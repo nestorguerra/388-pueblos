@@ -1,6 +1,8 @@
 // Cualquiera de los 388: pueblo.html#<código INE>. Guareña tiene su propia página.
 import { createTownPage, townError } from './town-page.js';
-import { SHARED, loadVotes, sendVote, wake } from './backend.js';
+import { SHARED, loadVotes, sendVote, wake, loadSignupCounts } from './backend.js';
+import { META_DESPERTAR } from './config.js';
+import { t, page } from './i18n.js';
 import { loadContenido } from './contenido.js';
 import { getJSON } from './red.js';
 
@@ -97,6 +99,19 @@ addEventListener('hashchange', () => location.reload());
   const c = window.claude;
   const loadShared = async () => { try { const v = await loadVotes(); if (v) render(v[ine] || 0); } catch {} };
   if (!c?.use && SHARED) { wake(); loadShared(); }
+
+  // la cola del pueblo: cuántos vecinos se han apuntado y cuántos faltan para que despierte
+  const join = $('#q-join');
+  if (join) { join.href = page(`index.html?pueblo=${ine}#unete`); join.textContent = t('cola.apuntate', { name: m.n }); }
+  if (!c?.use && SHARED) {
+    loadSignupCounts().then((cnt) => {
+      const box = $('#q-box');
+      if (!cnt || !box) return;
+      const n = cnt.pueblos[ine] || 0;
+      box.innerHTML = `<div class="qt"><b>${t('cola.apuntados', { n })}</b><span>${t('cola.faltan', { n, meta: META_DESPERTAR })}</span></div><div class="qbar" aria-hidden="true"><i style="width:${Math.min(100, (n / META_DESPERTAR) * 100).toFixed(1)}%"></i></div>`;
+      box.hidden = false;
+    }).catch(() => {});
+  }
   if (c?.use) {
     Promise.all([c.use('db'), c.use('user')]).then(async ([d, u]) => {
       if (!d) return;

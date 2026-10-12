@@ -10,7 +10,8 @@
  *   4. Copia la URL que termina en /exec y ponla en web/js/config.js (SHEETS_URL).
  *
  * La hoja crea sola dos pestañas: «Lista» (una fila por email) y «Votos» (una fila por dispositivo).
- * Desde la web solo se puede escribir y leer el recuento de votos; los emails nunca salen de la hoja.
+ * Desde la web solo se puede escribir y leer recuentos (votos y apuntados por pueblo); los emails nunca salen de la hoja.
+ * Si cambias este archivo, vuelve a implementar: Implementar → Gestionar implementaciones → editar → Nueva versión.
  */
 
 const PERFILES = ['Jugador', 'Creador', 'Desde fuera', 'Ayuntamiento'];
@@ -55,6 +56,19 @@ function doGet(e) {
     cache.put('votos', JSON.stringify(votos), 30);
     return responder({ ok: true, votos: votos });
   }
+  if (accion === 'apuntados') {
+    // cuántas personas hay en la lista de espera por pueblo (solo números: los emails no salen de aquí)
+    const cache = CacheService.getScriptCache();
+    const guardado = cache.get('apuntados');
+    if (guardado) return responder(Object.assign({ ok: true }, JSON.parse(guardado)));
+    const h = hoja('Lista', ['email', 'alias', 'pueblo (INE)', 'pueblo (escrito)', 'perfil', 'origen', 'dispositivo', 'fecha']);
+    const filas = h.getDataRange().getValues().slice(1);
+    const pueblos = {};
+    filas.forEach((f) => { const p = String(f[2]); if (INE.test(p)) pueblos[p] = (pueblos[p] || 0) + 1; });
+    const datos = { pueblos: pueblos, total: filas.length };
+    cache.put('apuntados', JSON.stringify(datos), 60);
+    return responder(Object.assign({ ok: true }, datos));
+  }
   return responder({ ok: true, servicio: '388 Pueblos' });
 }
 
@@ -92,6 +106,7 @@ function doPost(e) {
         return responder({ ok: true, nuevo: false });
       }
       h.appendRow(fila);
+      CacheService.getScriptCache().remove('apuntados');
       return responder({ ok: true, nuevo: true });
     }
     if (d.accion === 'voto') {

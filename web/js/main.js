@@ -1,7 +1,9 @@
 // 388 Pueblos — landing: scroll, interfaz y mapa de los 388.
 import { createLandingWorld } from './landing-world.js';
 import { readPassport } from './pasaporte.js';
-import { SHARED, loadVotes, sendVote, wake } from './backend.js';
+import { SHARED, loadVotes, sendVote, wake, loadSignupCounts } from './backend.js';
+import { META_DESPERTAR, DISCORD_URL } from './config.js';
+import { t } from './i18n.js';
 import { markListed, saveSignup, queueSignup } from './lista.js';
 import { getJSON, prerender } from './red.js';
 
@@ -288,13 +290,13 @@ function initScroll() {
   const secs = [
     ['#inicio', 'Pueblo 001/388'], ['#vuelo', 'El vuelo'], ['#manifiesto', 'Manifiesto'], ['#origen', 'Origen'],
     ['#mundo', 'El mundo'], ['#juego', 'Cómo se juega'], ['#los388', 'Los 388'], ['#ruta', 'Hoja de ruta'],
-    ['#ayuntamientos', 'Ayuntamientos'], ['#unete', 'Únete'],
+    ['#diario', 'Diario de obra'], ['#ayuntamientos', 'Ayuntamientos'], ['#comunidad', 'Comunidad'], ['#unete', 'Únete'],
   ];
   for (const [sel, label] of secs) {
     ScrollTrigger.create({ trigger: sel, start: 'top 50%', end: 'bottom 50%', onToggle: (s) => { if (s.isActive) $('#hud-sec').textContent = label; } });
   }
   ScrollTrigger.create({ start: 0, end: 'max', onUpdate: (s) => { $('#hud-bar').style.transform = `scaleX(${s.progress})`; } });
-  const navLinks = $$('.nav ul a');
+  const navLinks = $$('.nav ul a[href^="#"]'); // (solo las secciones de esta página; «EN» lleva a otra)
   for (const a of navLinks) {
     const target = $(a.getAttribute('href'));
     if (target) ScrollTrigger.create({ trigger: target, start: 'top 50%', end: 'bottom 50%', onToggle: (s) => a.classList.toggle('on', s.isActive) });
@@ -417,6 +419,7 @@ function selectMuni(i, { fly = false } = {}) {
   const stt = $('#s-status');
   stt.classList.toggle('on', home);
   stt.querySelector('span').textContent = home ? 'Despierto · primer pueblo' : 'Levantado en automático · por despertar';
+  renderQueue(m);
   const acts = $('#s-actions');
   acts.innerHTML = '';
   if (home) {
@@ -435,7 +438,7 @@ function selectMuni(i, { fly = false } = {}) {
     const j = document.createElement('a');
     j.className = 'btn';
     j.href = '#unete';
-    j.textContent = 'Es mi pueblo';
+    j.textContent = t('cola.apuntate', { name: m.n });
     j.addEventListener('click', () => { $('#f-town').value = m.n; updatePassport(); });
     const v = document.createElement('a');
     v.className = 'btn';
@@ -563,12 +566,102 @@ async function castVote(id) {
   if (prev && votes[prev] === 0) delete votes[prev];
   renderVotes();
 }
+// ---------------- colas por pueblo: vecinos apuntados hacia los que despiertan un pueblo ----------------
+let counts = null; // {pueblos: {INE: n}, total}
+async function loadCounts() {
+  try { counts = await loadSignupCounts(); } catch { counts = null; }
+  renderCounts();
+}
+function bar(n) { return `<div class="qbar" aria-hidden="true"><i style="width:${Math.min(100, (n / META_DESPERTAR) * 100).toFixed(1)}%"></i></div>`; }
+function renderQueue(m) {
+  const box = $('#s-queue');
+  if (!box) return;
+  if (!counts || !m) { box.hidden = true; return; }
+  const n = counts.pueblos[m.id] || 0;
+  box.hidden = false;
+  box.innerHTML = m.id === HOME
+    ? `<div class="qt"><b>${t('cola.despierto', { n })}</b></div>`
+    : `<div class="qt"><b>${t('cola.apuntados', { n })}</b><span>${t('cola.faltan', { n, meta: META_DESPERTAR })}</span></div>${bar(n)}`;
+}
+function renderCounts() {
+  const box = $('#queues');
+  if (!counts) { if (box) box.hidden = true; return; }
+  $('#c-list').textContent = fmt.format(counts.total);
+  $('#c-list').parentElement.hidden = false;
+  if (box) {
+    box.hidden = false;
+    $('#q-total').textContent = t('cola.total', { n: counts.total });
+    const top = Object.entries(counts.pueblos).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    $('#q-top').innerHTML = top.length
+      ? top.map(([id, n]) => {
+        const m = munis.find((x) => x.id === id);
+        return `<li><div class="row"><span>${m ? m.n : id}</span><span>${n}/${META_DESPERTAR}</span></div>${bar(n)}</li>`;
+      }).join('')
+      : `<li class="hint">${t('cola.vacia')}</li>`;
+  }
+  if (selected >= 0) renderQueue(munis[selected]);
+}
+
+// ---------------- diario de obra: los últimos cambios de la web y del juego, de sus repositorios públicos ----------------
+const REPOS = [['nestorguerra/388-pueblos', 'web'], ['nestorguerra/guarena-hq', 'juego']];
+async function loadDiary() {
+  const list = $('#diary');
+  if (!list) return;
+  let items = null;
+  try { const c = JSON.parse(sessionStorage.getItem('388p:diario') || 'null'); if (c && Date.now() - c.t < 600000) items = c.items; } catch { /* ignore */ }
+  if (!items) {
+    try {
+      const all = await Promise.all(REPOS.map(async ([repo, kind]) => {
+        const r = await getJSON(`https://api.github.com/repos/${repo}/commits?per_page=8`, { retries: 1, timeout: 10000 });
+        return r.map((c) => ({ kind, title: (c.commit.message || '').split('\n')[0].trim(), url: c.html_url, date: c.commit.author?.date || c.commit.committer?.date }));
+      }));
+      items = all.flat().filter((x) => x.title && !/^Merge /.test(x.title)).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 6);
+      try { sessionStorage.setItem('388p:diario', JSON.stringify({ t: Date.now(), items })); } catch { /* ignore */ }
+    } catch {
+      list.innerHTML = '<li class="muted">Ahora mismo no podemos cargar el diario. Puedes verlo en GitHub.</li>';
+      return;
+    }
+  }
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  list.replaceChildren(...items.map((x) => {
+    const li = document.createElement('li');
+    const d = new Date(x.date); const day = new Date(d); day.setHours(0, 0, 0, 0);
+    const meta = document.createElement('span');
+    meta.className = 'meta';
+    meta.innerHTML = `<span class="tag ${x.kind}">${t(x.kind === 'juego' ? 'diario.juego' : 'diario.web')}</span>`;
+    meta.append(t('diario.hace', { d: Math.max(0, Math.round((today - day) / 86400000)) }));
+    const a = document.createElement('a');
+    a.href = x.url; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = x.title;
+    li.append(meta, a);
+    return li;
+  }));
+}
+function initDiary() {
+  const sec = $('#diario');
+  if (!sec) return;
+  const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { io.disconnect(); loadDiary(); } }, { rootMargin: '600px 0px' });
+  io.observe(sec);
+}
+
+// ---------------- comunidad en Discord ----------------
+function initDiscord() {
+  const b = $('#discord');
+  if (!b || !DISCORD_URL) return;
+  b.href = DISCORD_URL;
+  b.target = '_blank';
+  b.rel = 'noopener';
+  b.removeAttribute('aria-disabled');
+  b.innerHTML = `${t('discord.entrar')} <span aria-hidden="true">↗</span>`;
+}
+
 async function initData() {
   try { myVote = localStorage.getItem(LS); } catch {}
   if (myVote && !db) { votes[myVote] = 1; renderVotes(); }
   const c = window.claude;
   if (!c?.use) {
     if (SHARED) {
+      loadCounts();
       wake();
       const load = async () => { try { votes = (await loadVotes()) || votes; renderVotes(); } catch {} };
       load();
@@ -678,6 +771,14 @@ function initForm() {
   for (const b of $$('#roles [data-role]')) b.addEventListener('click', () => setRole(b.dataset.role));
   $('#f-alias').addEventListener('input', updatePassport);
   $('#f-town').addEventListener('input', updatePassport);
+  // desde la página de ayuntamientos: ?perfil=Ayuntamiento deja elegido ese perfil
+  const perfil = new URLSearchParams(location.search).get('perfil');
+  if (perfil && $(`#roles [data-role="${CSS.escape(perfil)}"]`)) setRole(perfil);
+  // desde la página de un pueblo («Apúntate por…»): ?pueblo=<INE> deja el pueblo elegido y baja a la lista
+  const pre = new URLSearchParams(location.search).get('pueblo') || (perfil ? '' : null);
+  const pm = pre && munis.find((x) => x.id === pre);
+  if (pm) { $('#f-town').value = pm.n; updatePassport(); }
+  if (pm || perfil) setTimeout(() => (lenis ? lenis.scrollTo('#unete', { offset: -40 }) : $('#unete').scrollIntoView()), 900);
   const msg = $('#f-msg');
   $('#form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -695,11 +796,19 @@ function initForm() {
       await saveSignup(entry);
       markListed();
       msg.innerHTML = '';
-      msg.append(`Apuntado. Te avisaremos de cada novedad${town ? ` y de cuando ${town.n} despierte` : ''}. `);
+      if (town && counts) msg.append(`${t('cola.eres', { n: (counts.pueblos[town.id] || 0) + 1, name: town.n, meta: META_DESPERTAR })} `);
+      else msg.append(`Apuntado. Te avisaremos de cada novedad${town ? ` y de cuando ${town.n} despierte` : ''}. `);
       const go = document.createElement('a');
       go.href = 'guarena.html?jugar';
       go.textContent = 'Entrar ya en Guareña →';
       msg.append(go);
+      if (DISCORD_URL) {
+        const d = document.createElement('a');
+        d.href = DISCORD_URL; d.target = '_blank'; d.rel = 'noopener';
+        d.textContent = ` · ${t('discord.entrar')} ↗`;
+        msg.append(d);
+      }
+      loadCounts();
       msg.classList.add('ok');
       $('#pp-no').textContent = 'Nº fundador';
     } catch (err) {
@@ -732,6 +841,8 @@ function initUI() {
   initScroll();
   initCards();
   drawPlano();
+  initDiary();
+  initDiscord();
   if (munis.length) {
     initMapUI();
     initNames();

@@ -194,11 +194,11 @@
     <header>
       <span class="kicker">Abierto y gratis</span>
       <h2 id="t-abierto" class="h2">Los 388 pueblos, <span class="serif">abiertos a todo el mundo.</span></h2>
-      <p>388 Pueblos es un proyecto de código abierto. Entrar es gratis, estar con otras personas es gratis y muchas de las actividades y juegos también lo son.</p>
+      <p>388 Pueblos es un proyecto de código abierto. <strong>Por ahora, todo es gratis.</strong> Entrar en los pueblos y estar con otras personas lo será siempre.</p>
     </header>
     <div class="opens">
       <article><span class="mono">Gratis, siempre</span><h3>Entrar no cuesta nada</h3><p>El acceso a los 388 pueblos y la convivencia con otras personas dentro de ellos son y serán completamente gratuitos. Muchas actividades y juegos, también.</p></article>
-      <article><span class="mono">Freemium</span><h3>Dentro, cada pueblo suma</h3><p>En cada pueblo puede haber servicios y algunos juegos de pago, junto a otros muchos gratuitos. Así el mundo se sostiene sin cerrar la puerta a nadie.</p></article>
+      <article><span class="mono">Hoy, todo gratis</span><h3>Y mañana, sin muros</h3><p>Ahora mismo no se paga nada. Más adelante podrá haber algún servicio o juego de pago dentro de un pueblo, siempre junto a muchos gratuitos y sin cerrar la puerta a nadie. Lo sostienen los ayuntamientos que deciden despertar su pueblo.</p></article>
       <article class="feat"><span class="mono">Código abierto · MIT y CC BY-SA</span><h3>Mejora tu propio pueblo</h3><p>El código y los pueblos son abiertos. Cualquiera puede proponer mejoras y editar su pueblo: sus calles, sus lugares, sus historias y sus fiestas.</p><a class="btn" href="https://github.com/nestorguerra/388-pueblos" target="_blank" rel="noopener">Ver el código en GitHub <span aria-hidden="true">↗</span></a></article>
     </div>
   </section>
@@ -210,7 +210,7 @@
         <div class="box">
           <span class="kicker">Los 388 · mapa vivo</span>
           <h2 id="t-388">Un pueblo despierto. <span class="serif">387 por despertar.</span></h2>
-          <div class="awake mono"><span><b class="on num" id="c-awake">1</b> despierto</span><span><b class="num" id="c-sleep">388</b> levantados</span><span><b class="num" id="c-votes">0</b> votos</span></div>
+          <div class="awake mono"><span><b class="on num" id="c-awake">1</b> despierto</span><span><b class="num" id="c-sleep">388</b> levantados</span><span><b class="num" id="c-votes">0</b> votos</span><span class="cl" hidden><b class="num" id="c-list">0</b> apuntados</span></div>
           <p class="muted" style="margin:0">Los 388 ya tienen su gemelo automático con los edificios del Catastro. Toca cualquiera y entra en su gemelo.</p>
           <div class="search">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
@@ -256,6 +256,7 @@
           <div><b id="s-alt">285 m</b><span>Altitud</span></div>
           <div><b id="s-area">283 km²</b><span>Término</span></div>
         </div>
+        <div class="queue" id="s-queue" hidden></div>
         <p class="note" id="s-note"></p>
         <div class="chips" id="s-actions"></div>
       </aside>
@@ -286,6 +287,16 @@
     <p class="disclaim mono">Calendario orientativo. Cada fase depende de la comunidad conseguida y de la financiación.</p>
   </section>
 
+  <!-- DIARIO DE OBRA -->
+  <section id="diario" class="diary" aria-labelledby="t-diario">
+    <header>
+      <div><span class="kicker">Diario de obra</span><h2 id="t-diario" class="h2" style="margin-top:.8rem">Lo que hemos hecho <span class="serif">esta semana.</span></h2></div>
+      <p>Cada cambio en la web y en el juego queda a la vista, porque todo el código es abierto. Esto es lo último, sacado directamente de los repositorios.</p>
+    </header>
+    <ol class="entries" id="diary" aria-live="polite"><li class="muted">Cargando los últimos cambios…</li></ol>
+    <p class="more"><a class="btn" href="https://github.com/nestorguerra/388-pueblos/commits/main" target="_blank" rel="noopener" id="diary-all">Ver todos los cambios <span aria-hidden="true">↗</span></a></p>
+  </section>
+
   <!-- AYUNTAMIENTOS -->
   <section id="ayuntamientos" class="councils zocalo" aria-labelledby="t-ayto">
     <div class="head">
@@ -299,19 +310,39 @@
       <div><span class="mono">Turismo</span><h3>El pueblo, visible</h3><p>Una puerta de entrada a fiestas, rutas y producto local para gente que nunca habría encontrado el pueblo.</p></div>
     </div>
     <div class="tiers">
-      <article class="tier"><span class="mono">Nivel 1</span><h3>Pueblo semilla</h3><ul><li>Casco urbano completo desde Catastro, LiDAR y ortofoto del PNOA</li><li>Iglesia, plaza y ayuntamiento capturados en 3D</li><li>Ficha del pueblo, un minijuego y sello del pasaporte</li></ul><span class="price">Orientativo: 6.000–12.000 € · cabe en un contrato menor</span></article>
-      <article class="tier feat"><span class="mono">Nivel 2 · recomendado</span><h3>Pueblo vivo</h3><ul><li>Todo lo del nivel 1</li><li>Fachadas calle a calle e interiores de la iglesia</li><li>Misiones con historias del pueblo y habla local</li><li>Fiestas jugables en directo y multijugador</li></ul><span class="price">Orientativo: 15.000–35.000 €</span></article>
-      <article class="tier"><span class="mono">Nivel 3</span><h3>Pueblo laboratorio</h3><ul><li>Todo lo del nivel 2</li><li>Vuelo con dron y capas de planeamiento</li><li>Simulación urbana y votaciones vecinales</li><li>Panel de visitas y datos para el ayuntamiento</li></ul><span class="price">Orientativo: 40.000–90.000 €</span></article>
+      <article class="tier"><span class="mono">Servicio 1 · pago único</span><h3>Modela mi pueblo</h3><ul><li>Casco urbano completo, edificio a edificio, con su altura real</li><li>La iglesia, la plaza y el ayuntamiento, reconocibles a primera vista</li><li>El pueblo abierto en el mundo de 388 Pueblos, gratis para todos sus vecinos</li><li>Su ficha, su sello del pasaporte y su entrada al juego</li></ul><span class="price">De 500 a 2.000 € según el tamaño del municipio</span></article>
+      <article class="tier feat"><span class="mono">Servicio 2 · por modificación</span><h3>Planea en 3D</h3><ul><li>Modelamos una propuesta urbanística sobre el pueblo real: una plaza, una peatonalización, un arbolado, un edificio</li><li>Vista de antes y después, para enseñarla en un pleno o en la calle</li><li>Consulta a los vecinos dentro del mundo, con sus opiniones y votos en el panel</li></ul><span class="price">300 € por cada modificación</span></article>
+      <article class="tier"><span class="mono">Servicio 3 · cuota anual</span><h3>Panel municipal</h3><ul><li>Panel de control con estadísticas de visitas, jugadores y vecinos apuntados</li><li>Actividades y fiestas publicadas en el mundo, y avisos a los vecinos</li><li>Actualizaciones del modelo cuando cambia el pueblo</li><li>Indicadores de participación e informe anual</li></ul><span class="price">25 €/mes · 300 € al año</span></article>
     </div>
-    <p class="mono" style="margin-top:1.2rem;color:#2a3048;line-height:1.7">Importes sin IVA, más una licencia anual. Como referencia, la Diputación de Badajoz licitó en 2024 gemelos digitales turísticos para 20 municipios por 954.690 €, unos 47.700 € por pueblo. Automatizar la base con datos abiertos es lo que permite llegar a los pueblos pequeños. Y como el proyecto es de código abierto y el acceso es gratuito, lo que financia un ayuntamiento queda para todo el mundo.</p>
-    <div class="cta"><a class="btn primary" href="#unete" data-role="Ayuntamiento">Solicitar una presentación <span class="arr" aria-hidden="true">→</span></a><span class="mono" style="color:#2a3048">También para diputaciones, grupos de acción local y centros educativos</span></div>
+    <p class="mono" style="margin-top:1.2rem;color:#2a3048;line-height:1.7">Importes sin IVA. Cada servicio cabe en un contrato menor de servicios (artículo 118 de la Ley 9/2017 de Contratos del Sector Público): un pago fijo por modelar el pueblo y, si el ayuntamiento quiere, la cuota anual del panel y las modificaciones que encargue. Como el proyecto es de código abierto y el acceso es gratuito, lo que financia un ayuntamiento queda para todo el mundo.</p>
+    <div class="cta"><a class="btn primary" href="ayuntamientos.html">Ver la propuesta para ayuntamientos <span class="arr" aria-hidden="true">→</span></a><a class="btn" href="assets/dossier/388-pueblos-dossier-ayuntamientos.pdf" download>Descargar el dossier (PDF)</a><span class="mono" style="color:#2a3048">También para diputaciones, grupos de acción local y centros educativos</span></div>
+  </section>
+
+  <!-- COMUNIDAD -->
+  <section id="comunidad" class="community" aria-labelledby="t-com">
+    <div>
+      <span class="kicker">Comunidad</span>
+      <h2 id="t-com" class="h2" style="margin-top:.8rem">El pueblo, también <span class="serif">fuera del juego.</span></h2>
+      <p>En el Discord de 388 Pueblos se queda para jugar, se proponen ideas para cada pueblo y se sigue el diario de obra en directo. Un canal por comarca, moderación desde el primer día y normas claras pensadas para gente joven.</p>
+      <p class="cta"><a class="btn primary" id="discord" href="#comunidad" aria-disabled="true">Abrimos el Discord muy pronto</a></p>
+    </div>
+    <ul class="channels mono" aria-label="Algunos canales del Discord">
+      <li><b>#bienvenida</b><span>normas y primeros pasos</span></li>
+      <li><b>#plaza-mayor</b><span>charla general</span></li>
+      <li><b>#vegas-altas</b><span>un canal por comarca</span></li>
+      <li><b>#busco-partida</b><span>para jugar juntos</span></li>
+      <li><b>#ideas-para-mi-pueblo</b><span>lo que falta en tu pueblo</span></li>
+      <li><b>#diario-de-obra</b><span>cada cambio, en directo</span></li>
+    </ul>
   </section>
 
   <!-- PREGUNTAS -->
   <section id="preguntas" class="faq" aria-labelledby="t-faq">
     <div><span class="kicker">Preguntas</span><h2 id="t-faq" class="h2" style="margin-top:.8rem">Lo que más nos <span class="serif">preguntan.</span></h2></div>
     <div class="qs">
-      <details><summary>¿Cuánto cuesta?</summary><p>Entrar en los 388 pueblos y estar con otras personas es gratis, y lo seguirá siendo. Muchas actividades y juegos también; algunos juegos y servicios dentro de cada pueblo serán de pago.</p></details>
+      <details><summary>¿Cuánto cuesta?</summary><p>Por ahora, todo es gratis. Entrar en los 388 pueblos y estar con otras personas lo seguirá siendo siempre; en el futuro podrá haber algún servicio o juego de pago dentro de un pueblo, junto a muchos gratuitos.</p></details>
+      <details><summary>¿Qué hace falta para que despierte mi pueblo?</summary><p>Vecinos y un ayuntamiento. Cada pueblo tiene su cola: cuando llega a 100 personas apuntadas, llevamos esos datos a su ayuntamiento para que lo encargue. Apúntate eligiendo tu pueblo y avisa a los tuyos.</p></details>
+      <details><summary>¿Dónde hablo con otros jugadores?</summary><p>En el Discord de 388 Pueblos, con un canal para cada comarca, el diario de obra y un espacio para proponer ideas. Lo encontrarás en la sección «Comunidad».</p></details>
       <details><summary>¿Puedo jugar ya?</summary><p>Sí. Estamos en pruebas con lista de espera: te apuntas con tu email y entras al momento en la beta de Guareña.</p></details>
       <details><summary>¿Puedo editar mi pueblo?</summary><p>Sí. 388 Pueblos es de código abierto: el código tiene licencia MIT y los pueblos y sus contenidos, CC BY-SA 4.0. En el repositorio explicamos cómo proponer cambios en tu pueblo. El objetivo es que también se pueda hacer sin saber programar.</p></details>
       <details><summary>Soy de un ayuntamiento, ¿qué hacemos?</summary><p>Tu pueblo ya está levantado en automático. Despertarlo al detalle (plaza, iglesia, calles, misiones y fiestas) se hace con el ayuntamiento: mira los niveles de aquí arriba o pídenos una presentación.</p></details>
@@ -344,6 +375,11 @@
         <input class="trap" id="f-web" type="text" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
         <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap"><button class="btn primary" type="submit">Apuntarme a la lista <span class="arr" aria-hidden="true">→</span></button><span class="formmsg" id="f-msg" role="status"></span></div>
       </form>
+      <div class="queues" id="queues" hidden>
+        <p class="mono qt" id="q-total"></p>
+        <ol id="q-top"></ol>
+        <p class="hint">Cada pueblo despierta cuando llega a 100 vecinos apuntados: con esos datos vamos a su ayuntamiento.</p>
+      </div>
     </div>
     <div class="passport" id="passport" aria-label="Vista previa de tu pasaporte de vecino">
       <div class="ph mono"><span>Pasaporte de vecino</span><span id="pp-no">Nº —</span></div>
@@ -358,7 +394,7 @@
   <div class="word display">388 <span class="serif">pueblos</span></div>
   <div class="cols">
     <div><p>Un proyecto de Ana Pérez Toledo. Hecho en Guareña, Badajoz, pueblo a pueblo.</p><p>Código abierto: el código con licencia MIT y los pueblos y contenidos con CC BY-SA 4.0. Los datos de terceros mantienen sus licencias.</p><p><a href="guarena.html?jugar">Jugar en Guareña →</a></p><p><a href="https://github.com/nestorguerra/388-pueblos" target="_blank" rel="noopener">Código en GitHub ↗</a> · <a href="privacidad.html">Privacidad</a></p></div>
-    <div><span class="mono" style="color:var(--niebla-2)">Explora</span><ul><li><a href="#vuelo">El proyecto</a></li><li><a href="#los388">Mapa de los 388</a></li><li><a href="#ayuntamientos">Ayuntamientos</a></li><li><a href="#abierto">Abierto y gratis</a></li><li><a href="#preguntas">Preguntas</a></li><li><a href="#unete">Lista de espera</a></li></ul></div>
+    <div><span class="mono" style="color:var(--niebla-2)">Explora</span><ul><li><a href="#vuelo">El proyecto</a></li><li><a href="#los388">Mapa de los 388</a></li><li><a href="ayuntamientos.html">Para ayuntamientos</a></li><li><a href="#abierto">Abierto y gratis</a></li><li><a href="#diario">Diario de obra</a></li><li><a href="#comunidad">Comunidad en Discord</a></li><li><a href="#preguntas">Preguntas</a></li><li><a href="#unete">Lista de espera</a></li></ul></div>
     <div><span class="mono" style="color:var(--niebla-2)">Datos abiertos</span><ul><li>Edificios: Dirección General del Catastro (INSPIRE)</li><li>Límites municipales: IGN, vía es-atlas</li><li>Población: INE, Padrón 2025, vía Wikidata</li><li>Ubicaciones: © colaboradores de OpenStreetMap</li></ul></div>
   </div>
 </footer>

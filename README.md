@@ -25,7 +25,12 @@ CC BY-SA 4.0 ([LICENCIAS.md](LICENCIAS.md)).
 - **Un solo zoom, sin telones:** desde la portada, la cámara baja hasta Guareña y su página recoge el último fotograma
   (sessionStorage) y lo sigue acercando mientras levanta la maqueta; quien llega por un enlace ve el cartel de Guareña
   desde ese mismo encuadre (`web/assets/guarena-inicio.jpg`). Nunca una pantalla negra.
-- **Lista de espera** («apúntate y entra»), votos y pasaporte de sellos por pueblo visitado.
+- **Lista de espera** con una cola por pueblo (cada pueblo despierta con 100 vecinos apuntados), votos y pasaporte.
+- **Diario de obra** en la portada con los últimos cambios de la web y del juego, y **comunidad en Discord**
+  ([DISCORD.md](DISCORD.md): canales, roles, normas y publicación automática del diario).
+- **Para ayuntamientos** (`ayuntamientos.html`): tres servicios por contrato menor (modelado del pueblo, propuestas
+  urbanísticas en 3D y panel municipal), calculadora por municipio y dossier en PDF (`dossier.html?ine=<INE>`,
+  `python3 tools/dossier_pdf.py`). Precios y datos del proveedor en `web/js/config.js`.
 
 ```
 web/                      La web, sin paso de compilación

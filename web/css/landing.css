@@ -433,3 +433,44 @@ section { position: relative; }
   .grain { animation: none; }
   .manifesto .statement .w { opacity: 1 !important; }
 }
+
+/* colas por pueblo: vecinos apuntados hacia los 100 que despiertan un pueblo */
+.queue { display: grid; gap: 0.45rem; }
+.queue .qbar, .queues .qbar { height: 6px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.queue .qbar i, .queues .qbar i { display: block; height: 100%; width: 0; background: var(--sodio); border-radius: inherit; transition: width 0.8s var(--ease-out); }
+.queue .qt { display: flex; justify-content: space-between; gap: 1rem; font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--niebla); }
+.queue .qt b { color: var(--cal); font-weight: 500; }
+.awake .cl b { color: var(--sodio-2); }
+.queues { margin-top: 2.2rem; max-width: 34rem; display: grid; gap: 0.7rem; }
+.queues .qt { color: var(--sodio); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0; }
+.queues ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+.queues li { display: grid; gap: 0.3rem; }
+.queues li .row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.95rem; }
+.queues li .row span:last-child { font-family: var(--f-mono); font-size: 0.75rem; color: var(--niebla); }
+.queues .hint { margin: 0; color: var(--niebla-2); font-size: 0.85rem; }
+
+/* diario de obra */
+.diary { padding: 14vh var(--gutter) 12vh; background: var(--noche); border-top: 1px solid var(--linea); }
+.diary header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 2rem; align-items: end; }
+.diary header p { color: var(--niebla); max-width: 44ch; }
+.diary .entries { list-style: none; margin: 3rem 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.diary .entries li { border: 1px solid var(--linea); border-radius: 16px; padding: 1.2rem 1.2rem 1.1rem; display: grid; gap: 0.6rem; align-content: start; min-width: 0; background: rgba(255, 255, 255, 0.02); }
+.diary .entries li.muted { grid-column: 1 / -1; color: var(--niebla); border-style: dashed; }
+.diary .entries .meta { display: flex; gap: 0.6rem; align-items: center; font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--niebla); }
+.diary .entries .tag { color: var(--tinta); background: var(--sodio); border-radius: 999px; padding: 0.12rem 0.5rem; }
+.diary .entries .tag.juego { background: var(--anil-claro); }
+.diary .entries a { color: var(--cal); text-decoration: none; font-family: var(--f-display); font-variation-settings: "wdth" 108; font-weight: 650; font-size: 1.05rem; line-height: 1.25; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.diary .entries a:hover { color: var(--sodio-2); }
+.diary .more { margin: 1.6rem 0 0; }
+@media (max-width: 860px) { .diary header { grid-template-columns: 1fr; } .diary .entries { grid-template-columns: 1fr; } }
+
+/* comunidad (Discord) */
+.community { padding: 14vh var(--gutter); background: var(--noche-2); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr); gap: 2rem 5rem; align-items: center; border-top: 1px solid var(--linea); }
+.community p { color: var(--niebla); max-width: 48ch; }
+.community .cta { margin-top: 1.6rem; }
+.community .btn[aria-disabled="true"] { opacity: 0.6; cursor: default; }
+.community .channels { list-style: none; margin: 0; padding: 1rem; border: 1px solid var(--linea); border-radius: 18px; background: rgba(7, 10, 20, 0.6); display: grid; gap: 0.15rem; }
+.community .channels li { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0.6rem; border-radius: 10px; font-size: 0.8rem; color: var(--niebla); }
+.community .channels li:hover { background: rgba(255, 255, 255, 0.04); }
+.community .channels b { color: var(--cal); font-weight: 500; }
+@media (max-width: 860px) { .community { grid-template-columns: 1fr; } }

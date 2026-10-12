@@ -1,0 +1,34 @@
+# Diario de obra en Discord: cada cambio que llega a main se publica en el canal #diario-de-obra.
+# Para activarlo: en Discord, Ajustes del canal → Integraciones → Webhooks → Nuevo webhook → Copiar URL;
+# en GitHub, Settings → Secrets and variables → Actions → New repository secret: DISCORD_WEBHOOK = esa URL.
+name: Diario de obra en Discord
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  avisar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publicar los cambios en #diario-de-obra
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          COMMITS: ${{ toJSON(github.event.commits) }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$DISCORD_WEBHOOK" ]; then echo "Sin DISCORD_WEBHOOK: nada que publicar"; exit 0; fi
+          python3 - <<'PY'
+          import json, os, urllib.request
+          commits = json.loads(os.environ.get("COMMITS") or "[]")
+          lines = []
+          for c in commits[-8:]:
+              title = (c.get("message") or "").split("\n")[0].strip()
+              if title and not title.startswith("Merge "):
+                  lines.append(f"• [{title}]({c.get('url')})")
+          if lines:
+              body = {"username": "Diario de obra · 388 Pueblos", "content": "**Novedades en la web**\n" + "\n".join(lines)}
+              req = urllib.request.Request(os.environ["DISCORD_WEBHOOK"], data=json.dumps(body).encode(),
+                                           headers={"Content-Type": "application/json", "User-Agent": "388-pueblos"})
+              urllib.request.urlopen(req, timeout=20)
+          PY

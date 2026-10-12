@@ -60,6 +60,17 @@ export async function loadVotes() {
   return null;
 }
 
+// Apuntados a la lista de espera por pueblo, {pueblos: {INE: n}, total} (solo números)
+export async function loadSignupCounts() {
+  if (SHEETS) {
+    const r = await fetch(`${SHEETS}?accion=apuntados`, { cache: 'no-store', redirect: 'follow', signal: limit(15000) });
+    const j = await r.json();
+    return { pueblos: j.pueblos || {}, total: j.total || 0 };
+  }
+  if (SERVER) { const j = await apiGet('/lista/recuento'); return { pueblos: j.pueblos || {}, total: j.total || 0 }; }
+  return null;
+}
+
 // Un voto por dispositivo (cambiarlo mueve el voto)
 export async function sendVote(pueblo) {
   if (SHEETS) return sheets({ accion: 'voto', device: deviceId(), pueblo });

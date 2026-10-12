@@ -70,7 +70,7 @@ site = args.site.rstrip("/")
 with open(os.path.join(OUT, "robots.txt"), "w") as f:
     f.write("User-agent: *\nAllow: /\n" + (f"Sitemap: {site}/sitemap.xml\n" if site else ""))
 if site:
-    urls = ["/", "/guarena.html", "/privacidad.html"]
+    urls = ["/", "/guarena.html", "/ayuntamientos.html", "/privacidad.html"]
     with open(os.path.join(OUT, "sitemap.xml"), "w") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
         f.writelines(f"  <url><loc>{site}{u}</loc></url>\n" for u in urls)

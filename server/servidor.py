@@ -6,6 +6,7 @@ Solo usa la biblioteca estándar de Python 3.9+. Abierto a cualquiera, sin cuent
 - /api/votos              GET recuento por pueblo · POST {device, pueblo} (un voto por dispositivo).
 - /api/pasaporte          GET ?device= · POST {device, pueblo} (un sello por pueblo visitado).
 - /api/lista              POST {email, alias, pueblo, perfil, origen, edad14, acepto} (nunca se puede leer por la API).
+- /api/lista/recuento     GET apuntados por pueblo y total (solo números).
 Todo lo demás sirve la carpeta web/ (con ETag y caché). Los HTML reciben window.P388 para que las páginas usen este
 servidor. La API acepta peticiones de otros orígenes (la web estática en su CDN).
 
@@ -225,6 +226,9 @@ def rate_ok(ip, limit=30, window=60):
 def api(method, path, query, body, ip):
     if path == "/api/online":
         return 200, {"total": sum(len(r) for r in rooms.values()), "pueblos": {k[7:]: len(v) for k, v in rooms.items()}}
+    if path == "/api/lista/recuento" and method == "GET":
+        pueblos = {p: n for p, n in db.execute("SELECT pueblo, COUNT(*) FROM lista WHERE pueblo IS NOT NULL GROUP BY pueblo")}
+        return 200, {"pueblos": pueblos, "total": db.execute("SELECT COUNT(*) FROM lista").fetchone()[0]}
     if path == "/api/votos" and method == "GET":
         return 200, {p: n for p, n in db.execute("SELECT pueblo, COUNT(*) FROM votos GROUP BY pueblo")}
     if path == "/api/pasaporte" and method == "GET":
