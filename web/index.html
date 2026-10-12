@@ -1,5 +1,6 @@
 <title>388 Pueblos</title>
 <meta name="description" content="388 Pueblos: el gemelo digital y mundo online de los 388 municipios de Extremadura. Empezamos por Guareña.">
+<link rel="icon" href="assets/logo/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap">
@@ -113,9 +114,11 @@ p { margin: 0; text-wrap: pretty; }
 .nav .btn { padding: 0.65rem 1rem; background: rgba(7, 10, 20, 0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .nav .btn.primary { background: var(--sodio); }
 @media (max-width: 900px) { .nav ul { display: none; } }
-.nav .brand { transition: color 0.3s; }
-.nav.light .brand { color: var(--tinta); }
-.nav.light .brand em { color: var(--anil); }
+.brand img { display: block; height: 50px; width: auto; }
+.brand .b-light { display: none; }
+.nav.light .brand .b-dark { display: none; }
+.nav.light .brand .b-light { display: block; }
+@media (max-width: 600px) { .brand img { height: 40px; } }
 
 /* ---------- HUD de progreso ---------- */
 .hud { position: fixed; left: var(--gutter); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; gap: 1.2rem; align-items: center; color: var(--niebla); pointer-events: none; }
@@ -415,7 +418,7 @@ section { position: relative; }
 <div class="grain" aria-hidden="true"></div>
 
 <header class="nav">
-  <a class="brand" href="#inicio" aria-label="388 Pueblos, inicio">388 <em>pueblos</em></a>
+  <a class="brand" href="#inicio" aria-label="388 Pueblos, inicio"><img class="b-dark" src="assets/logo/logo-388pueblos-nav-oscuro.svg" alt="388 Pueblos" width="130" height="50"><img class="b-light" src="assets/logo/logo-388pueblos-nav-claro.svg" alt="" width="130" height="50"></a>
   <nav aria-label="Secciones">
     <ul>
       <li><a href="#vuelo">El proyecto</a></li>

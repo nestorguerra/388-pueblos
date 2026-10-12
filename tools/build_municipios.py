@@ -91,7 +91,8 @@ for r in json.load(open(wd_path))["results"]["bindings"]:
     if "elev" in r:
         m["elev"] = round(float(r["elev"]["value"]))
     if "area" in r:
-        m["area"] = round(float(r["area"]["value"]), 1)
+        a = float(r["area"]["value"])
+        m["area"] = round(a / 1e6 if a > 50000 else a, 1)  # algunos valores vienen en m² (p. ej. Cáceres)
     if "demonym" in r:
         m.setdefault("dem", set()).add(r["demonym"]["value"])
     if "pop" in r and "popdate" in r:

@@ -124,3 +124,5 @@ details[open] summary::after { content: "−"; }
 .sleep i { width: 8px; height: 8px; border-radius: 50%; background: var(--niebla-2); }
 .sleep.on { color: var(--sodio); }
 .sleep.on i { background: var(--sodio); box-shadow: 0 0 10px var(--sodio); }
+
+.brand img { display: block; height: 44px; width: auto; filter: drop-shadow(0 1px 8px rgba(0, 0, 0, 0.35)); }
