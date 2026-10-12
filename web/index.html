@@ -169,12 +169,12 @@ section { position: relative; }
 .step.right { justify-self: end; }
 .step.final { max-width: 38rem; justify-self: start; text-align: left; }
 .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--linea); border: 1px solid var(--linea); border-radius: 12px; overflow: hidden; }
-.stats div { background: rgba(7, 10, 20, 0.7); padding: 1rem 1.1rem; display: grid; gap: 0.2rem; }
-.stats strong { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: clamp(1.9rem, 3.4vw, 3rem); letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.stats div { background: rgba(7, 10, 20, 0.7); padding: 1rem 1.1rem; display: grid; gap: 0.2rem; min-width: 0; }
+.stats strong { font-family: var(--f-display); font-variation-settings: "wdth" 104; font-weight: 800; font-size: clamp(1.6rem, 2.7vw, 2.6rem); letter-spacing: -0.035em; line-height: 1; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stats strong.s { color: var(--sodio); }
 .stats span { font-size: 0.86rem; color: var(--niebla); line-height: 1.35; }
 .stats small { font-family: var(--f-mono); font-size: 0.62rem; color: var(--niebla-2); letter-spacing: 0.06em; }
-.skip { position: absolute; right: var(--gutter); top: 50%; writing-mode: vertical-rl; pointer-events: auto; }
+.skip { position: absolute; left: 50%; bottom: 64px; transform: translateX(-50%); pointer-events: auto; }
 @media (max-width: 700px) { .step { align-self: end; margin-bottom: 40px; } .skip { display: none; } }
 @media (max-width: 480px) { .stats { grid-template-columns: 1fr; } .stats div { padding: 0.75rem 0.9rem; } .step.final h2 { font-size: 1.5rem; } }
 
@@ -481,7 +481,7 @@ section { position: relative; }
           <div><strong class="num s" data-count="335">335</strong><span>tienen hoy menos habitantes que en 2001</span><small>o que en su primer padrón</small></div>
         </div>
       </article>
-      <a class="skip mono btn" href="#los388">Saltar al mapa ↓</a>
+      <a class="skip mono btn" href="#los388">Saltar al mapa de los 388 ↓</a>
     </div>
   </section>
 
