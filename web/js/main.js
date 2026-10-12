@@ -59,7 +59,7 @@ function enterTown(href, name, idx) {
   ov.className = 'dive-ov';
   ov.innerHTML = '<div><b></b><span class="mono"></span></div>';
   ov.querySelector('b').textContent = name;
-  ov.querySelector('span').textContent = href === 'guarena.html' ? `Levantando ${fmt.format(world.townCount)} volúmenes…` : 'Levantando el pueblo…';
+  ov.querySelector('span').textContent = href.startsWith('guarena.html') ? `Levantando ${fmt.format(world.townCount)} volúmenes…` : 'Levantando el pueblo…';
   document.body.append(ov);
   document.documentElement.classList.add('diving');
   lenis?.stop();
@@ -74,11 +74,11 @@ function enterTown(href, name, idx) {
   if (!world.dive(idx, go)) go();
 }
 document.addEventListener('click', (e) => {
-  const a = e.target.closest('a[href="guarena.html"], a[href^="pueblo.html#"]');
+  const a = e.target.closest('a[href^="guarena.html"], a[href^="pueblo.html#"]');
   if (!a || !world || reduced || e.metaKey || e.ctrlKey || e.shiftKey || world.diving) return;
   if (canvas.style.visibility === 'hidden') return; // el mundo no está a la vista: navegación normal
   const href = a.getAttribute('href');
-  const id = href === 'guarena.html' ? '06060' : href.split('#')[1];
+  const id = href.startsWith('guarena.html') ? '06060' : href.split('#')[1];
   const idx = world.munis.findIndex((m) => m.id === id);
   if (idx < 0) return;
   e.preventDefault();
@@ -396,11 +396,11 @@ function selectMuni(i, { fly = false } = {}) {
   acts.innerHTML = '';
   if (home) {
     $('#s-note').textContent = 'Guareña es el primer pueblo del mundo de 388 Pueblos: Santa María (BIC, iniciada en 1557), la casa del poeta Luis Chamizo y el yacimiento tartésico de Casas del Turuñuelo.';
-    acts.innerHTML = '<a class="btn primary" href="guarena.html">Entrar en Guareña <span class="arr" aria-hidden="true">→</span></a>';
+    acts.innerHTML = '<a class="btn primary" href="guarena.html?jugar">Jugar en Guareña <span class="arr" aria-hidden="true">→</span></a><a class="btn" href="guarena.html">Ver su gemelo</a>';
   } else {
     const n = votes[m.id] || 0;
     const mine = myVote === m.id;
-    $('#s-note').textContent = `Ya tiene su gemelo automático con los edificios del Catastro: puedes entrar y pasear. Despertarlo (plaza, iglesia y calles al detalle, misiones y fiestas) depende de que su ayuntamiento se sume. ${n ? `Ya lo piden ${n} ${n === 1 ? 'persona' : 'personas'}.` : 'Aún nadie lo ha pedido.'}`;
+    $('#s-note').textContent = `Ya tiene su gemelo automático con los edificios del Catastro: puedes entrar a verlo. Despertarlo (plaza, iglesia y calles al detalle, misiones y fiestas) depende de que su ayuntamiento se sume. ${n ? `Ya lo piden ${n} ${n === 1 ? 'persona' : 'personas'}.` : 'Aún nadie lo ha pedido.'}`;
     const b = document.createElement('button');
     b.className = 'btn primary';
     b.type = 'button';
@@ -572,41 +572,10 @@ async function initData() {
 
 // ---------------- presencia en la sala general y pasaporte ----------------
 async function initLive() {
-  const c = window.claude;
-  const el = $('#online-l');
-  if (!c?.use) {
-    if (SERVER) {
-      const tick = async () => {
-        try {
-          const o = await apiGet('/online');
-          const towns = Object.keys(o.pueblos || {}).length;
-          el.hidden = false;
-          el.querySelector('span').textContent = o.total > 0 ? `${o.total} ${o.total === 1 ? 'persona paseando' : 'personas paseando'} ahora en ${towns} ${towns === 1 ? 'pueblo' : 'pueblos'}` : 'Nadie paseando ahora mismo. Entra en tu pueblo y sé el primero';
-        } catch {}
-      };
-      tick();
-      setInterval(tick, 10000);
-      const r = await readPassport();
-      if (r) $('#pp-st').textContent = `${r.count}/388`;
-    }
-    return;
-  }
-  try {
-    const lobby = await c.use('room');
-    if (!lobby) return;
-    lobby.presence({ pg: 'landing' }).catch(() => {});
-    lobby.onPeers(({ peers }) => {
-      const n = peers.filter((p) => p.kind === 'viewer').length;
-      const inTowns = peers.filter((p) => p.kind === 'viewer' && p.presence && p.presence.pg === 'pueblo').length;
-      el.hidden = false;
-      el.querySelector('span').textContent = n > 1 ? `${n} personas conectadas ahora${inTowns ? ` · ${inTowns} dentro de un pueblo` : ''}` : 'Solo tú ahora mismo. Comparte el enlace y paseamos juntos';
-    }, () => {});
-  } catch {}
   const r = await readPassport();
-  if (r) {
-    $('#pp-st').textContent = `${r.count}/388`;
-    if (r.count) $('#pp-no').textContent = 'Nº fundador';
-  }
+  if (!r) return;
+  $('#pp-st').textContent = `${r.count}/388`;
+  if (r.count && window.claude?.use) $('#pp-no').textContent = 'Nº fundador';
 }
 
 // ---------------- nombres en movimiento ----------------

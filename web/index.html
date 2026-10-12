@@ -269,8 +269,6 @@ section { position: relative; }
 .rank li span:last-child { font-family: var(--f-mono); color: var(--sodio); font-size: 0.75rem; }
 .rank ol { list-style: none; margin: 0; padding: 0; }
 .muted { color: var(--niebla-2); font-size: 0.85rem; }
-.online-l { display: flex; gap: 0.5rem; align-items: center; margin: 0; color: var(--niebla); }
-.online-l i { width: 8px; height: 8px; border-radius: 50%; background: #6fdc8c; box-shadow: 0 0 10px #6fdc8c; flex: 0 0 auto; }
 .tip { position: fixed; left: 0; top: 0; z-index: 30; pointer-events: none; min-width: 210px; padding: 0.8rem 0.9rem; border-radius: 12px; border: 1px solid var(--linea); background: rgba(7, 10, 20, 0.86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: grid; gap: 0.35rem; opacity: 0; transition: opacity 0.15s; }
 .tip h4 { margin: 0; font-family: var(--f-display); font-variation-settings: "wdth" 110; font-weight: 750; font-size: 1.15rem; letter-spacing: -0.02em; }
 .tip .row { display: flex; justify-content: space-between; gap: 1rem; font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--niebla); }
@@ -453,7 +451,7 @@ section { position: relative; }
     <div class="sub">
       <p>Un gemelo digital de cada municipio de Extremadura convertido en un mundo online para conocer, jugar y encontrarse. Empezamos por Guareña.</p>
       <div class="ctas">
-        <a class="btn primary" href="guarena.html">Entrar en Guareña <span class="arr" aria-hidden="true">→</span></a>
+        <a class="btn primary" href="guarena.html?jugar">Jugar en Guareña <span class="arr" aria-hidden="true">→</span></a>
         <a class="btn" href="#los388">Ver los 388</a>
       </div>
     </div>
@@ -570,7 +568,7 @@ section { position: relative; }
       <article class="card"><div class="top mono"><span>En directo</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M28 6v8M28 42v8M6 28h8M42 28h8M12 12l6 6M38 38l6 6M44 12l-6 6M18 38l-6 6"/><circle cx="28" cy="28" r="7"/></svg></div><h3>Fiestas a la vez</h3><p>Cuando el pueblo está en fiestas, el mundo también. Verbena, procesión o romería vividas online por quien no puede ir.</p></article>
       <article class="card"><div class="top mono"><span>Historias</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M10 10h22l14 14v22H10z"/><path d="M32 10v14h14M17 32h22M17 39h15"/></svg></div><h3>Leyendas y misiones</h3><p>Misiones escritas con los mayores de cada pueblo: oficios, apodos, leyendas y lugares que ya no salen en ningún mapa.</p></article>
       <article class="card"><div class="top mono"><span>Competición</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M18 8h20v10a10 10 0 0 1-20 0zM18 12H9c0 7 4 11 9 11M38 12h9c0 7-4 11-9 11M28 28v10M19 48h18M22 38h12v10H22z"/></svg></div><h3>Liga de pueblos</h3><p>El pique sano de siempre entre pueblos vecinos, con retos semanales y clasificación por comarcas.</p></article>
-      <article class="card"><div class="top mono"><span class="tag">Ya disponible</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 46V24l20-14 20 14v22z"/><path d="M22 46V32h12v14M8 24h40"/></svg></div><h3>Pasea con otros</h3><p>Entra en cualquiera de los 388 con tu avatar y encuéntrate con quien esté allí en ese momento. Sin chat libre: frases y emojis, pensado para menores.</p></article>
+      <article class="card"><div class="top mono"><span class="tag">Ya disponible</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 46V24l20-14 20 14v22z"/><path d="M22 46V32h12v14M8 24h40"/></svg></div><h3>Juega en Guareña</h3><p>Pulses jugar o pasear donde sea, entras en Guareña: sus calles reales, sus vecinos y sus primeras misiones. El resto de pueblos se irán sumando.</p></article>
       <article class="card"><div class="top mono"><span class="tag">Ya disponible</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="28" cy="28" r="20"/><circle cx="28" cy="28" r="3" fill="currentColor"/><path d="M28 4v8M28 44v8M4 28h8M44 28h8"/></svg></div><h3>Despierta tu pueblo</h3><p>Vota qué pueblo se modela después. Los votos se llevan a cada ayuntamiento como prueba de que hay gente esperando.</p></article>
     </div>
   </section>
@@ -583,8 +581,7 @@ section { position: relative; }
           <span class="kicker">Los 388 · mapa vivo</span>
           <h2 id="t-388">Un pueblo despierto. <span class="serif">387 por despertar.</span></h2>
           <div class="awake mono"><span><b class="on num" id="c-awake">1</b> despierto</span><span><b class="num" id="c-sleep">388</b> levantados</span><span><b class="num" id="c-votes">0</b> votos</span></div>
-          <p class="muted" style="margin:0">Los 388 ya tienen su gemelo automático con los edificios del Catastro. Toca cualquiera y entra a pasear.</p>
-          <p class="mono online-l" id="online-l" hidden><i></i><span></span></p>
+          <p class="muted" style="margin:0">Los 388 ya tienen su gemelo automático con los edificios del Catastro. Toca cualquiera y entra en su gemelo.</p>
           <div class="search">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
             <label class="sr" for="q">Busca tu pueblo</label>
@@ -663,7 +660,7 @@ section { position: relative; }
   <section id="ayuntamientos" class="councils zocalo" aria-labelledby="t-ayto">
     <div class="head">
       <div><span class="kicker" style="color:var(--anil)">Para ayuntamientos</span><h2 id="t-ayto" class="h2" style="margin-top:.8rem">Tu pueblo, en el mapa del mundo.</h2></div>
-      <p>Tu pueblo ya está levantado en volumen con datos del Catastro, y la gente puede entrar a pasear. Despertarlo sirve para mucho más que jugar: documenta el patrimonio, ayuda a decidir el urbanismo, atrae visitas y devuelve al pueblo a quienes viven lejos.</p>
+      <p>Tu pueblo ya está levantado en volumen con datos del Catastro, y cualquiera puede entrar a verlo. Despertarlo sirve para mucho más que jugar: documenta el patrimonio, ayuda a decidir el urbanismo, atrae visitas y devuelve al pueblo a quienes viven lejos.</p>
     </div>
     <div class="benefits">
       <div><span class="mono">Patrimonio</span><h3>Memoria documentada</h3><p>Iglesias, ermitas, casas y calles registradas en 3D antes de que cambien o desaparezcan.</p></div>

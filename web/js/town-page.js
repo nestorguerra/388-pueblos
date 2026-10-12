@@ -1,10 +1,9 @@
-// Página de un pueblo: gemelo explorable, minijuego de nidos, paseo con otras personas y pasaporte.
+// Página de un pueblo: gemelo explorable, minijuego de nidos, pasaporte y la entrada al juego de Guareña.
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
   THREE, buildTown, buildGround, buildTrees, buildStorks, buildSky, buildLights,
   applyTimeOfDay, makeRenderer, glowTexture,
 } from './world.js';
-import { createPaseo, FRASES, EMOJIS } from './paseo.js';
 import { stamp } from './pasaporte.js';
 import { createPlay, canEmbed } from './jugar.js';
 
@@ -125,7 +124,6 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
   }
   let fly = null;
   function goPlace(pl) {
-    if (paseo.active) togglePaseo(false);
     controls.autoRotate = false;
     const dir = new THREE.Vector3().subVectors(camera.position, controls.target).setY(0).normalize();
     const tgt = new THREE.Vector3(pl.x, pl.h, -pl.y);
@@ -134,38 +132,6 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
     if (pl.p) showCard(pl.tag || 'Lugar', pl.name, pl.p, pl.s);
   }
   controls.addEventListener('start', () => { fly = null; controls.autoRotate = false; });
-
-  // ---- paseo con otras personas ----
-  const onlineEl = $('#online');
-  const paseo = createPaseo({
-    scene, camera, controls, canvas, town: T, labelsEl: $('#labels'), roomName: `pueblo-${ine}`, radius,
-    onStatus: ({ online, connected, others }) => {
-      if (!onlineEl) return;
-      onlineEl.classList.toggle('on', connected);
-      onlineEl.querySelector('span').textContent = connected
-        ? (online > 1 ? `${online} personas en ${name} ahora · ${others} paseando` : `Solo tú en ${name} ahora. Comparte el enlace para pasear juntos`)
-        : 'Paseo en solitario: esta vista no conecta con otras personas';
-    },
-  });
-  const walkBtn = $('#walk');
-  const paseoUI = $('#paseo-ui');
-  function togglePaseo(on) {
-    if (on) { paseo.enable(); fly = null; card.hidden = true; } else paseo.disable();
-    if (walkBtn) { walkBtn.setAttribute('aria-pressed', String(on)); walkBtn.textContent = on ? 'Dejar de pasear' : 'Pasear por el pueblo'; }
-    if (paseoUI) paseoUI.hidden = !on;
-  }
-  walkBtn?.addEventListener('click', () => togglePaseo(!paseo.active));
-  const fr = $('#frases'), em = $('#emos');
-  if (fr) {
-    fr.innerHTML = FRASES.map((f, i) => `<button type="button" data-f="${i}"></button>`).join('');
-    [...fr.children].forEach((b, i) => { b.textContent = FRASES[i]; });
-    fr.addEventListener('click', (e) => { const b = e.target.closest('[data-f]'); if (b) paseo.phrase(+b.dataset.f); });
-  }
-  if (em) {
-    em.innerHTML = EMOJIS.map((f, i) => `<button type="button" data-e="${i}" aria-label="Reacción ${f}">${f}</button>`).join('');
-    em.addEventListener('click', (e) => { const b = e.target.closest('[data-e]'); if (b) paseo.emoji(+b.dataset.e); });
-  }
-  if ($('#alias')) $('#alias').textContent = paseo.alias;
 
   // clic sobre nidos (proyección en pantalla, tolerante en móvil)
   let down = null;
@@ -184,7 +150,7 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
       if (d < bd && dist < 900) { bd = d; best = i; }
     });
     if (best >= 0) collect(best);
-    else if (found.size === 0 && !paseo.active && $('#hint')) $('#hint').textContent = 'Acércate más: los nidos son pequeños. Empieza por lo alto de la torre de la iglesia.';
+    else if (found.size === 0 && $('#hint')) $('#hint').textContent = 'Acércate más: los nidos son pequeños. Empieza por lo alto de la torre de la iglesia.';
   });
 
   // ---- luz del día ----
@@ -213,7 +179,6 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
       todStart = tod;
       fly = null;
       card.hidden = true;
-      if (paseo.active) togglePaseo(false);
       requestAnimationFrame(resize);
     },
     onExit: ({ fov }) => { todGoal = todStart; fovGoal = fov; requestAnimationFrame(resize); },
@@ -246,7 +211,6 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
         camera.position.lerp(fly.pos, 0.06);
         if (camera.position.distanceTo(fly.pos) < 1) fly = null;
       }
-      paseo.update(dt, t);
       if (fovGoal !== null) {
         camera.fov = lerp(camera.fov, fovGoal, 0.06);
         if (Math.abs(camera.fov - fovGoal) < 0.05) { camera.fov = fovGoal; fovGoal = null; }
@@ -281,7 +245,7 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
     const w = canvas.clientWidth, h = canvas.clientHeight;
     for (const L of labels) {
       v3.set(L.pl.x, L.pl.h + 6, -L.pl.y).project(camera);
-      const show = !paseo.active && v3.z < 1 && Math.abs(v3.x) < 1.05 && Math.abs(v3.y) < 1.05 && d < 1500;
+      const show = v3.z < 1 && Math.abs(v3.x) < 1.05 && Math.abs(v3.y) < 1.05 && d < 1500;
       L.vis = lerp(L.vis, show ? 1 : 0, 0.15);
       L.el.style.opacity = L.vis.toFixed(3);
       L.el.style.pointerEvents = L.vis > 0.5 ? 'auto' : 'none';
@@ -293,6 +257,12 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
   ld.style.opacity = 0;
   setTimeout(() => ld.remove(), 900);
 
+  // ?jugar (desde la portada o desde cualquier otro pueblo): la cámara sigue bajando sola hasta el juego
+  if (/[?&]jugar\b/.test(location.search)) {
+    try { history.replaceState(history.state, '', location.pathname + location.hash); } catch { /* ignore */ }
+    if (play) { play.warm(); setTimeout(() => play.start(), reduced ? 0 : 900); }
+  }
+
   // ---- sello del pasaporte ----
   stamp(ine).then((r) => {
     const el = $('#pass');
@@ -301,5 +271,5 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
     if (r.isNew) setTimeout(() => say(`Sello de ${name} añadido · ${r.count}/388`), 1400);
   });
 
-  return { T, collect, paseo };
+  return { T, collect };
 }

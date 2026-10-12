@@ -6,7 +6,7 @@ Esta carpeta contiene la **fase 1** pedida (investigación, referentes de diseñ
 
 - **Los 388 municipios levantados en 3D** de forma automática (nivel 0) con los edificios del Catastro: 826.000 piezas edificadas en total.
 - **Una página por pueblo** (`pueblo.html#<código INE>`) y una dedicada para Guareña, con su contenido verificado.
-- **Capa social en tiempo real:** paseo con avatar, presencia de otras personas conectadas al mismo pueblo, frases y emojis predefinidos (sin chat libre), vecinos NPC y un pasaporte persistente con un sello por pueblo visitado.
+- **Jugar es entrar en Guareña:** cualquier botón de jugar o pasear (portada, mapa, cualquier pueblo) lleva al juego de Guareña; la cámara del gemelo baja hasta la foto del dron del juego y se funde con él (js/jugar.js). Pasaporte persistente con un sello por pueblo visitado.
 
 ## Qué hay aquí
 
@@ -24,8 +24,8 @@ Esta carpeta contiene la **fase 1** pedida (investigación, referentes de diseñ
 │   ├── js/world.js                    Motor 3D compartido (pueblo, iglesias, suelo, olivares, cigüeñas, cielo, mapa)
 │   ├── js/landing-world.js            Vuelo de cámara de la plaza a los 388
 │   ├── js/main.js                     Scroll, interfaz, mapa interactivo, votos, lista de espera, presencia
-│   ├── js/town-page.js                Página de pueblo común: nidos, lugares, luz, paseo, pasaporte
-│   ├── js/paseo.js                    Avatar, colisiones con los edificios, NPC y presencia en tiempo real
+│   ├── js/town-page.js                Página de pueblo común: nidos, lugares, luz, pasaporte, entrada al juego
+│   ├── js/jugar.js                    Descenso de la cámara hasta el juego de Guareña, en un iframe, sin cortes
 │   ├── js/pasaporte.js                Sellos por pueblo visitado
 │   ├── js/guarena.js · js/pueblo.js   Contenido de Guareña y ficha automática del resto
 │   ├── js/backend.js                  Conexión con el servidor propio (WebSocket y API)
@@ -41,7 +41,7 @@ Esta carpeta contiene la **fase 1** pedida (investigación, referentes de diseñ
 python3 388-pueblos/server/servidor.py --port 8388
 ```
 
-Y abrir http://localhost:8388. Abre el mismo pueblo en dos pestañas, pulsa "Pasear por el pueblo" en ambas y os veréis.
+Y abrir http://localhost:8388. En Guareña, "Quiero jugar aquí" baja la cámara hasta el juego. Para probar con el juego en local: `guarena.html?juego=http://127.0.0.1:8918/index.html` (solo se acepta en localhost).
 
 ## Servidor propio: el mundo abierto a cualquiera
 
@@ -50,7 +50,7 @@ Y abrir http://localhost:8388. Abre el mismo pueblo en dos pestañas, pulsa "Pas
 | Ruta | Qué hace |
 |---|---|
 | `/ws?room=pueblo-<INE>` | Presencia en tiempo real por pueblo: posición, frases y emojis predefinidos. El servidor descarta cualquier campo de texto libre |
-| `/api/online` | Personas paseando ahora, en total y por pueblo |
+| `/api/online` | Personas conectadas por sala de pueblo (la web ya no lo usa desde que el paseo se cambió por el juego) |
 | `/api/votos` | Recuento por pueblo; un voto por dispositivo |
 | `/api/pasaporte` | Sellos por pueblo visitado, por dispositivo |
 | `/api/lista` | Alta en la lista de espera (exige edad ≥ 14 y consentimiento). No se puede leer por la API |
@@ -89,6 +89,6 @@ Detalles del pipeline de los 388:
 - **La cita de Ana** en la sección "Origen" es un borrador escrito a partir del brief. Hay que validarla con ella o sustituirla por una frase suya. Lo mismo con el texto biográfico, que se limita a lo que dice el brief.
 - **Precios por nivel** (6.000–12.000 €, 15.000–35.000 €, 40.000–90.000 €) son estimaciones de la investigación, no tarifas cerradas.
 - **Hoja de ruta:** fechas propuestas a partir del calendario festivo de Guareña y de las municipales previstas para mayo de 2027.
-- **Paseo con otras personas:** dentro del Artifact solo conecta a personas con sesión iniciada y acceso de colaborador; con el enlace público se pasea en solitario (con los NPC). Con el servidor propio desplegado, cualquiera se ve con cualquiera, sin cuentas. Probado en local con dos clientes simultáneos.
+- **Jugar:** el juego es el de Guareña (https://nestorguerra.github.io/guarena/), incrustado en un iframe con `?desde=388`. Web y juego se coordinan con mensajes (`ready`, `go` con la hora, `picture`, `shown`). En el Artifact de claude.ai no se puede incrustar otra web, así que allí el botón abre el juego en otra pestaña.
 - **Lista de espera, votos y pasaporte:** al publicarse como Artifact usan la base de datos del Artifact. Los votos son públicos y anónimos (uno por persona); los emails solo los puede leer la propietaria del Artifact. Para el lanzamiento real hace falta un backend propio, política de privacidad y el flujo de consentimiento para menores de 14 años (LOPDGDD).
 - **Guareña v0.1** es volumetría automática (LOD1) más una torre procedural para Santa María. No es cartografía oficial. El siguiente paso es capturar plaza, Santa María y San Gregorio con fotogrametría o splats.
