@@ -43,6 +43,7 @@ ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8388")))
 ap.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
 ap.add_argument("--db", default=os.environ.get("DB_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "388pueblos.sqlite3")))
 ap.add_argument("--export-lista", action="store_true")
+ap.add_argument("--site", default=os.environ.get("SITE_URL", ""), help="si se da, las páginas redirigen a la web estática")
 args = ap.parse_args()
 
 db = sqlite3.connect(args.db)
@@ -328,6 +329,10 @@ async def handle(reader, writer):
             elif url.path.startswith("/api/"):
                 status, obj = api(method, url.path, query, body, ip)
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
+            elif method in ("GET", "HEAD") and args.site and (url.path == "/" or url.path.endswith(".html")):
+                # la web vive en el CDN: las páginas de aquí llevan allí (la API sigue aquí)
+                status, payload, ctype = 301, b"", "text/plain"
+                location = args.site.rstrip("/") + url.path + (("?" + url.query) if url.query else "")
             elif method in ("GET", "HEAD"):
                 status, payload, ctype, cache = static(url.path)
             else:
@@ -342,9 +347,11 @@ async def handle(reader, writer):
             if headers.get("if-none-match") == etag:
                 status, payload = 304, b""
             extra = f"Cache-Control: {cache}\r\nETag: {etag}\r\n"
+        elif status == 301:
+            extra = f"Location: {location}\r\nCache-Control: public, max-age=3600\r\n"
         else:
             extra = "Cache-Control: no-store\r\n"
-        reason = {200: "OK", 204: "No Content", 304: "Not Modified", 400: "Bad Request", 404: "Not Found", 405: "Method Not Allowed", 413: "Payload Too Large", 429: "Too Many Requests"}.get(status, "OK")
+        reason = {200: "OK", 204: "No Content", 301: "Moved Permanently", 304: "Not Modified", 400: "Bad Request", 404: "Not Found", 405: "Method Not Allowed", 413: "Payload Too Large", 429: "Too Many Requests"}.get(status, "OK")
         hdr = (f"HTTP/1.1 {status} {reason}\r\nContent-Type: {ctype}\r\nContent-Length: {len(payload)}\r\n{extra}"
                "X-Content-Type-Options: nosniff\r\nReferrer-Policy: strict-origin-when-cross-origin\r\nConnection: close\r\n\r\n").encode()
         writer.write(hdr + (b"" if method == "HEAD" else payload))

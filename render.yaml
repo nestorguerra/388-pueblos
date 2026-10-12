@@ -2,9 +2,10 @@
 #
 # 1. pueblos388: la web, estática, en el CDN de Render. Gratis, sin esperas (no se duerme) y cerca de quien la
 #    visita. tools/build_web.py la empaqueta en dist/web con versiones en los JS y CSS para poder guardarlos un año.
-# 2. 388-pueblos: el servidor propio (API de votos y lista de espera, y la web también). En el plan gratuito se
-#    duerme tras unos minutos sin visitas y su base de datos SQLite es temporal: la lista de espera debe ir a
-#    Google Sheets (SHEETS_URL en web/js/config.js; ver README). Mientras tanto, la web estática usa esta API.
+# 2. 388-pueblos: el servidor propio (API de votos y lista de espera; sus páginas redirigen a la web estática con
+#    SITE_URL). En el plan gratuito se duerme tras unos minutos sin visitas y su base de datos SQLite es temporal:
+#    la lista de espera debe ir a Google Sheets (SHEETS_URL en web/js/config.js; ver README). Mientras tanto, la web
+#    estática usa esta API.
 services:
   - type: web
     name: pueblos388
@@ -59,3 +60,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: SITE_URL
+        value: https://pueblos388.onrender.com
