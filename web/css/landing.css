@@ -94,7 +94,8 @@ p { margin: 0; text-wrap: pretty; }
 /* ---------- navegación ---------- */
 .nav { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 18px var(--gutter); pointer-events: none; mix-blend-mode: normal; }
 .nav > * { pointer-events: auto; }
-.brand { display: inline-flex; align-items: baseline; gap: 0.5rem; text-decoration: none; font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; text-transform: uppercase; }
+.brand { display: inline-flex; align-items: baseline; gap: 0.5rem; text-decoration: none; font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; text-transform: uppercase; padding: 6px 14px; border: 1px solid var(--linea); border-radius: 999px; background: rgba(7, 10, 20, 0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); transition: border-color 0.2s; }
+.brand:hover { border-color: rgba(255, 255, 255, 0.4); }
 .brand em { font-family: var(--f-serif); font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0; font-size: 1.2rem; color: var(--sodio); }
 .nav ul { list-style: none; display: flex; gap: 0.25rem; margin: 0; padding: 4px; border: 1px solid var(--linea); border-radius: 999px; background: rgba(7, 10, 20, 0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .nav ul a { display: block; padding: 0.5rem 0.9rem; border-radius: 999px; text-decoration: none; font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--niebla); transition: color 0.2s, background 0.2s; }
@@ -108,11 +109,9 @@ p { margin: 0; text-wrap: pretty; }
 .nav .btn { padding: 0.65rem 1rem; background: rgba(7, 10, 20, 0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .nav .btn.primary { background: var(--sodio); }
 @media (max-width: 900px) { .nav ul { display: none; } }
-.brand img { display: block; height: 36px; width: auto; }
-.brand .b-light { display: none; }
-.nav.light .brand .b-dark { display: none; }
-.nav.light .brand .b-light { display: block; }
-@media (max-width: 600px) { .brand img { height: 30px; } }
+/* (el logo, siempre sobre su pastilla de cristal oscuro: se lee igual sobre el mapa, la cal o el título) */
+.brand img { display: block; height: 26px; width: auto; }
+@media (max-width: 600px) { .brand img { height: 24px; } }
 
 /* ---------- HUD de progreso ---------- */
 .hud { position: fixed; left: var(--gutter); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; gap: 1.2rem; align-items: center; color: var(--niebla); pointer-events: none; }
@@ -392,7 +391,7 @@ section { position: relative; }
 .hero .beta { flex-basis: 100%; display: inline-flex; gap: 0.6rem; align-items: center; color: var(--niebla); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; }
 .hero .beta i { width: 7px; height: 7px; border-radius: 50%; background: var(--sodio); box-shadow: 0 0 10px var(--sodio); }
 /* en pantallas táctiles, botones de al menos 44 px de alto */
-@media (pointer: coarse) { .btn, .chip { min-height: 44px; } }
+@media (pointer: coarse) { .btn, .chip, .brand { min-height: 44px; } .brand { align-items: center; } }
 /* preguntas */
 .faq { padding: 14vh var(--gutter); background: var(--noche); display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 2rem 5rem; align-items: start; border-top: 1px solid var(--linea); }
 .faq .qs { display: grid; }

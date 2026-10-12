@@ -356,7 +356,6 @@ function initScroll() {
   }
   for (const sel of ['#origen', '#ruta', '#ayuntamientos']) {
     ScrollTrigger.create({ trigger: sel, start: 'top bottom-=40', end: 'bottom bottom-=40', onToggle: (s) => { $('.hud').style.opacity = s.isActive ? 0 : 1; $('.hud-r').style.opacity = s.isActive ? 0 : 1; } });
-    ScrollTrigger.create({ trigger: sel, start: 'top 40px', end: 'bottom 40px', onToggle: (s) => $('.nav').classList.toggle('light', s.isActive) });
   }
 }
 
