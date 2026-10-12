@@ -4,6 +4,7 @@ import { readPassport } from './pasaporte.js';
 import { SHARED, loadVotes, sendVote, wake, loadSignupCounts } from './backend.js';
 import { META_DESPERTAR, DISCORD_URL } from './config.js';
 import { t, addTexts, lang, page, locale } from './i18n.js';
+import { initRedes } from './redes.js';
 import { markListed, saveSignup, queueSignup } from './lista.js';
 import { getJSON, prerender } from './red.js';
 
@@ -888,6 +889,7 @@ function initUI() {
   drawPlano();
   initDiary();
   initDiscord();
+  initRedes();
   if (munis.length) {
     initMapUI();
     initNames();

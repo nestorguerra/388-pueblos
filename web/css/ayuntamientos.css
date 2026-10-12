@@ -123,6 +123,6 @@ section { padding: 12vh var(--gutter); }
 .final h2 .serif { color: var(--sodio); }
 .final p { color: var(--niebla); max-width: 46ch; margin: 0; }
 .final .provider { font-size: 0.75rem; letter-spacing: 0.04em; color: var(--niebla-2); }
-.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; padding: 2rem var(--gutter) calc(2rem + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--linea); color: var(--niebla); font-size: 0.85rem; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: 2rem var(--gutter) calc(2rem + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--linea); color: var(--niebla); font-size: 0.85rem; }
 .foot a { color: var(--cal); }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

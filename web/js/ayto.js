@@ -3,12 +3,14 @@ import { SERVICIOS } from './config.js';
 import { getJSON } from './red.js';
 import { euros, conIva, habitantes, bandaTexto, presupuesto, proveedorTexto } from './servicios.js';
 import { panelHTML } from './panel-demo.js';
+import { initRedes } from './redes.js';
 
 const $ = (s) => document.querySelector(s);
 const norm = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
 
 $('#panel-demo').innerHTML = panelHTML();
 $('#provider').textContent = proveedorTexto();
+initRedes();
 
 (async () => {
   let munis = [];

@@ -10,6 +10,10 @@ export const CONTACTO = '';
 // Invitación al servidor de Discord de la comunidad (https://discord.gg/…). Vacía: el botón dice «muy pronto».
 export const DISCORD_URL = '';
 
+// Perfiles de 388 Pueblos en redes sociales (iconos del pie de la web, junto al de Discord). Vacíos: «muy pronto».
+export const TIKTOK_URL = ''; // https://www.tiktok.com/@…
+export const INSTAGRAM_URL = ''; // https://www.instagram.com/…/
+
 // Vecinos apuntados que hacen falta para que un pueblo «despierte» (se modele al detalle y se abra al juego).
 export const META_DESPERTAR = 100;
 
