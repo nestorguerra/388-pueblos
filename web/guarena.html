@@ -38,7 +38,7 @@
   img.src = fresh ? r.img : 'assets/guarena-inicio.jpg';
   var jugar = /[?&]jugar\b/.test(location.search);
   if (jugar) document.body.classList.add('jugando'); // (sin paneles: de la imagen se pasa al juego)
-  if (jugar) requestAnimationFrame(function () { requestAnimationFrame(function () { img.style.transition = 'transform 9s cubic-bezier(0.3, 0.6, 0.4, 1)'; img.style.transform = 'scale(1.12)'; }); });
+  if (jugar) requestAnimationFrame(function () { requestAnimationFrame(function () { img.style.transition = 'transform 14s cubic-bezier(0.35, 0, 0.65, 1)'; img.style.transform = 'scale(1.4)'; }); });
 })();</script>
 <canvas id="c" aria-label="Modelo 3D de Guareña. Arrastra para girar, rueda o pellizco para acercar."></canvas>
 <div id="labels"></div>

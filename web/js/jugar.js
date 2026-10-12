@@ -6,13 +6,17 @@
 // página web» pide aquí cerrarlo (guarena:salir) y la cámara vuelve a la web desde donde estaba.
 // Aquí la cámara de la web baja hasta ese mismo punto, con el mismo encuadre, mientras el juego se descarga debajo, en
 // un iframe, sin construir nada todavía (su trabajo pesado congelaría esta cámara: en muchos navegadores comparten
-// proceso). Al llegar, la web se funde con la foto del juego, que ya no se mueve con JavaScript sino con una transición
-// CSS (suave aunque todo esté ocupado); entonces el juego construye el pueblo detrás de la foto, que se sigue acercando,
-// y su cámara baja hasta Annie. Se hablan con mensajes:
-//   juego → web  guarena:ready   (la foto está puesta y quieta)    guarena:picture (la foto ya se acerca)
-//   web → juego  guarena:go {t}  (acércate desde t, en el reloj      guarena:shown   (ya se te ve: sigue hasta Annie)
-//                                 de la web: aunque el juego lo oiga tarde, la foto va por donde va la cámara)
-//   juego → web  guarena:salir   (el jugador quiere volver a la web: la web cierra el juego y recupera su cámara)
+// proceso). La cámara no se para en el dron: al llegar ya va cerrando el objetivo (un zoom, a la velocidad con la que
+// el juego dice que arrancará el suyo), y así se funde con la foto del juego, que hace el mismo zoom a la misma
+// velocidad (con una transición CSS, suave aunque todo esté ocupado). Después el juego construye el pueblo detrás de la
+// foto, que se sigue acercando, y su cámara baja hasta Annie. Se hablan con mensajes:
+//   juego → web  guarena:ready {rate}  (la foto está puesta; rate: la velocidad con que arrancará su zoom, por segundo)
+//   web → juego  guarena:zoom {s, r, t, hold}  (al empezar el fundido: la cámara de la web va por el zoom s, y crece
+//                e^r veces por segundo, en el instante t de su reloj; durante hold segundos la foto sigue igual, y
+//                luego, a su aire)
+//   web → juego  guarena:go {t}  (ya fundidos: construye)        guarena:shown  (ya se te ve: sigue hasta Annie)
+//   juego → web  guarena:picture  (la foto ya se acerca)          guarena:salir  (volver a la web: la web cierra el
+//                juego y recupera su cámara)
 import { THREE } from './world.js';
 
 const DEFAULT_GAME = 'https://nestorguerra.github.io/guarena-hq/';
@@ -82,10 +86,16 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
   const origin = new URL(url, location.href).origin;
   let st = null; // {phase, t, ...}
   let iframe = null, ready = 0, goSent = 0, goWall = 0, loaded = 0;
+  // la velocidad del zoom con que la cámara entra en la foto (por segundo): la que el juego dice que llevará el suyo
+  // (va del dron a la calle de Annie en lo que tardó en cargar la última vez); hasta que lo diga, la de 12 s
+  let rate = Math.log(2.6) / 12;
 
   addEventListener('message', (e) => {
     if (!iframe || e.source !== iframe.contentWindow || e.origin !== origin || !e.data || typeof e.data.type !== 'string') return;
-    if (e.data.type === 'guarena:ready' && !ready) ready = performance.now();
+    if (e.data.type === 'guarena:ready' && !ready) {
+      ready = performance.now();
+      if (e.data.rate > 0.01 && e.data.rate < 0.4) rate = e.data.rate;
+    }
     // «Volver a la página web» en los ajustes del juego: atrás (el estado #jugar se va y popstate cierra el juego)
     if (e.data.type === 'guarena:salir' && st) { if (st.phase === 'game' && history.state && history.state.jugar) history.back(); else exit(); }
   });
@@ -123,7 +133,7 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     // la curva: se separa y sube un poco, rodea y entra por detrás del dron, que ya mira a la calle de Annie
     const p1 = p0.clone().lerp(DRONE, 0.35).add(new THREE.Vector3(0, Math.max(60, p0.y * 0.25), 0));
     const p2 = DRONE.clone().addScaledVector(away, 120).add(new THREE.Vector3(0, 40, 0));
-    st = { phase: 'approach', t: 0, dur: reduced ? 1.2 : 4.2, p0, p1, p2, l0, fov0: camera.fov, s: 1, at: performance.now() };
+    st = { phase: 'approach', t: 0, dur: reduced ? 1.2 : 4.2, p0, p1, p2, l0, fov0: camera.fov, s: 1, z: 1, v: 0, at: performance.now() };
     document.body.classList.add('jugando');
     onStart();
   }
@@ -140,6 +150,9 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     return out.set(0, 0, 0).addScaledVector(a, u * u * u).addScaledVector(b, 3 * u * u * t).addScaledVector(c, 3 * u * t * t).addScaledVector(d, t * t * t);
   }
   function droneAt(s, out) { return out.copy(DRONE).sub(TARGET).multiplyScalar(1 / s).add(TARGET); }
+  // el objetivo cerrado z veces sobre el campo de visión fov (grados): la foto ampliada z veces sobre su centro
+  const lens = (fov, z) => THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(fov) / 2) / z));
+  const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
   // devuelve la mezcla de luz hacia la mañana del juego (0 → 1) o null si no hay transición
   function update(dt) {
@@ -148,25 +161,31 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     const fovEnd = coverFov(aspect);
     st.t += dt;
     if (st.phase === 'approach') {
-      // el final de la curva es el dron mismo: la foto del juego espera quieta, tal cual se pintó, a que la web
-      // llegue a ella (la curva llega frenando: el reposo de la foto no es un parón)
+      // el final de la curva es el dron mismo, el punto desde el que se pintó la foto del juego; la curva llega
+      // frenando, pero la vista no se para: mientras frena, el objetivo empieza a cerrarse, y al llegar ya va a la
+      // velocidad del zoom del juego
       const k = Math.min(1, st.t / st.dur), e = ease(k);
       const sp = 1;
       bez(st.p0, st.p1, st.p2, droneAt(sp, end), e, v);
       look.copy(st.l0).lerp(TARGET, ease(Math.min(1, k * 1.25)));
       camera.position.copy(v);
       camera.lookAt(look);
-      camera.fov = lerp(st.fov0, fovEnd, e);
+      st.v = rate * st.z * smooth(0.6, 1, k);
+      st.z += st.v * dt;
+      camera.fov = lens(lerp(st.fov0, fovEnd, e), st.z);
       camera.updateProjectionMatrix();
       clay(ease(Math.max(0, (k - 0.5) / 0.5)));
       if (k >= 1) { st.s = sp; st.phase = 'hold'; st.t = 0; }
       return e;
     }
     if (st.phase === 'hold') {
-      // ya en el dron, quieta en el encuadre de la foto: el fundido empieza en cuanto el juego la tiene puesta
+      // ya en el dron, en el encuadre de la foto y sin dejar de acercarse (si el juego tarda en llegar, cada vez más
+      // despacio, sin pasar de la mitad del camino): el fundido empieza en cuanto el juego tiene puesta la foto
       droneAt(st.s, camera.position);
       camera.lookAt(TARGET);
-      camera.fov = fovEnd;
+      st.v = st.z < 2.2 ? rate * st.z * Math.max(0.12, Math.min(1, (1.7 - st.z) / 0.35)) : 0;
+      st.z += st.v * dt;
+      camera.fov = lens(fovEnd, st.z);
       camera.updateProjectionMatrix();
       if (st.t > 1.2 && !ready) status('Cargando el juego…');
       // (sin noticias del juego: 9 s después de que el iframe esté cargado y de haber pulsado, o 40 s en total)
@@ -174,15 +193,19 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
       if (timedOut && !ready) { fail(); return null; } // (el juego no ha llegado a responder)
       if (ready) {
         status(null);
-        st.phase = 'fade'; st.t = 0;
+        st.phase = 'fade'; st.t = 0; st.z0 = st.z; st.r = st.v / st.z;
+        // la foto se pone donde va esta cámara y sigue igual que ella durante el fundido: una sola imagen
+        post('guarena:zoom', { s: st.z, r: st.r, t: Date.now(), hold: 1.25 });
         iframe.classList.add('on');
       }
       return 1;
     }
     if (st.phase === 'fade') {
-      // durante el fundido las dos imágenes, quietas en el mismo encuadre
+      // durante el fundido las dos imágenes, con el mismo encuadre y el mismo zoom
       droneAt(st.s, camera.position);
       camera.lookAt(TARGET);
+      st.z = st.z0 * Math.exp(st.r * st.t);
+      camera.fov = lens(fovEnd, st.z);
       camera.updateProjectionMatrix();
       if (st.t > 1.25) {
         st.phase = 'game';
