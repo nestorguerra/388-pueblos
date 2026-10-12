@@ -1,15 +1,21 @@
 // Entrar a jugar en Guareña sin salir de la página.
 //
-// El juego (https://nestorguerra.github.io/guarena/) arranca con la «foto del dron»: una vista aérea pintada desde una
-// cámara fija que se va acercando mientras construye el pueblo, y luego su cámara real vuela hasta Annie.
-// Aquí la cámara de la web baja hasta ese mismo punto, con el mismo encuadre; el juego se carga debajo, en un iframe,
-// y las dos imágenes se funden. Se hablan con mensajes:
-//   juego → web  guarena:ready   (la foto está puesta y quieta)    guarena:picture (la foto ya se acerca, y se ve)
+// El juego, Guareña HQ en plastilina (https://nestorguerra.github.io/guarena-hq/), arranca sin menús con la «foto del
+// dron»: una vista aérea pintada desde una cámara fija que se va acercando mientras construye el pueblo, y luego su
+// cámara real baja hasta Annie, en su puerta de la calle Malfeitos. Dentro, X abre los ajustes; su botón «Volver a la
+// página web» pide aquí cerrarlo (guarena:salir) y la cámara vuelve a la web desde donde estaba.
+// Aquí la cámara de la web baja hasta ese mismo punto, con el mismo encuadre, mientras el juego se descarga debajo, en
+// un iframe, sin construir nada todavía (su trabajo pesado congelaría esta cámara: en muchos navegadores comparten
+// proceso). Al llegar, la web se funde con la foto del juego, que ya no se mueve con JavaScript sino con una transición
+// CSS (suave aunque todo esté ocupado); entonces el juego construye el pueblo detrás de la foto, que se sigue acercando,
+// y su cámara baja hasta Annie. Se hablan con mensajes:
+//   juego → web  guarena:ready   (la foto está puesta y quieta)    guarena:picture (la foto ya se acerca)
 //   web → juego  guarena:go {t}  (acércate desde t, en el reloj      guarena:shown   (ya se te ve: sigue hasta Annie)
 //                                 de la web: aunque el juego lo oiga tarde, la foto va por donde va la cámara)
+//   juego → web  guarena:salir   (el jugador quiere volver a la web: la web cierra el juego y recupera su cámara)
 import { THREE } from './world.js';
 
-const DEFAULT_GAME = 'https://nestorguerra.github.io/guarena/';
+const DEFAULT_GAME = 'https://nestorguerra.github.io/guarena-hq/';
 
 // Del sistema del juego (metros; x al este, z al sur; origen 38.8596 N, 6.1025 O; proyección equirectangular) al de
 // la web (UTM 29N centrado en la Plaza de España; X al este, Z = −norte). Ajuste afín: 1,82° de giro, escala 1,0017.
@@ -30,26 +36,11 @@ export function coverFov(aspect) {
   return aspect > 16 / 9 ? THREE.MathUtils.radToDeg(2 * Math.atan((t * 16) / 9 / aspect)) : 48;
 }
 
-// cubic-bezier(0.25, 0.55, 0.35, 1): la misma curva con la que se acerca la foto del juego (26 s, hasta 1,34×)
-function cssBezier(x1, y1, x2, y2) {
-  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
-  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
-  const sx = (t) => ((ax * t + bx) * t + cx) * t;
-  const sy = (t) => ((ay * t + by) * t + cy) * t;
-  const dx = (t) => (3 * ax * t + 2 * bx) * t + cx;
-  return (x) => {
-    let t = x;
-    for (let i = 0; i < 8; i++) { const e = sx(t) - x; const d = dx(t); if (Math.abs(e) < 1e-5 || Math.abs(d) < 1e-6) break; t -= e / d; }
-    return sy(Math.min(1, Math.max(0, t)));
-  };
-}
-const pictureEase = cssBezier(0.25, 0.55, 0.35, 1);
-const pictureScale = (ms) => 1 + 0.34 * pictureEase(Math.min(1, ms / 26000));
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const lerp = (a, b, t) => a + (b - a) * t;
 
 function gameUrl() {
-  // en local se puede probar con el juego sin empaquetar: ?juego=http://localhost:8918/index.html
+  // en local se puede probar con el juego sin empaquetar: ?juego=http://localhost:8920/index.html
   try {
     const q = new URLSearchParams(location.search).get('juego');
     if (q && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(q)) return q;
@@ -64,21 +55,17 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
   const url = gameUrl();
   const origin = new URL(url, location.href).origin;
   let st = null; // {phase, t, ...}
-  let iframe = null, ready = 0, goSent = 0, goWall = 0, picture = 0, loaded = 0;
+  let iframe = null, ready = 0, goSent = 0, goWall = 0, loaded = 0;
 
   addEventListener('message', (e) => {
     if (!iframe || e.source !== iframe.contentWindow || e.origin !== origin || !e.data || typeof e.data.type !== 'string') return;
-    if (e.data.type === 'guarena:ready' && !ready) { ready = performance.now(); if (st) go(); }
-    if (e.data.type === 'guarena:picture' && !picture) picture = performance.now();
+    if (e.data.type === 'guarena:ready' && !ready) ready = performance.now();
+    // «Volver a la página web» en los ajustes del juego: atrás (el estado #jugar se va y popstate cierra el juego)
+    if (e.data.type === 'guarena:salir' && st) { if (st.phase === 'game' && history.state && history.state.jugar) history.back(); else exit(); }
   });
   const post = (type, more) => { try { iframe.contentWindow.postMessage({ type, ...more }, origin); } catch { /* ignore */ } };
-  // la foto del juego empieza a acercarse cuando lo dice la web (si se ha cargado antes, espera quieta)
-  function go() { if (!goSent && ready && iframe) { goSent = performance.now(); goWall = Date.now(); post('guarena:go', { t: goWall }); } }
-  // cuánto se ha acercado ya la foto del juego (1 = el dron; la web la sigue con su cámara)
-  const pictureS = () => {
-    const since = goSent || picture; // (un juego que no espera la señal empieza a acercarse él solo)
-    return since ? pictureScale(performance.now() - since) : 1;
-  };
+  // la foto del juego empieza a acercarse, y el juego a construir el pueblo, cuando lo dice la web: ya fundida con ella
+  function go() { if (!goSent && iframe) { goSent = performance.now(); goWall = Date.now(); post('guarena:go', { t: goWall }); } }
 
   function mountIframe() {
     if (iframe) return;
@@ -89,7 +76,7 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     iframe.tabIndex = -1;
     iframe.setAttribute('aria-hidden', 'true');
     const u = new URL(url, location.href);
-    u.searchParams.set('estilo', 'anime');
+    u.searchParams.set('estilo', 'plastilina');
     u.searchParams.set('desde', '388');
     iframe.src = u.href;
     iframe.addEventListener('load', () => { loaded = performance.now(); }, { once: true });
@@ -102,7 +89,6 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
   function start() {
     if (st) return;
     mountIframe();
-    go();
     controls.enabled = false;
     controls.autoRotate = false;
     const p0 = camera.position.clone();
@@ -116,6 +102,12 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     onStart();
   }
 
+  // en la segunda mitad de la bajada la maqueta se va calentando hacia los colores de la foto del juego (la plastilina:
+  // tejas anaranjadas, cal tostada), para que el fundido junte dos imágenes que ya se parecen; al volver, se enfría
+  const clay = (c) => {
+    c = Math.min(1, Math.max(0, c));
+    canvas.style.filter = c > 0.001 ? `sepia(${(0.45 * c).toFixed(3)}) saturate(${(1 + 1.1 * c).toFixed(3)}) hue-rotate(${(-6 * c).toFixed(2)}deg) brightness(${(1 - 0.07 * c).toFixed(3)})` : '';
+  };
   const v = new THREE.Vector3(), look = new THREE.Vector3(), end = new THREE.Vector3();
   function bez(a, b, c, d, t, out) {
     const u = 1 - t;
@@ -130,41 +122,37 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     const fovEnd = coverFov(aspect);
     st.t += dt;
     if (st.phase === 'approach') {
-      // el final de la curva es el punto al que ha llegado la foto del juego (si ya se mueve, la curva entra en
-      // su acercamiento con su misma velocidad: no hay parón ni tirón al llegar)
+      // el final de la curva es el dron mismo: la foto del juego espera quieta, tal cual se pintó, a que la web
+      // llegue a ella (la curva llega frenando: el reposo de la foto no es un parón)
       const k = Math.min(1, st.t / st.dur), e = ease(k);
-      const sp = pictureS();
+      const sp = 1;
       bez(st.p0, st.p1, st.p2, droneAt(sp, end), e, v);
       look.copy(st.l0).lerp(TARGET, ease(Math.min(1, k * 1.25)));
       camera.position.copy(v);
       camera.lookAt(look);
       camera.fov = lerp(st.fov0, fovEnd, e);
       camera.updateProjectionMatrix();
+      clay(ease(Math.max(0, (k - 0.5) / 0.5)));
       if (k >= 1) { st.s = sp; st.phase = 'hold'; st.t = 0; }
       return e;
     }
     if (st.phase === 'hold') {
-      // ya en el dron, la cámara va con la foto del juego (o, si el juego aún no ha dicho nada, se acerca muy
-      // despacio mientras carga); el fundido empieza cuando el juego enseña la foto y la foto ha alcanzado a la cámara
-      const sp = pictureS();
-      if (!goSent && !picture) st.s = Math.min(1.012, st.s + dt * 0.0012);
-      const s = Math.max(st.s, sp);
-      droneAt(s, camera.position);
+      // ya en el dron, quieta en el encuadre de la foto: el fundido empieza en cuanto el juego la tiene puesta
+      droneAt(st.s, camera.position);
       camera.lookAt(TARGET);
       camera.fov = fovEnd;
       camera.updateProjectionMatrix();
       // (sin noticias del juego: 9 s después de que el iframe esté cargado y de haber pulsado, o 40 s en total)
       const timedOut = (loaded && performance.now() - Math.max(loaded, st.at) > 9000) || st.t > 40;
-      if ((picture && performance.now() - picture > 120 && sp >= st.s - 1e-4) || timedOut) {
+      if (ready || timedOut) {
         st.phase = 'fade'; st.t = 0;
-        if (!picture) picture = performance.now(); // (un juego sin mensajes: al menos que la cámara siga acercándose)
         iframe.classList.add('on');
       }
       return 1;
     }
     if (st.phase === 'fade') {
-      // durante el fundido la cámara sigue exactamente el acercamiento de la foto del juego
-      droneAt(Math.max(st.s, pictureS()), camera.position);
+      // durante el fundido las dos imágenes, quietas en el mismo encuadre
+      droneAt(st.s, camera.position);
       camera.lookAt(TARGET);
       camera.updateProjectionMatrix();
       if (st.t > 1.25) {
@@ -172,6 +160,7 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
         iframe.classList.add('live');
         iframe.removeAttribute('aria-hidden');
         iframe.tabIndex = 0;
+        go(); // (la foto empieza a acercarse y el juego, a construirse detrás)
         post('guarena:shown', { t: goWall || Date.now() });
         try { iframe.focus(); } catch { /* ignore */ }
         try { history.pushState({ jugar: 1 }, '', '#jugar'); } catch { /* ignore */ }
@@ -186,9 +175,10 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     if (!st) return;
     const fov0 = st.fov0;
     st = null;
-    ready = 0; goSent = 0; goWall = 0; picture = 0; loaded = 0;
+    ready = 0; goSent = 0; goWall = 0; loaded = 0;
     if (iframe) { iframe.remove(); iframe = null; }
     document.body.classList.remove('jugando');
+    canvas.style.transition = 'filter 1.4s ease'; clay(0); setTimeout(() => { canvas.style.transition = ''; }, 1500);
     // de vuelta en la web, desde donde estaba la cámara y mirando a lo mismo (sin saltos)
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);

@@ -18,8 +18,10 @@ CC BY-SA 4.0 ([LICENCIAS.md](LICENCIAS.md)).
 
 - **Los 388 municipios en 3D**, levantados de forma automática con los edificios del Catastro (826.000 piezas
   edificadas), con su página (`pueblo.html#<código INE>`) y un mapa vivo para votar qué pueblo despierta después.
-- **Guareña, pueblo 001**, con contenido verificado y la entrada al juego: la cámara del gemelo baja hasta la foto del
-  dron del juego (https://nestorguerra.github.io/guarena/) y se funde con él, sin salir de la página.
+- **Guareña, pueblo 001**, con contenido verificado y la entrada al juego, al momento: la cámara del gemelo baja hasta
+  la foto del dron del juego (Guareña HQ, en plastilina: https://nestorguerra.github.io/guarena-hq/), se funde con él y
+  sigue bajando hasta Annie, en su calle, sin salir de la página. En el juego, X abre los ajustes, con «Volver a la
+  página web».
 - **Lista de espera** («apúntate y entra»), votos y pasaporte de sellos por pueblo visitado.
 
 ```
@@ -59,7 +61,7 @@ Y abrir http://localhost:8388. Para probar la web estática tal como se publica:
 python3 tools/build_web.py --api http://localhost:8388/api && python3 -m http.server 8390 --directory dist/web
 ```
 
-Para probar la entrada al juego con el juego en local: `guarena.html?juego=http://127.0.0.1:8918/index.html` (solo se
+Para probar la entrada al juego con el juego en local: `guarena.html?juego=http://localhost:8920/index.html` (solo se
 acepta en localhost).
 
 ## Despliegue

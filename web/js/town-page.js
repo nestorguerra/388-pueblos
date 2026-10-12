@@ -6,7 +6,6 @@ import {
 } from './world.js';
 import { stamp } from './pasaporte.js';
 import { createPlay, canEmbed } from './jugar.js';
-import { gate, isListed } from './lista.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -184,7 +183,8 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
     },
     onExit: ({ fov }) => { todGoal = todStart; fovGoal = fov; requestAnimationFrame(resize); },
   }) : null;
-  // jugar: primero la lista de espera (una sola vez por dispositivo), después la cámara baja hasta el juego
+  // jugar: la cámara baja al momento hasta el juego, sin formularios por medio (la lista de espera sigue en la
+  // portada). En el visor de claude.ai no se puede incrustar el juego: el enlace lo abre en otra pestaña.
   for (const b of $$('[data-jugar]')) {
     if (play) {
       b.addEventListener('pointerenter', () => play.warm(), { once: true });
@@ -192,17 +192,7 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
     }
     b.addEventListener('click', (e) => {
       if (e.metaKey || e.ctrlKey || e.shiftKey) return;
-      if (play) { e.preventDefault(); gate().then((ok) => ok && play.start()); return; }
-      // (en el visor de claude.ai no se puede incrustar el juego: se abre en otra pestaña, dentro del mismo clic)
-      if (!isListed()) { e.preventDefault(); gate({ onEnter: () => window.open(b.href, '_blank', 'noopener') }); }
-    });
-  }
-  // en los demás pueblos, «Jugar» y «Pasear» llevan a Guareña: la lista de espera, antes de salir
-  for (const a of $$('a[href^="guarena.html?jugar"]')) {
-    a.addEventListener('click', (e) => {
-      if (isListed() || e.metaKey || e.ctrlKey || e.shiftKey) return;
-      e.preventDefault();
-      gate().then((ok) => { if (ok) location.href = a.getAttribute('href'); });
+      if (play) { e.preventDefault(); play.start(); }
     });
   }
   const MORNING = new THREE.Vector3(0.62, 0.62, 0.48).normalize(); // (el juego arranca a las 10:36)
@@ -276,7 +266,7 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
   // ?jugar (desde la portada o desde cualquier otro pueblo): la cámara sigue bajando sola hasta el juego
   if (/[?&]jugar\b/.test(location.search)) {
     try { history.replaceState(history.state, '', location.pathname + location.hash); } catch { /* ignore */ }
-    if (play) { play.warm(); setTimeout(() => gate().then((ok) => ok && play.start()), reduced ? 0 : 900); }
+    if (play) { play.warm(); setTimeout(() => play.start(), reduced ? 0 : 900); }
   }
 
   // ---- sello del pasaporte ----
