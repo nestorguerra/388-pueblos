@@ -53,6 +53,46 @@ document.addEventListener('click', (e) => {
   scrollToEl(el);
 });
 
+// ---------------- entrar en un pueblo: descenso de cámara continuo hasta su juego ----------------
+function enterTown(href, name, idx) {
+  const ov = document.createElement('div');
+  ov.className = 'dive-ov';
+  ov.innerHTML = '<div><b></b><span class="mono"></span></div>';
+  ov.querySelector('b').textContent = name;
+  ov.querySelector('span').textContent = href === 'guarena.html' ? `Levantando ${fmt.format(world.townCount)} volúmenes…` : 'Levantando el pueblo…';
+  document.body.append(ov);
+  document.documentElement.classList.add('diving');
+  lenis?.stop();
+  tip.style.opacity = 0;
+  const go = () => {
+    ov.classList.add('on');
+    setTimeout(() => { location.href = href; }, 520);
+  };
+  // un clic durante el descenso salta directamente al pueblo
+  ov.addEventListener('click', go, { once: true });
+  addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { removeEventListener('keydown', esc); go(); } });
+  if (!world.dive(idx, go)) go();
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href="guarena.html"], a[href^="pueblo.html#"]');
+  if (!a || !world || reduced || e.metaKey || e.ctrlKey || e.shiftKey || world.diving) return;
+  if (canvas.style.visibility === 'hidden') return; // el mundo no está a la vista: navegación normal
+  const href = a.getAttribute('href');
+  const id = href === 'guarena.html' ? '06060' : href.split('#')[1];
+  const idx = world.munis.findIndex((m) => m.id === id);
+  if (idx < 0) return;
+  e.preventDefault();
+  enterTown(href, world.munis[idx].n, idx);
+});
+// al volver atrás desde el pueblo, la página puede restaurarse tal cual: deshacer el descenso
+addEventListener('pageshow', (e) => {
+  if (!e.persisted) return;
+  document.querySelectorAll('.dive-ov').forEach((n) => n.remove());
+  document.documentElement.classList.remove('diving');
+  world?.cancelDive();
+  lenis?.start();
+});
+
 // ---------------- mundo 3D ----------------
 let world = null;
 const canvas = $('#world');
@@ -77,6 +117,7 @@ async function boot() {
         onPick: (i) => selectMuni(i, { fly: true }),
       });
       names = world.munis.map((m) => m.n);
+      if (/[?&]debug/.test(location.search)) window.__w = world; // depuración local
       $('#n-parts').textContent = fmt.format(world.townCount);
     } catch (err) {
       console.error(err);

@@ -396,6 +396,15 @@ section { position: relative; }
 .foot a:hover { color: var(--sodio); }
 @media (max-width: 760px) { .foot .cols { grid-template-columns: 1fr; } }
 
+/* descenso al pueblo */
+.diving .nav, .diving .hud, .diving .hud-r, .diving .mapsec .panel, .diving .mapsec .sheet, .diving .tip, .diving .hero > *, .diving .step, .diving .skip { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.5s ease; }
+.diving #wlabels { opacity: 0.6; }
+.dive-ov { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: transparent; cursor: pointer; transition: background 0.5s ease; }
+.dive-ov > div { display: grid; gap: 0.8rem; justify-items: center; opacity: 0; transition: opacity 0.5s ease; }
+.dive-ov b { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: clamp(3rem, 12vw, 7rem); letter-spacing: -0.05em; line-height: 0.85; text-transform: uppercase; color: var(--cal); text-align: center; }
+.dive-ov span { color: var(--niebla); }
+.dive-ov.on { background: var(--noche); }
+.dive-ov.on > div { opacity: 1; }
 .no-webgl #world { background: radial-gradient(120% 90% at 50% 0%, #1b2547, var(--noche) 70%); }
 
 @media (prefers-reduced-motion: reduce) {

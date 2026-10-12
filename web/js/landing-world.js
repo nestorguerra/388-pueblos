@@ -117,6 +117,7 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
   const modeGoal = new THREE.Vector4(1, 0, 0, 0);
   let cur = { ...INTRO[0] };
   let flight = null;
+  let dive = null; // descenso de cámara hacia un pueblo antes de abrir su juego
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -203,18 +204,35 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
       if (wide()) goal.x -= 75000; // deja sitio al panel de la izquierda
       if (flight) goal = { ...flight, night: 1 };
     }
-    // parallax del puntero
-    const px = state.pointer.inside ? state.pointer.nx : 0;
-    const py = state.pointer.inside ? state.pointer.ny : 0;
+    // parallax del puntero (desactivado durante el descenso)
+    const px = state.pointer.inside && !dive ? state.pointer.nx : 0;
+    const py = state.pointer.inside && !dive ? state.pointer.ny : 0;
     rig.off.az = lerp(rig.off.az, px * 0.05, 0.05);
     rig.off.tilt = lerp(rig.off.tilt, -py * 0.025, 0.05);
-    const k = state.mode === 'intro' ? 0.12 : 0.06;
-    cur.x = lerp(cur.x, goal.x, k);
-    cur.y = lerp(cur.y, goal.y, k);
-    cur.dist = Math.exp(lerp(Math.log(cur.dist), Math.log(goal.dist), k));
-    cur.tilt = lerp(cur.tilt, goal.tilt, k);
-    cur.az = lerp(cur.az, goal.az, k);
-    cur.night = lerp(cur.night ?? 0, goal.night ?? 0, k);
+    if (dive) {
+      // descenso continuo: primero se centra sobre el pueblo y la distancia cae en escala logarítmica
+      dive.t += dt;
+      const p = clamp01(dive.t / dive.dur);
+      const pp = 1 - Math.pow(1 - p, 3);
+      const pd = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      const s = dive.s, e = dive.e;
+      cur.x = lerp(s.x, e.x, pp);
+      cur.y = lerp(s.y, e.y, pp);
+      cur.dist = Math.exp(lerp(Math.log(s.dist), Math.log(e.dist), pd));
+      cur.tilt = lerp(s.tilt, e.tilt, pd);
+      cur.az = lerp(s.az, e.az, pd);
+      cur.night = lerp(s.night ?? 1, e.night, pd);
+      camera.fov = lerp(32, e.fov || 32, clamp01((p - 0.6) / 0.4));
+      if (p >= 1 && !dive.done) { dive.done = true; dive.onDone?.(); }
+    } else {
+      const k = state.mode === 'intro' ? 0.12 : 0.06;
+      cur.x = lerp(cur.x, goal.x, k);
+      cur.y = lerp(cur.y, goal.y, k);
+      cur.dist = Math.exp(lerp(Math.log(cur.dist), Math.log(goal.dist), k));
+      cur.tilt = lerp(cur.tilt, goal.tilt, k);
+      cur.az = lerp(cur.az, goal.az, k);
+      cur.night = lerp(cur.night ?? 0, goal.night ?? 0, k);
+    }
     Object.assign(rig.s, cur);
     rig.apply();
 
@@ -229,6 +247,7 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     ground.uniforms.uCam.value = d;
     ground.mesh.visible = ground.uniforms.uFade.value > 0.01;
     T.group.visible = trees.visible = d < 60000;
+    if (dive?.e.noGround) ground.mesh.visible = T.group.visible = trees.visible = false;
     storks.visible = d < 6000;
     map.uniforms.uNight.value = cur.night;
     applyTimeOfDay(ctx, cur.night);
@@ -257,14 +276,14 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     if (storks.visible) storks.userData.update(t);
 
     // hover
-    if (state.mode === 'map' && state.pointer.inside) {
+    if (state.mode === 'map' && state.pointer.inside && !dive) {
       const i = state.pointer.overUI ? -1 : pickAt(state.pointer.nx, state.pointer.ny);
       if (i !== state.hover) {
         state.hover = i;
         onHover(i, state.pointer);
       } else if (i >= 0) onHover(i, state.pointer, true);
     }
-    map.uniforms.uHover.value = state.mode === 'map' ? state.hover : -1;
+    map.uniforms.uHover.value = state.mode === 'map' && !dive ? state.hover : -1;
     map.uniforms.uSel.value = state.sel;
     document.body.style.cursor = state.mode === 'map' && state.hover >= 0 ? 'pointer' : '';
 
@@ -294,6 +313,32 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
       flight = { x: m.c[0] * Q, y: m.c[1] * Q - 9000, dist: 120000, tilt: 0.78, az: 0.12 };
     },
     overview() { flight = null; },
+    // Descenso de cámara hasta un pueblo. Guareña termina en el mismo encuadre con el que arranca su juego
+    // (guarena.html: objetivo en la mitad de la torre, distancia ~946 m, fov 38, hora dorada).
+    dive(i, onDone) {
+      const m = muni.m[i];
+      if (!m) return false;
+      let e, dur;
+      if (m.id === '06060') {
+        e = { x: tower.x * 0.5, y: -tower.z * 0.5, dist: 946, tilt: 0.94, az: 0.5586, night: 0, fov: 38 };
+        dur = cur.dist > 30000 ? 6.2 : 2.4;
+      } else {
+        // el suelo detallado solo existe alrededor de Guareña: el resto termina sobre su término en el mapa
+        e = { x: m.c[0] * Q, y: m.c[1] * Q - 6000, dist: 38000, tilt: 0.8, az: 0.18, night: 0.75, fov: 34, noGround: true };
+        dur = 3.8;
+      }
+      flight = null;
+      state.hover = -1;
+      state.sel = i;
+      dive = { s: { ...cur }, e, t: 0, dur, onDone, done: false };
+      return true;
+    },
+    cancelDive() {
+      dive = null;
+      camera.fov = 32;
+      camera.updateProjectionMatrix();
+    },
+    get diving() { return !!dive; },
     get hover() { return state.hover; },
     _step: (n = 60) => { for (let i = 0; i < n; i++) tick(1 / 60); },
     _dbg: () => ({ cur: { ...cur }, cam: camera.position.toArray(), near: camera.near, far: camera.far, fade: ground.uniforms.uFade.value, op: map.uniforms.uOpacity.value }),
