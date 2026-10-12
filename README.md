@@ -22,6 +22,9 @@ CC BY-SA 4.0 ([LICENCIAS.md](LICENCIAS.md)).
   la foto del dron del juego (Guareña HQ, en plastilina: https://nestorguerra.github.io/guarena-hq/), se funde con él y
   sigue bajando hasta Annie, en su calle, sin salir de la página. En el juego, X abre los ajustes, con «Volver a la
   página web».
+- **Un solo zoom, sin telones:** desde la portada, la cámara baja hasta Guareña y su página recoge el último fotograma
+  (sessionStorage) y lo sigue acercando mientras levanta la maqueta; quien llega por un enlace ve el cartel de Guareña
+  desde ese mismo encuadre (`web/assets/guarena-inicio.jpg`). Nunca una pantalla negra.
 - **Lista de espera** («apúntate y entra»), votos y pasaporte de sellos por pueblo visitado.
 
 ```

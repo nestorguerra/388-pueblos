@@ -16,6 +16,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function townError(msg, { retry = false } = {}) {
   const again = retry ? '<button class="btn primary" type="button" id="retry">Reintentar</button> ' : '';
+  $('#loading').classList.remove('relevo'); // (el aviso, sobre el fondo de la noche)
   $('#loading').innerHTML = `<div class="err" role="alert"><b style="font-size:2.4rem">388 Pueblos</b><p>${msg}</p><p>${again}<a class="btn" href="index.html#los388">Volver al mapa de los 388</a></p></div>`;
   $('#retry')?.addEventListener('click', () => location.reload());
 }
@@ -55,7 +56,8 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
   controls.maxDistance = 2600;
   controls.maxPolarAngle = 1.38;
   controls.target.set(tower.x * 0.5, 8, tower.z * 0.5);
-  controls.autoRotate = !reduced;
+  const jugar = /[?&]jugar\b/.test(location.search); // (se viene a jugar: la cámara quieta en el encuadre de partida)
+  controls.autoRotate = !reduced && !jugar;
   controls.autoRotateSpeed = 0.35;
   const startD = Math.max(380, Math.min(900, radius * 0.75));
   camera.position.set(controls.target.x + startD * 0.45, startD * 0.62, controls.target.z + startD * 0.72);
@@ -269,17 +271,30 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
   // los sombreadores se compilan en paralelo antes del primer fotograma (sin el parón de la primera imagen)
   await nextTask();
   if (renderer.compileAsync) await renderer.compileAsync(scene, camera).catch(() => {});
+  // la primera imagen (guarena.html: el último fotograma de la portada, o su cartel) se funde con la maqueta en el
+  // mismo encuadre. Con ?jugar se ha seguido acercando: la cámara se pone como ella se ve ahora (en el mismo sitio,
+  // con el objetivo cerrado s veces) y la bajada al juego arranca desde ahí mismo, sin parón ni salto
+  const ld = $('#loading'), rimg = $('#relevo');
+  if (jugar && play && rimg) {
+    const m = getComputedStyle(rimg).transform;
+    const s = m && m !== 'none' ? parseFloat(m.slice(m.indexOf('(') + 1)) || 1 : 1;
+    rimg.style.transition = 'none';
+    rimg.style.transform = `scale(${s})`;
+    camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) / s));
+    camera.updateProjectionMatrix();
+  }
   requestAnimationFrame(frame);
-  const ld = $('#loading');
   ld.style.opacity = 0;
   setTimeout(() => ld.remove(), 900);
 
   // (si la portada lanzó esta página por adelantado durante su descenso, lo que sigue espera a la llegada)
-  whenShown((prerendered) => {
-    // ?jugar (desde la portada o desde cualquier otro pueblo): la cámara sigue bajando sola hasta el juego
-    if (/[?&]jugar\b/.test(location.search)) {
+  whenShown(() => {
+    // ?jugar (desde la portada o desde cualquier otro pueblo): la cámara sigue bajando sola hasta el juego, al
+    // momento (la imagen venía acercándose: un parón aquí se notaría)
+    if (jugar) {
       try { history.replaceState(history.state, '', location.pathname + location.hash); } catch { /* ignore */ }
-      if (play) { play.warm(); setTimeout(() => play.start(), reduced ? 0 : prerendered ? 250 : 900); }
+      if (play) { play.warm(); play.start(); }
+      else document.body.classList.remove('jugando'); // (sin juego incrustable aquí: que se vean los paneles)
     }
 
     // ---- sello del pasaporte ----

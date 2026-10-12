@@ -25,6 +25,21 @@
 <link rel="preload" href="data/guarena.json" as="fetch" crossorigin>
 </head>
 <body>
+<div class="loading relevo" id="loading"><img id="relevo" alt="" decoding="sync"></div>
+<script>(function () {
+  // La primera imagen, antes que nada: el último fotograma de la bajada de la portada (sessionStorage '388:relevo',
+  // si es de hace un momento) o, si se llega de otra parte, el cartel de Guareña desde ese mismo encuadre. Nunca una
+  // pantalla negra. Con ?jugar la imagen se sigue acercando despacio mientras se levanta la maqueta (una transición
+  // CSS: suave aunque la página esté ocupada); town-page.js recoge ese zoom y la cámara sigue desde ahí hasta el juego.
+  var box = document.getElementById('loading'), img = document.getElementById('relevo'), r = null;
+  try { r = JSON.parse(sessionStorage.getItem('388:relevo') || 'null'); sessionStorage.removeItem('388:relevo'); } catch (e) { /* sin relevo */ }
+  var fresh = !!(r && r.img && Date.now() - r.t < 30000);
+  box.style.background = fresh && r.mean ? r.mean : '#71543e';
+  img.src = fresh ? r.img : 'assets/guarena-inicio.jpg';
+  var jugar = /[?&]jugar\b/.test(location.search);
+  if (jugar) document.body.classList.add('jugando'); // (sin paneles: de la imagen se pasa al juego)
+  if (jugar) requestAnimationFrame(function () { requestAnimationFrame(function () { img.style.transition = 'transform 9s cubic-bezier(0.3, 0.6, 0.4, 1)'; img.style.transform = 'scale(1.12)'; }); });
+})();</script>
 <canvas id="c" aria-label="Modelo 3D de Guareña. Arrastra para girar, rueda o pellizco para acercar."></canvas>
 <div id="labels"></div>
 
@@ -106,7 +121,6 @@
 </div>
 <div class="toast" id="toast" role="status"></div>
 
-<div class="loading" id="loading"><div><b>Guareña</b><span class="mono" id="ld">Levantando 7.985 volúmenes…</span></div></div>
 
 <script type="module" src="js/guarena.js"></script>
 </body>

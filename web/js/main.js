@@ -2,7 +2,7 @@
 import { createLandingWorld } from './landing-world.js';
 import { readPassport } from './pasaporte.js';
 import { SHARED, loadVotes, sendVote, wake } from './backend.js';
-import { gate, isListed, markListed, saveSignup, queueSignup } from './lista.js';
+import { markListed, saveSignup, queueSignup } from './lista.js';
 import { getJSON, prerender } from './red.js';
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -56,24 +56,40 @@ document.addEventListener('click', (e) => {
 });
 
 // ---------------- entrar en un pueblo: descenso de cámara continuo hasta su juego ----------------
+// En Guareña no hay telón: la cámara baja hasta el encuadre con el que arranca su página y le pasa ese último fotograma
+// (sessionStorage '388:relevo'). La página lo enseña al instante, lo sigue acercando mientras levanta su maqueta y se
+// funde con ella en el mismo encuadre: un solo zoom de la portada al pueblo, y de ahí al juego. Los demás pueblos, que
+// acaban sobre el mapa y no en su encuadre, siguen con su telón y su nombre.
+const RELEVO = '388:relevo';
 function enterTown(href, name, idx) {
   // mientras dura el descenso, el navegador ya va levantando la página del pueblo (llega lista)
   prerender(href, href.startsWith('pueblo.html#') ? `data/pueblos/${href.split('#')[1]}.json` : null);
-  const ov = document.createElement('div');
-  ov.className = 'dive-ov';
-  ov.innerHTML = '<div><b></b><span class="mono"></span></div>';
-  ov.querySelector('b').textContent = name;
-  ov.querySelector('span').textContent = href.startsWith('guarena.html') ? `Levantando ${fmt.format(world.townCount)} volúmenes…` : 'Levantando el pueblo…';
-  document.body.append(ov);
+  const guarena = href.startsWith('guarena.html');
+  let ov = null, gone = false;
+  if (!guarena) {
+    ov = document.createElement('div');
+    ov.className = 'dive-ov';
+    ov.innerHTML = '<div><b></b><span class="mono"></span></div>';
+    ov.querySelector('b').textContent = name;
+    ov.querySelector('span').textContent = 'Levantando el pueblo…';
+    document.body.append(ov);
+  }
   document.documentElement.classList.add('diving');
   lenis?.stop();
   tip.style.opacity = 0;
-  const go = () => {
+  const go = async () => {
+    if (gone) return;
+    gone = true;
+    if (guarena) {
+      try { const s = await world.snapshot(); if (s) sessionStorage.setItem(RELEVO, JSON.stringify({ ...s, t: Date.now() })); } catch { /* sin relevo: la página tiene su propia imagen */ }
+      location.href = href;
+      return;
+    }
     ov.classList.add('on');
     setTimeout(() => { location.href = href; }, 520);
   };
-  // un clic durante el descenso salta directamente al pueblo
-  ov.addEventListener('click', go, { once: true });
+  // un clic durante el descenso (o Esc) salta directamente al pueblo
+  (ov || document).addEventListener(ov ? 'click' : 'pointerdown', go, { once: true });
   addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { removeEventListener('keydown', esc); go(); } });
   if (!world.dive(idx, go)) go();
 }
@@ -84,17 +100,11 @@ function follow(href) {
   if (!world || reduced || world.diving || idx < 0 || canvas.style.visibility === 'hidden') { location.href = href; return; }
   enterTown(href, world.munis[idx].n, idx);
 }
-const townId = (t) => { const m = munis.find((x) => norm(x.n) === norm(t)); return m ? m.id : null; };
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="guarena.html"], a[href^="pueblo.html#"]');
   if (!a || e.metaKey || e.ctrlKey || e.shiftKey || world?.diving) return;
   const href = a.getAttribute('href');
-  // jugar: primero la lista de espera (una sola vez), y después el descenso hasta Guareña y su juego
-  if (href.includes('?jugar') && !isListed()) {
-    e.preventDefault();
-    gate({ resolveTown: townId }).then((ok) => ok && follow(href));
-    return;
-  }
+  // (jugar: directamente, sin formulario por medio; la lista de espera tiene su sitio en la portada)
   if (!world || reduced || canvas.style.visibility === 'hidden') return;
   e.preventDefault();
   follow(href);

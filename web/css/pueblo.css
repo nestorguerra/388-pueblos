@@ -91,6 +91,10 @@ details[open] summary::after { content: "−"; }
 .loading div { display: grid; gap: 0.8rem; justify-items: center; }
 .loading b { font-variation-settings: "wdth" 125; font-weight: 800; font-size: clamp(3rem, 12vw, 7rem); letter-spacing: -0.05em; line-height: 0.85; text-transform: uppercase; }
 .loading span { color: var(--niebla); }
+/* (Guareña: su primera imagen, el último fotograma de la portada o su cartel, a toda pantalla; luego se funde con la
+   maqueta en el mismo encuadre) */
+.loading.relevo { background: #71543e; transition: opacity 0.45s ease; } /* (el relevo, rápido: la cámara ya se mueve) */
+.loading.relevo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: 50% 50%; will-change: transform; user-select: none; -webkit-user-drag: none; }
 .err { max-width: 34rem; padding: 2rem var(--gutter); text-align: center; }
 
 @media (max-width: 760px) {

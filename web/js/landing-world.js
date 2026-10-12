@@ -123,6 +123,7 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
   let cur = { ...INTRO[0] };
   let flight = null;
   let dive = null; // descenso de cámara hacia un pueblo antes de abrir su juego
+  let snap = null; // (un fotograma pedido: el último de la bajada, que la página del pueblo enseña al abrirse)
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
@@ -295,6 +296,13 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     document.body.style.cursor = state.mode === 'map' && state.hover >= 0 ? 'pointer' : '';
 
     renderer.render(scene, camera);
+    if (snap) {
+      // (ahora, mientras el lienzo aún tiene este fotograma; a resolución completa aunque la adaptativa la hubiera
+      // bajado durante el descenso: es la primera imagen de la página siguiente)
+      const full = Math.min(window.devicePixelRatio, mobile ? 1.5 : 1.75);
+      if (renderer.getPixelRatio() < full - 0.01) { renderer.setPixelRatio(full); renderer.render(scene, camera); }
+      const f = snap; snap = null; f();
+    }
     updateLabels(d);
   }
   // los sombreadores se compilan en paralelo antes del primer fotograma
@@ -348,6 +356,25 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
       camera.updateProjectionMatrix();
     },
     get diving() { return !!dive; },
+    // el próximo fotograma, como imagen del tamaño de la página (JPEG en data URL) y su color medio
+    snapshot() {
+      return new Promise((res) => {
+        const t = setTimeout(() => { snap = null; res(null); }, 600);
+        snap = () => {
+          clearTimeout(t);
+          try {
+            const w = Math.min(1920, canvas.clientWidth || 1280), h = Math.round(w * (canvas.clientHeight || 720) / (canvas.clientWidth || 1280));
+            const c = document.createElement('canvas'); c.width = w; c.height = h;
+            const g = c.getContext('2d'); g.drawImage(canvas, 0, 0, w, h);
+            const s = document.createElement('canvas'); s.width = 16; s.height = 9; const sg = s.getContext('2d'); sg.drawImage(c, 0, 0, 16, 9);
+            const px = sg.getImageData(0, 0, 16, 9).data; let r = 0, gg = 0, b = 0;
+            for (let i = 0; i < px.length; i += 4) { r += px[i]; gg += px[i + 1]; b += px[i + 2]; }
+            const n = px.length / 4, hex = (v) => Math.round(v / n).toString(16).padStart(2, '0');
+            res({ img: c.toDataURL('image/jpeg', 0.86), mean: '#' + hex(r) + hex(gg) + hex(b), w, h });
+          } catch { res(null); }
+        };
+      });
+    },
     get hover() { return state.hover; },
     _step: (n = 60) => { for (let i = 0; i < n; i++) tick(1 / 60); },
     _governor: governor,
