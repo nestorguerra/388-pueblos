@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pueblo · 388 Pueblos</title>
+<meta name="description" content="Gemelo digital automático de un pueblo de Extremadura, levantado con datos abiertos del Catastro.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/pueblo.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c" aria-label="Modelo 3D del pueblo. Arrastra para girar, rueda o pellizco para acercar."></canvas>
+<div id="labels"></div>
+
+<header class="top">
+  <a class="brand" href="index.html" aria-label="Volver a 388 Pueblos">388 <em>pueblos</em></a>
+  <div class="right">
+    <a class="btn" href="index.html#los388">← Los 388</a>
+    <button class="btn" type="button" id="rnd">Pueblo al azar</button>
+    <a class="btn primary" href="index.html#unete" id="mine">Es mi pueblo</a>
+  </div>
+</header>
+
+<aside class="panel" aria-label="Pueblo">
+  <section class="glass">
+    <span class="kicker" id="p-kicker">Pueblo de Extremadura</span>
+    <h1 id="p-name">…<small id="p-sub"></small></h1>
+    <div class="facts">
+      <div><b id="p-pop">—</b><span>Vecinos 2025</span></div>
+      <div><b id="p-alt">—</b><span>Altitud</span></div>
+      <div><b id="p-area">—</b><span>Término</span></div>
+    </div>
+    <p id="p-desc"></p>
+    <div class="status mono"><span class="sleep" id="p-sleep"><i></i>Dormido</span><span><b id="n-parts">—</b> volúmenes</span><span>Catastro</span></div>
+  </section>
+
+  <section class="glass game paseo" aria-labelledby="t-paseo">
+    <span class="kicker">Vecinos conectados</span>
+    <h2 id="t-paseo">Pasea con otras personas</h2>
+    <p class="online mono" id="online"><i></i><span>Conectando…</span></p>
+    <button class="btn primary big" id="walk" type="button" aria-pressed="false">Pasear por el pueblo</button>
+    <div id="paseo-ui" hidden>
+      <p class="hint" style="margin-bottom:.6rem">Eres <b id="alias">vecino</b>. Muévete con WASD o las flechas, o toca una calle. Sin chat libre: saluda con frases y emojis.</p>
+      <div class="row" id="frases" style="margin-bottom:.5rem"></div>
+      <div class="row emo" id="emos"></div>
+    </div>
+    <div class="passbar mono" id="pass"><span>Tu pasaporte</span><span>…</span></div>
+  </section>
+
+  <section class="glass" aria-labelledby="t-vote">
+    <span class="kicker">Despierta este pueblo</span>
+    <h2 id="t-vote" style="margin:0;font-variation-settings:'wdth' 112;font-weight:750;font-size:1.35rem;letter-spacing:-.025em;line-height:1.05">Vota para que sea el siguiente</h2>
+    <p class="hint" id="v-note">Despertar un pueblo es modelar al detalle su plaza, su iglesia y sus calles y abrirlo al juego. Los votos se llevan a cada ayuntamiento.</p>
+    <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap"><button class="btn primary" type="button" id="vote">Despertar este pueblo</button><span class="mono" id="v-count" style="color:var(--niebla)"></span></div>
+  </section>
+
+  <section class="glass game" aria-labelledby="t-game">
+    <span class="kicker">Minijuego</span>
+    <h2 id="t-game">Encuentra los nidos de cigüeña</h2>
+    <div class="nests" id="nests" aria-live="polite"></div>
+    <p class="hint" id="hint">Gira el pueblo y busca los nidos sobre la torre y los tejados. Cada nido desbloquea un dato del pueblo.</p>
+  </section>
+
+  <section class="glass">
+    <span class="kicker">Lugares</span>
+    <div class="places" id="places"></div>
+  </section>
+
+  <p class="mono" style="color:var(--niebla-2);padding:0 .3rem;line-height:1.7">Edificios: D. G. del Catastro (INSPIRE). Iglesias: © OpenStreetMap. Población: INE vía Wikidata. Volumetría automática: no es cartografía oficial.</p>
+</aside>
+
+<aside class="card glass" id="card" hidden aria-live="polite">
+  <button class="x" type="button" id="card-x" aria-label="Cerrar">×</button>
+  <span class="kicker" id="card-k"></span>
+  <h3 id="card-t"></h3>
+  <p id="card-p"></p>
+  <span class="src" id="card-s"></span>
+</aside>
+
+<div class="dock glass" role="group" aria-label="Hora del día">
+  <span class="lab mono">Luz</span>
+  <button class="btn" type="button" data-t="-1" aria-pressed="false">Mediodía</button>
+  <button class="btn" type="button" data-t="0" aria-pressed="true">Atardecer</button>
+  <button class="btn" type="button" data-t="1" aria-pressed="false">Noche</button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<div class="loading" id="loading"><div><b id="ld-name">388</b><span class="mono" id="ld">Levantando el pueblo…</span></div></div>
+
+<script type="module" src="js/pueblo.js"></script>
+</body>
+</html>

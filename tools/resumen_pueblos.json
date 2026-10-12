@@ -1,0 +1,3106 @@
+{
+"10001": {
+"ine": "10001",
+"parts": 550,
+"churches": 1,
+"shift": 422,
+"byChurch": true,
+"r": 481
+},
+"10002": {
+"ine": "10002",
+"parts": 1287,
+"churches": 1,
+"shift": 68,
+"byChurch": false,
+"r": 485
+},
+"10003": {
+"ine": "10003",
+"parts": 1273,
+"churches": 1,
+"shift": 176,
+"byChurch": true,
+"r": 511
+},
+"06001": {
+"ine": "06001",
+"parts": 356,
+"churches": 1,
+"shift": 217,
+"byChurch": true,
+"r": 537
+},
+"10004": {
+"ine": "10004",
+"parts": 1636,
+"churches": 1,
+"shift": 90,
+"byChurch": false,
+"r": 536
+},
+"10005": {
+"ine": "10005",
+"parts": 1084,
+"churches": 0,
+"shift": 43,
+"byChurch": false,
+"r": 511
+},
+"06002": {
+"ine": "06002",
+"parts": 6857,
+"churches": 1,
+"shift": 485,
+"byChurch": true,
+"r": 781
+},
+"10006": {
+"ine": "10006",
+"parts": 2831,
+"churches": 1,
+"shift": 826,
+"byChurch": true,
+"r": 581
+},
+"06003": {
+"ine": "06003",
+"parts": 1962,
+"churches": 1,
+"shift": 147,
+"byChurch": true,
+"r": 535
+},
+"10903": {
+"ine": "10903",
+"parts": 1409,
+"churches": 1,
+"shift": 149,
+"byChurch": true,
+"r": 547
+},
+"06004": {
+"ine": "06004",
+"parts": 2196,
+"churches": 1,
+"shift": 163,
+"byChurch": true,
+"r": 613
+},
+"10007": {
+"ine": "10007",
+"parts": 2130,
+"churches": 1,
+"shift": 108,
+"byChurch": true,
+"r": 520
+},
+"06006": {
+"ine": "06006",
+"parts": 5013,
+"churches": 3,
+"shift": 163,
+"byChurch": true,
+"r": 766
+},
+"10009": {
+"ine": "10009",
+"parts": 957,
+"churches": 0,
+"shift": 57,
+"byChurch": false,
+"r": 469
+},
+"06007": {
+"ine": "06007",
+"parts": 1847,
+"churches": 1,
+"shift": 413,
+"byChurch": true,
+"r": 599
+},
+"06008": {
+"ine": "06008",
+"parts": 1295,
+"churches": 1,
+"shift": 98,
+"byChurch": true,
+"r": 530
+},
+"10010": {
+"ine": "10010",
+"parts": 3783,
+"churches": 1,
+"shift": 20,
+"byChurch": true,
+"r": 652
+},
+"10008": {
+"ine": "10008",
+"parts": 1285,
+"churches": 2,
+"shift": 446,
+"byChurch": true,
+"r": 581
+},
+"10012": {
+"ine": "10012",
+"parts": 1273,
+"churches": 1,
+"shift": 179,
+"byChurch": false,
+"r": 516
+},
+"10011": {
+"ine": "10011",
+"parts": 1808,
+"churches": 1,
+"shift": 41,
+"byChurch": true,
+"r": 515
+},
+"10014": {
+"ine": "10014",
+"parts": 1961,
+"churches": 1,
+"shift": 172,
+"byChurch": true,
+"r": 624
+},
+"10015": {
+"ine": "10015",
+"parts": 1363,
+"churches": 1,
+"shift": 170,
+"byChurch": true,
+"r": 525
+},
+"10016": {
+"ine": "10016",
+"parts": 523,
+"churches": 1,
+"shift": 45,
+"byChurch": false,
+"r": 483
+},
+"10018": {
+"ine": "10018",
+"parts": 2876,
+"churches": 1,
+"shift": 244,
+"byChurch": true,
+"r": 608
+},
+"06009": {
+"ine": "06009",
+"parts": 493,
+"churches": 1,
+"shift": 53,
+"byChurch": true,
+"r": 467
+},
+"10019": {
+"ine": "10019",
+"parts": 1509,
+"churches": 0,
+"shift": 98,
+"byChurch": false,
+"r": 600
+},
+"06010": {
+"ine": "06010",
+"parts": 1987,
+"churches": 2,
+"shift": 153,
+"byChurch": true,
+"r": 571
+},
+"06011": {
+"ine": "06011",
+"parts": 8333,
+"churches": 3,
+"shift": 165,
+"byChurch": true,
+"r": 1403
+},
+"10020": {
+"ine": "10020",
+"parts": 3664,
+"churches": 1,
+"shift": 21,
+"byChurch": true,
+"r": 611
+},
+"10017": {
+"ine": "10017",
+"parts": 2906,
+"churches": 1,
+"shift": 122,
+"byChurch": true,
+"r": 528
+},
+"06012": {
+"ine": "06012",
+"parts": 4402,
+"churches": 1,
+"shift": 40,
+"byChurch": true,
+"r": 728
+},
+"10021": {
+"ine": "10021",
+"parts": 7078,
+"churches": 3,
+"shift": 27,
+"byChurch": true,
+"r": 788
+},
+"10023": {
+"ine": "10023",
+"parts": 1629,
+"churches": 1,
+"shift": 102,
+"byChurch": false,
+"r": 537
+},
+"10022": {
+"ine": "10022",
+"parts": 946,
+"churches": 1,
+"shift": 116,
+"byChurch": false,
+"r": 493
+},
+"06013": {
+"ine": "06013",
+"parts": 722,
+"churches": 1,
+"shift": 96,
+"byChurch": true,
+"r": 468
+},
+"06014": {
+"ine": "06014",
+"parts": 8730,
+"churches": 3,
+"shift": 66,
+"byChurch": true,
+"r": 859
+},
+"06015": {
+"ine": "06015",
+"parts": 7828,
+"churches": 3,
+"shift": 108,
+"byChurch": true,
+"r": 1500
+},
+"06016": {
+"ine": "06016",
+"parts": 3638,
+"churches": 2,
+"shift": 292,
+"byChurch": true,
+"r": 703
+},
+"10025": {
+"ine": "10025",
+"parts": 609,
+"churches": 0,
+"shift": 37,
+"byChurch": false,
+"r": 488
+},
+"06017": {
+"ine": "06017",
+"parts": 615,
+"churches": 1,
+"shift": 7,
+"byChurch": true,
+"r": 464
+},
+"10024": {
+"ine": "10024",
+"parts": 1138,
+"churches": 1,
+"shift": 29,
+"byChurch": true,
+"r": 529
+},
+"10026": {
+"ine": "10026",
+"parts": 741,
+"churches": 1,
+"shift": 167,
+"byChurch": true,
+"r": 533
+},
+"10027": {
+"ine": "10027",
+"parts": 357,
+"churches": 1,
+"shift": 42,
+"byChurch": true,
+"r": 427
+},
+"06018": {
+"ine": "06018",
+"parts": 664,
+"churches": 1,
+"shift": 11231,
+"byChurch": false,
+"r": 533
+},
+"06019": {
+"ine": "06019",
+"parts": 3743,
+"churches": 1,
+"shift": 271,
+"byChurch": true,
+"r": 637
+},
+"10028": {
+"ine": "10028",
+"parts": 846,
+"churches": 1,
+"shift": 48,
+"byChurch": false,
+"r": 440
+},
+"10029": {
+"ine": "10029",
+"parts": 1244,
+"churches": 1,
+"shift": 87,
+"byChurch": true,
+"r": 487
+},
+"06020": {
+"ine": "06020",
+"parts": 3006,
+"churches": 1,
+"shift": 97,
+"byChurch": true,
+"r": 626
+},
+"06021": {
+"ine": "06021",
+"parts": 1586,
+"churches": 1,
+"shift": 202,
+"byChurch": true,
+"r": 552
+},
+"10030": {
+"ine": "10030",
+"parts": 1813,
+"churches": 1,
+"shift": 152,
+"byChurch": true,
+"r": 501
+},
+"10031": {
+"ine": "10031",
+"parts": 936,
+"churches": 1,
+"shift": 96,
+"byChurch": false,
+"r": 455
+},
+"10032": {
+"ine": "10032",
+"parts": 3186,
+"churches": 2,
+"shift": 164,
+"byChurch": true,
+"r": 608
+},
+"06022": {
+"ine": "06022",
+"parts": 3477,
+"churches": 3,
+"shift": 402,
+"byChurch": true,
+"r": 678
+},
+"10033": {
+"ine": "10033",
+"parts": 148,
+"churches": 1,
+"shift": 131,
+"byChurch": true,
+"r": 491
+},
+"06023": {
+"ine": "06023",
+"parts": 5204,
+"churches": 1,
+"shift": 369,
+"byChurch": true,
+"r": 748
+},
+"06024": {
+"ine": "06024",
+"parts": 2227,
+"churches": 1,
+"shift": 73,
+"byChurch": true,
+"r": 575
+},
+"10034": {
+"ine": "10034",
+"parts": 1041,
+"churches": 1,
+"shift": 499,
+"byChurch": true,
+"r": 478
+},
+"10035": {
+"ine": "10035",
+"parts": 1889,
+"churches": 1,
+"shift": 137,
+"byChurch": true,
+"r": 629
+},
+"10036": {
+"ine": "10036",
+"parts": 808,
+"churches": 1,
+"shift": 69,
+"byChurch": true,
+"r": 483
+},
+"10038": {
+"ine": "10038",
+"parts": 305,
+"churches": 1,
+"shift": 25,
+"byChurch": false,
+"r": 430
+},
+"10039": {
+"ine": "10039",
+"parts": 706,
+"churches": 1,
+"shift": 185,
+"byChurch": true,
+"r": 489
+},
+"06025": {
+"ine": "06025",
+"parts": 4990,
+"churches": 2,
+"shift": 227,
+"byChurch": true,
+"r": 810
+},
+"06026": {
+"ine": "06026",
+"parts": 1365,
+"churches": 1,
+"shift": 24,
+"byChurch": true,
+"r": 546
+},
+"10040": {
+"ine": "10040",
+"parts": 1056,
+"churches": 1,
+"shift": 278,
+"byChurch": true,
+"r": 497
+},
+"06027": {
+"ine": "06027",
+"parts": 1220,
+"churches": 1,
+"shift": 163,
+"byChurch": true,
+"r": 523
+},
+"10041": {
+"ine": "10041",
+"parts": 815,
+"churches": 1,
+"shift": 47,
+"byChurch": false,
+"r": 562
+},
+"06028": {
+"ine": "06028",
+"parts": 8284,
+"churches": 1,
+"shift": 56,
+"byChurch": true,
+"r": 757
+},
+"10042": {
+"ine": "10042",
+"parts": 484,
+"churches": 0,
+"shift": 72,
+"byChurch": false,
+"r": 430
+},
+"06029": {
+"ine": "06029",
+"parts": 2301,
+"churches": 1,
+"shift": 80,
+"byChurch": false,
+"r": 580
+},
+"10043": {
+"ine": "10043",
+"parts": 1555,
+"churches": 1,
+"shift": 165,
+"byChurch": true,
+"r": 535
+},
+"06030": {
+"ine": "06030",
+"parts": 488,
+"churches": 1,
+"shift": 360,
+"byChurch": true,
+"r": 446
+},
+"10046": {
+"ine": "10046",
+"parts": 483,
+"churches": 1,
+"shift": 69,
+"byChurch": true,
+"r": 454
+},
+"10047": {
+"ine": "10047",
+"parts": 1165,
+"churches": 1,
+"shift": 101,
+"byChurch": false,
+"r": 560
+},
+"06031": {
+"ine": "06031",
+"parts": 812,
+"churches": 1,
+"shift": 55,
+"byChurch": true,
+"r": 505
+},
+"10048": {
+"ine": "10048",
+"parts": 1049,
+"churches": 1,
+"shift": 98,
+"byChurch": true,
+"r": 462
+},
+"10049": {
+"ine": "10049",
+"parts": 3914,
+"churches": 1,
+"shift": 201,
+"byChurch": true,
+"r": 749
+},
+"10050": {
+"ine": "10050",
+"parts": 1180,
+"churches": 1,
+"shift": 19,
+"byChurch": false,
+"r": 553
+},
+"10051": {
+"ine": "10051",
+"parts": 390,
+"churches": 0,
+"shift": 1472,
+"byChurch": false,
+"r": 485
+},
+"10052": {
+"ine": "10052",
+"parts": 468,
+"churches": 1,
+"shift": 48,
+"byChurch": false,
+"r": 451
+},
+"10053": {
+"ine": "10053",
+"parts": 832,
+"churches": 1,
+"shift": 101,
+"byChurch": false,
+"r": 482
+},
+"06033": {
+"ine": "06033",
+"parts": 2501,
+"churches": 1,
+"shift": 224,
+"byChurch": true,
+"r": 584
+},
+"10056": {
+"ine": "10056",
+"parts": 1245,
+"churches": 1,
+"shift": 34,
+"byChurch": false,
+"r": 507
+},
+"10057": {
+"ine": "10057",
+"parts": 528,
+"churches": 1,
+"shift": 146,
+"byChurch": true,
+"r": 437
+},
+"06034": {
+"ine": "06034",
+"parts": 662,
+"churches": 1,
+"shift": 147,
+"byChurch": true,
+"r": 458
+},
+"10054": {
+"ine": "10054",
+"parts": 1229,
+"churches": 1,
+"shift": 187,
+"byChurch": true,
+"r": 513
+},
+"10055": {
+"ine": "10055",
+"parts": 1173,
+"churches": 1,
+"shift": 76,
+"byChurch": false,
+"r": 532
+},
+"10058": {
+"ine": "10058",
+"parts": 1835,
+"churches": 1,
+"shift": 304,
+"byChurch": true,
+"r": 585
+},
+"10059": {
+"ine": "10059",
+"parts": 1310,
+"churches": 1,
+"shift": 170,
+"byChurch": false,
+"r": 483
+},
+"10060": {
+"ine": "10060",
+"parts": 2216,
+"churches": 1,
+"shift": 25,
+"byChurch": true,
+"r": 556
+},
+"06035": {
+"ine": "06035",
+"parts": 2919,
+"churches": 1,
+"shift": 2862,
+"byChurch": true,
+"r": 537
+},
+"06036": {
+"ine": "06036",
+"parts": 5416,
+"churches": 1,
+"shift": 343,
+"byChurch": true,
+"r": 786
+},
+"10044": {
+"ine": "10044",
+"parts": 2558,
+"churches": 1,
+"shift": 80,
+"byChurch": false,
+"r": 598
+},
+"10045": {
+"ine": "10045",
+"parts": 1394,
+"churches": 1,
+"shift": 11,
+"byChurch": true,
+"r": 553
+},
+"10061": {
+"ine": "10061",
+"parts": 3441,
+"churches": 1,
+"shift": 231,
+"byChurch": true,
+"r": 611
+},
+"10062": {
+"ine": "10062",
+"parts": 870,
+"churches": 1,
+"shift": 267,
+"byChurch": false,
+"r": 497
+},
+"10063": {
+"ine": "10063",
+"parts": 525,
+"churches": 1,
+"shift": 48,
+"byChurch": true,
+"r": 447
+},
+"06042": {
+"ine": "06042",
+"parts": 1554,
+"churches": 1,
+"shift": 74,
+"byChurch": true,
+"r": 569
+},
+"10064": {
+"ine": "10064",
+"parts": 1812,
+"churches": 1,
+"shift": 582,
+"byChurch": true,
+"r": 596
+},
+"10065": {
+"ine": "10065",
+"parts": 278,
+"churches": 1,
+"shift": 127,
+"byChurch": true,
+"r": 471
+},
+"10066": {
+"ine": "10066",
+"parts": 566,
+"churches": 1,
+"shift": 59,
+"byChurch": true,
+"r": 456
+},
+"06038": {
+"ine": "06038",
+"parts": 1422,
+"churches": 1,
+"shift": 230,
+"byChurch": true,
+"r": 537
+},
+"10067": {
+"ine": "10067",
+"parts": 4837,
+"churches": 3,
+"shift": 15,
+"byChurch": true,
+"r": 983
+},
+"06040": {
+"ine": "06040",
+"parts": 1578,
+"churches": 1,
+"shift": 41,
+"byChurch": true,
+"r": 567
+},
+"06041": {
+"ine": "06041",
+"parts": 856,
+"churches": 1,
+"shift": 57,
+"byChurch": true,
+"r": 509
+},
+"10068": {
+"ine": "10068",
+"parts": 1208,
+"churches": 1,
+"shift": 346,
+"byChurch": true,
+"r": 536
+},
+"10037": {
+"ine": "10037",
+"parts": 7737,
+"churches": 3,
+"shift": 185,
+"byChurch": true,
+"r": 1500
+},
+"10070": {
+"ine": "10070",
+"parts": 2495,
+"churches": 1,
+"shift": 73,
+"byChurch": false,
+"r": 524
+},
+"10071": {
+"ine": "10071",
+"parts": 441,
+"churches": 1,
+"shift": 31,
+"byChurch": false,
+"r": 436
+},
+"06044": {
+"ine": "06044",
+"parts": 8239,
+"churches": 3,
+"shift": 1092,
+"byChurch": true,
+"r": 1452
+},
+"06043": {
+"ine": "06043",
+"parts": 1043,
+"churches": 1,
+"shift": 18,
+"byChurch": true,
+"r": 540
+},
+"06032": {
+"ine": "06032",
+"parts": 185,
+"churches": 1,
+"shift": 17,
+"byChurch": true,
+"r": 429
+},
+"10085": {
+"ine": "10085",
+"parts": 875,
+"churches": 1,
+"shift": 41,
+"byChurch": false,
+"r": 485
+},
+"10184": {
+"ine": "10184",
+"parts": 1313,
+"churches": 1,
+"shift": 23,
+"byChurch": false,
+"r": 536
+},
+"10072": {
+"ine": "10072",
+"parts": 1448,
+"churches": 1,
+"shift": 164,
+"byChurch": true,
+"r": 538
+},
+"06045": {
+"ine": "06045",
+"parts": 723,
+"churches": 1,
+"shift": 85,
+"byChurch": true,
+"r": 509
+},
+"10073": {
+"ine": "10073",
+"parts": 2055,
+"churches": 1,
+"shift": 240,
+"byChurch": true,
+"r": 541
+},
+"06046": {
+"ine": "06046",
+"parts": 2040,
+"churches": 1,
+"shift": 128,
+"byChurch": true,
+"r": 593
+},
+"06048": {
+"ine": "06048",
+"parts": 2171,
+"churches": 1,
+"shift": 298,
+"byChurch": true,
+"r": 539
+},
+"06047": {
+"ine": "06047",
+"parts": 1619,
+"churches": 1,
+"shift": 13,
+"byChurch": true,
+"r": 546
+},
+"06049": {
+"ine": "06049",
+"parts": 2341,
+"churches": 1,
+"shift": 20,
+"byChurch": true,
+"r": 559
+},
+"06050": {
+"ine": "06050",
+"parts": 5330,
+"churches": 3,
+"shift": 243,
+"byChurch": true,
+"r": 758
+},
+"10075": {
+"ine": "10075",
+"parts": 1121,
+"churches": 1,
+"shift": 57,
+"byChurch": true,
+"r": 464
+},
+"06051": {
+"ine": "06051",
+"parts": 3077,
+"churches": 1,
+"shift": 225,
+"byChurch": true,
+"r": 606
+},
+"06052": {
+"ine": "06052",
+"parts": 5561,
+"churches": 1,
+"shift": 26,
+"byChurch": true,
+"r": 752
+},
+"06053": {
+"ine": "06053",
+"parts": 1217,
+"churches": 1,
+"shift": 87,
+"byChurch": true,
+"r": 520
+},
+"06054": {
+"ine": "06054",
+"parts": 7274,
+"churches": 3,
+"shift": 220,
+"byChurch": true,
+"r": 823
+},
+"06055": {
+"ine": "06055",
+"parts": 2700,
+"churches": 1,
+"shift": 392,
+"byChurch": true,
+"r": 633
+},
+"10076": {
+"ine": "10076",
+"parts": 1138,
+"churches": 1,
+"shift": 165,
+"byChurch": true,
+"r": 540
+},
+"06056": {
+"ine": "06056",
+"parts": 1293,
+"churches": 1,
+"shift": 114,
+"byChurch": true,
+"r": 497
+},
+"10077": {
+"ine": "10077",
+"parts": 1842,
+"churches": 1,
+"shift": 101,
+"byChurch": false,
+"r": 522
+},
+"10079": {
+"ine": "10079",
+"parts": 1426,
+"churches": 1,
+"shift": 150,
+"byChurch": true,
+"r": 543
+},
+"10080": {
+"ine": "10080",
+"parts": 885,
+"churches": 1,
+"shift": 116,
+"byChurch": true,
+"r": 482
+},
+"10081": {
+"ine": "10081",
+"parts": 366,
+"churches": 1,
+"shift": 463,
+"byChurch": true,
+"r": 455
+},
+"06057": {
+"ine": "06057",
+"parts": 1459,
+"churches": 1,
+"shift": 270,
+"byChurch": true,
+"r": 504
+},
+"10082": {
+"ine": "10082",
+"parts": 3688,
+"churches": 2,
+"shift": 162,
+"byChurch": true,
+"r": 622
+},
+"10083": {
+"ine": "10083",
+"parts": 457,
+"churches": 1,
+"shift": 67,
+"byChurch": true,
+"r": 435
+},
+"10084": {
+"ine": "10084",
+"parts": 1617,
+"churches": 1,
+"shift": 166,
+"byChurch": true,
+"r": 581
+},
+"06059": {
+"ine": "06059",
+"parts": 3257,
+"churches": 1,
+"shift": 109,
+"byChurch": true,
+"r": 621
+},
+"10087": {
+"ine": "10087",
+"parts": 2725,
+"churches": 1,
+"shift": 65,
+"byChurch": true,
+"r": 608
+},
+"06903": {
+"ine": "06903",
+"parts": 2890,
+"churches": 1,
+"shift": 167,
+"byChurch": true,
+"r": 652
+},
+"06060": {
+"ine": "06060",
+"parts": 6550,
+"churches": 2,
+"shift": 226,
+"byChurch": true,
+"r": 829
+},
+"10088": {
+"ine": "10088",
+"parts": 889,
+"churches": 1,
+"shift": 87,
+"byChurch": true,
+"r": 454
+},
+"10089": {
+"ine": "10089",
+"parts": 938,
+"churches": 1,
+"shift": 121,
+"byChurch": true,
+"r": 590
+},
+"10090": {
+"ine": "10090",
+"parts": 1300,
+"churches": 1,
+"shift": 237,
+"byChurch": true,
+"r": 503
+},
+"10091": {
+"ine": "10091",
+"parts": 857,
+"churches": 1,
+"shift": 200,
+"byChurch": true,
+"r": 488
+},
+"06062": {
+"ine": "06062",
+"parts": 977,
+"churches": 1,
+"shift": 441,
+"byChurch": true,
+"r": 510
+},
+"10092": {
+"ine": "10092",
+"parts": 1161,
+"churches": 0,
+"shift": 26,
+"byChurch": false,
+"r": 469
+},
+"10093": {
+"ine": "10093",
+"parts": 918,
+"churches": 1,
+"shift": 87,
+"byChurch": true,
+"r": 490
+},
+"10094": {
+"ine": "10094",
+"parts": 773,
+"churches": 1,
+"shift": 22,
+"byChurch": true,
+"r": 462
+},
+"06063": {
+"ine": "06063",
+"parts": 4453,
+"churches": 1,
+"shift": 546,
+"byChurch": true,
+"r": 700
+},
+"10095": {
+"ine": "10095",
+"parts": 657,
+"churches": 1,
+"shift": 23,
+"byChurch": true,
+"r": 479
+},
+"10096": {
+"ine": "10096",
+"parts": 2337,
+"churches": 1,
+"shift": 644,
+"byChurch": true,
+"r": 723
+},
+"10097": {
+"ine": "10097",
+"parts": 367,
+"churches": 1,
+"shift": 72,
+"byChurch": false,
+"r": 436
+},
+"06065": {
+"ine": "06065",
+"parts": 681,
+"churches": 1,
+"shift": 82,
+"byChurch": true,
+"r": 482
+},
+"06066": {
+"ine": "06066",
+"parts": 2890,
+"churches": 1,
+"shift": 123,
+"byChurch": true,
+"r": 615
+},
+"06064": {
+"ine": "06064",
+"parts": 2155,
+"churches": 1,
+"shift": 17,
+"byChurch": true,
+"r": 543
+},
+"06067": {
+"ine": "06067",
+"parts": 3308,
+"churches": 2,
+"shift": 1101,
+"byChurch": true,
+"r": 637
+},
+"10098": {
+"ine": "10098",
+"parts": 1652,
+"churches": 0,
+"shift": 283,
+"byChurch": false,
+"r": 489
+},
+"06068": {
+"ine": "06068",
+"parts": 948,
+"churches": 1,
+"shift": 70,
+"byChurch": true,
+"r": 499
+},
+"10099": {
+"ine": "10099",
+"parts": 1236,
+"churches": 1,
+"shift": 168,
+"byChurch": false,
+"r": 513
+},
+"06069": {
+"ine": "06069",
+"parts": 4443,
+"churches": 1,
+"shift": 429,
+"byChurch": true,
+"r": 700
+},
+"10100": {
+"ine": "10100",
+"parts": 1327,
+"churches": 1,
+"shift": 201,
+"byChurch": true,
+"r": 540
+},
+"10101": {
+"ine": "10101",
+"parts": 372,
+"churches": 1,
+"shift": 156,
+"byChurch": true,
+"r": 458
+},
+"10102": {
+"ine": "10102",
+"parts": 1914,
+"churches": 1,
+"shift": 926,
+"byChurch": false,
+"r": 508
+},
+"10103": {
+"ine": "10103",
+"parts": 1487,
+"churches": 1,
+"shift": 92,
+"byChurch": true,
+"r": 492
+},
+"10105": {
+"ine": "10105",
+"parts": 2966,
+"churches": 2,
+"shift": 337,
+"byChurch": true,
+"r": 676
+},
+"10104": {
+"ine": "10104",
+"parts": 3848,
+"churches": 1,
+"shift": 188,
+"byChurch": true,
+"r": 835
+},
+"10106": {
+"ine": "10106",
+"parts": 501,
+"churches": 1,
+"shift": 138,
+"byChurch": true,
+"r": 442
+},
+"06070": {
+"ine": "06070",
+"parts": 7604,
+"churches": 3,
+"shift": 143,
+"byChurch": true,
+"r": 905
+},
+"10107": {
+"ine": "10107",
+"parts": 1641,
+"churches": 1,
+"shift": 82,
+"byChurch": true,
+"r": 570
+},
+"06005": {
+"ine": "06005",
+"parts": 2529,
+"churches": 1,
+"shift": 154,
+"byChurch": true,
+"r": 626
+},
+"10013": {
+"ine": "10013",
+"parts": 789,
+"churches": 1,
+"shift": 61,
+"byChurch": false,
+"r": 474
+},
+"06037": {
+"ine": "06037",
+"parts": 1955,
+"churches": 1,
+"shift": 390,
+"byChurch": true,
+"r": 625
+},
+"06039": {
+"ine": "06039",
+"parts": 3063,
+"churches": 1,
+"shift": 196,
+"byChurch": true,
+"r": 634
+},
+"10069": {
+"ine": "10069",
+"parts": 2259,
+"churches": 1,
+"shift": 183,
+"byChurch": true,
+"r": 537
+},
+"10078": {
+"ine": "10078",
+"parts": 923,
+"churches": 1,
+"shift": 155,
+"byChurch": true,
+"r": 483
+},
+"06058": {
+"ine": "06058",
+"parts": 2697,
+"churches": 1,
+"shift": 132,
+"byChurch": false,
+"r": 644
+},
+"10086": {
+"ine": "10086",
+"parts": 679,
+"churches": 0,
+"shift": 48,
+"byChurch": false,
+"r": 477
+},
+"06061": {
+"ine": "06061",
+"parts": 1935,
+"churches": 1,
+"shift": 120,
+"byChurch": true,
+"r": 569
+},
+"06071": {
+"ine": "06071",
+"parts": 535,
+"churches": 1,
+"shift": 69,
+"byChurch": true,
+"r": 475
+},
+"06089": {
+"ine": "06089",
+"parts": 1189,
+"churches": 1,
+"shift": 108,
+"byChurch": true,
+"r": 525
+},
+"06090": {
+"ine": "06090",
+"parts": 1730,
+"churches": 1,
+"shift": 1081,
+"byChurch": true,
+"r": 546
+},
+"06099": {
+"ine": "06099",
+"parts": 1789,
+"churches": 1,
+"shift": 23,
+"byChurch": false,
+"r": 578
+},
+"10144": {
+"ine": "10144",
+"parts": 1254,
+"churches": 0,
+"shift": 17,
+"byChurch": false,
+"r": 550
+},
+"06115": {
+"ine": "06115",
+"parts": 2033,
+"churches": 1,
+"shift": 277,
+"byChurch": true,
+"r": 590
+},
+"06162": {
+"ine": "06162",
+"parts": 4893,
+"churches": 1,
+"shift": 435,
+"byChurch": true,
+"r": 698
+},
+"10108": {
+"ine": "10108",
+"parts": 475,
+"churches": 1,
+"shift": 11,
+"byChurch": false,
+"r": 453
+},
+"06073": {
+"ine": "06073",
+"parts": 1483,
+"churches": 1,
+"shift": 153,
+"byChurch": true,
+"r": 534
+},
+"06074": {
+"ine": "06074",
+"parts": 5564,
+"churches": 3,
+"shift": 123,
+"byChurch": true,
+"r": 793
+},
+"06072": {
+"ine": "06072",
+"parts": 1928,
+"churches": 1,
+"shift": 276,
+"byChurch": true,
+"r": 669
+},
+"10109": {
+"ine": "10109",
+"parts": 3474,
+"churches": 1,
+"shift": 170,
+"byChurch": true,
+"r": 617
+},
+"06122": {
+"ine": "06122",
+"parts": 7586,
+"churches": 2,
+"shift": 6,
+"byChurch": true,
+"r": 875
+},
+"10110": {
+"ine": "10110",
+"parts": 2435,
+"churches": 1,
+"shift": 300,
+"byChurch": true,
+"r": 671
+},
+"10111": {
+"ine": "10111",
+"parts": 2325,
+"churches": 1,
+"shift": 174,
+"byChurch": true,
+"r": 596
+},
+"10112": {
+"ine": "10112",
+"parts": 3608,
+"churches": 1,
+"shift": 261,
+"byChurch": true,
+"r": 607
+},
+"10113": {
+"ine": "10113",
+"parts": 4423,
+"churches": 1,
+"shift": 328,
+"byChurch": false,
+"r": 647
+},
+"06075": {
+"ine": "06075",
+"parts": 1071,
+"churches": 2,
+"shift": 211,
+"byChurch": true,
+"r": 503
+},
+"06076": {
+"ine": "06076",
+"parts": 1817,
+"churches": 1,
+"shift": 37,
+"byChurch": true,
+"r": 547
+},
+"10114": {
+"ine": "10114",
+"parts": 1207,
+"churches": 0,
+"shift": 70,
+"byChurch": false,
+"r": 577
+},
+"06077": {
+"ine": "06077",
+"parts": 1013,
+"churches": 1,
+"shift": 2084,
+"byChurch": true,
+"r": 482
+},
+"10115": {
+"ine": "10115",
+"parts": 4408,
+"churches": 1,
+"shift": 39,
+"byChurch": true,
+"r": 729
+},
+"10116": {
+"ine": "10116",
+"parts": 4587,
+"churches": 1,
+"shift": 113,
+"byChurch": true,
+"r": 756
+},
+"06078": {
+"ine": "06078",
+"parts": 1254,
+"churches": 1,
+"shift": 24,
+"byChurch": true,
+"r": 504
+},
+"06079": {
+"ine": "06079",
+"parts": 1045,
+"churches": 1,
+"shift": 195,
+"byChurch": true,
+"r": 530
+},
+"10117": {
+"ine": "10117",
+"parts": 556,
+"churches": 1,
+"shift": 34,
+"byChurch": false,
+"r": 464
+},
+"10118": {
+"ine": "10118",
+"parts": 891,
+"churches": 1,
+"shift": 27,
+"byChurch": true,
+"r": 475
+},
+"06080": {
+"ine": "06080",
+"parts": 2687,
+"churches": 2,
+"shift": 123,
+"byChurch": true,
+"r": 640
+},
+"06081": {
+"ine": "06081",
+"parts": 2363,
+"churches": 1,
+"shift": 303,
+"byChurch": true,
+"r": 567
+},
+"10119": {
+"ine": "10119",
+"parts": 2086,
+"churches": 1,
+"shift": 19,
+"byChurch": true,
+"r": 513
+},
+"06082": {
+"ine": "06082",
+"parts": 896,
+"churches": 1,
+"shift": 93,
+"byChurch": false,
+"r": 503
+},
+"10120": {
+"ine": "10120",
+"parts": 870,
+"churches": 1,
+"shift": 88,
+"byChurch": false,
+"r": 446
+},
+"10121": {
+"ine": "10121",
+"parts": 7739,
+"churches": 1,
+"shift": 20,
+"byChurch": true,
+"r": 913
+},
+"10122": {
+"ine": "10122",
+"parts": 611,
+"churches": 1,
+"shift": 39,
+"byChurch": false,
+"r": 465
+},
+"10123": {
+"ine": "10123",
+"parts": 1259,
+"churches": 1,
+"shift": 41,
+"byChurch": true,
+"r": 517
+},
+"06084": {
+"ine": "06084",
+"parts": 2052,
+"churches": 1,
+"shift": 28,
+"byChurch": true,
+"r": 573
+},
+"10124": {
+"ine": "10124",
+"parts": 1659,
+"churches": 1,
+"shift": 93,
+"byChurch": true,
+"r": 537
+},
+"06085": {
+"ine": "06085",
+"parts": 5155,
+"churches": 1,
+"shift": 432,
+"byChurch": true,
+"r": 738
+},
+"10125": {
+"ine": "10125",
+"parts": 1478,
+"churches": 1,
+"shift": 160,
+"byChurch": true,
+"r": 546
+},
+"10127": {
+"ine": "10127",
+"parts": 5844,
+"churches": 1,
+"shift": 44,
+"byChurch": true,
+"r": 790
+},
+"06086": {
+"ine": "06086",
+"parts": 1441,
+"churches": 1,
+"shift": 164,
+"byChurch": true,
+"r": 573
+},
+"06087": {
+"ine": "06087",
+"parts": 4147,
+"churches": 1,
+"shift": 31,
+"byChurch": false,
+"r": 635
+},
+"06088": {
+"ine": "06088",
+"parts": 8674,
+"churches": 2,
+"shift": 17,
+"byChurch": true,
+"r": 1058
+},
+"10126": {
+"ine": "10126",
+"parts": 2694,
+"churches": 1,
+"shift": 122,
+"byChurch": true,
+"r": 600
+},
+"10128": {
+"ine": "10128",
+"parts": 6216,
+"churches": 1,
+"shift": 371,
+"byChurch": true,
+"r": 826
+},
+"10129": {
+"ine": "10129",
+"parts": 662,
+"churches": 1,
+"shift": 253,
+"byChurch": true,
+"r": 487
+},
+"06083": {
+"ine": "06083",
+"parts": 8023,
+"churches": 3,
+"shift": 1207,
+"byChurch": true,
+"r": 1500
+},
+"10130": {
+"ine": "10130",
+"parts": 1813,
+"churches": 1,
+"shift": 8,
+"byChurch": true,
+"r": 628
+},
+"10131": {
+"ine": "10131",
+"parts": 7189,
+"churches": 2,
+"shift": 376,
+"byChurch": true,
+"r": 1104
+},
+"10132": {
+"ine": "10132",
+"parts": 984,
+"churches": 1,
+"shift": 127,
+"byChurch": false,
+"r": 486
+},
+"06091": {
+"ine": "06091",
+"parts": 5361,
+"churches": 1,
+"shift": 871,
+"byChurch": true,
+"r": 741
+},
+"10133": {
+"ine": "10133",
+"parts": 2408,
+"churches": 1,
+"shift": 110,
+"byChurch": true,
+"r": 575
+},
+"10134": {
+"ine": "10134",
+"parts": 1115,
+"churches": 1,
+"shift": 113,
+"byChurch": true,
+"r": 522
+},
+"06092": {
+"ine": "06092",
+"parts": 1304,
+"churches": 1,
+"shift": 13838,
+"byChurch": false,
+"r": 518
+},
+"10135": {
+"ine": "10135",
+"parts": 579,
+"churches": 1,
+"shift": 236,
+"byChurch": true,
+"r": 570
+},
+"06094": {
+"ine": "06094",
+"parts": 2699,
+"churches": 1,
+"shift": 193,
+"byChurch": true,
+"r": 604
+},
+"10136": {
+"ine": "10136",
+"parts": 938,
+"churches": 0,
+"shift": 88,
+"byChurch": false,
+"r": 474
+},
+"06093": {
+"ine": "06093",
+"parts": 7603,
+"churches": 1,
+"shift": 24,
+"byChurch": true,
+"r": 765
+},
+"06095": {
+"ine": "06095",
+"parts": 5177,
+"churches": 2,
+"shift": 62,
+"byChurch": true,
+"r": 976
+},
+"06096": {
+"ine": "06096",
+"parts": 836,
+"churches": 1,
+"shift": 197,
+"byChurch": true,
+"r": 467
+},
+"06097": {
+"ine": "06097",
+"parts": 4248,
+"churches": 1,
+"shift": 31,
+"byChurch": true,
+"r": 659
+},
+"06098": {
+"ine": "06098",
+"parts": 888,
+"churches": 1,
+"shift": 154,
+"byChurch": true,
+"r": 520
+},
+"10137": {
+"ine": "10137",
+"parts": 867,
+"churches": 1,
+"shift": 138,
+"byChurch": true,
+"r": 497
+},
+"10138": {
+"ine": "10138",
+"parts": 1190,
+"churches": 1,
+"shift": 130,
+"byChurch": true,
+"r": 513
+},
+"10139": {
+"ine": "10139",
+"parts": 336,
+"churches": 1,
+"shift": 70,
+"byChurch": false,
+"r": 432
+},
+"10141": {
+"ine": "10141",
+"parts": 1286,
+"churches": 1,
+"shift": 65,
+"byChurch": true,
+"r": 470
+},
+"10140": {
+"ine": "10140",
+"parts": 2533,
+"churches": 1,
+"shift": 60,
+"byChurch": false,
+"r": 589
+},
+"06101": {
+"ine": "06101",
+"parts": 1101,
+"churches": 1,
+"shift": 150,
+"byChurch": true,
+"r": 499
+},
+"10142": {
+"ine": "10142",
+"parts": 1177,
+"churches": 1,
+"shift": 72,
+"byChurch": true,
+"r": 543
+},
+"10143": {
+"ine": "10143",
+"parts": 555,
+"churches": 1,
+"shift": 226,
+"byChurch": false,
+"r": 447
+},
+"06100": {
+"ine": "06100",
+"parts": 2708,
+"churches": 1,
+"shift": 230,
+"byChurch": false,
+"r": 536
+},
+"10145": {
+"ine": "10145",
+"parts": 624,
+"churches": 1,
+"shift": 152,
+"byChurch": true,
+"r": 441
+},
+"10146": {
+"ine": "10146",
+"parts": 1380,
+"churches": 1,
+"shift": 292,
+"byChurch": true,
+"r": 612
+},
+"10147": {
+"ine": "10147",
+"parts": 2136,
+"churches": 1,
+"shift": 151,
+"byChurch": true,
+"r": 589
+},
+"10148": {
+"ine": "10148",
+"parts": 8205,
+"churches": 3,
+"shift": 31,
+"byChurch": true,
+"r": 1482
+},
+"10149": {
+"ine": "10149",
+"parts": 1320,
+"churches": 1,
+"shift": 32,
+"byChurch": true,
+"r": 507
+},
+"10150": {
+"ine": "10150",
+"parts": 993,
+"churches": 1,
+"shift": 98,
+"byChurch": false,
+"r": 487
+},
+"10151": {
+"ine": "10151",
+"parts": 569,
+"churches": 1,
+"shift": 217,
+"byChurch": true,
+"r": 457
+},
+"10152": {
+"ine": "10152",
+"parts": 1247,
+"churches": 1,
+"shift": 148,
+"byChurch": true,
+"r": 494
+},
+"06102": {
+"ine": "06102",
+"parts": 2428,
+"churches": 1,
+"shift": 51,
+"byChurch": true,
+"r": 562
+},
+"06107": {
+"ine": "06107",
+"parts": 2438,
+"churches": 1,
+"shift": 25,
+"byChurch": true,
+"r": 614
+},
+"06108": {
+"ine": "06108",
+"parts": 3707,
+"churches": 1,
+"shift": 219,
+"byChurch": true,
+"r": 662
+},
+"06103": {
+"ine": "06103",
+"parts": 4917,
+"churches": 1,
+"shift": 106,
+"byChurch": false,
+"r": 799
+},
+"06104": {
+"ine": "06104",
+"parts": 1367,
+"churches": 1,
+"shift": 98,
+"byChurch": true,
+"r": 524
+},
+"06105": {
+"ine": "06105",
+"parts": 1904,
+"churches": 1,
+"shift": 54,
+"byChurch": true,
+"r": 521
+},
+"06106": {
+"ine": "06106",
+"parts": 793,
+"churches": 1,
+"shift": 205,
+"byChurch": true,
+"r": 498
+},
+"10905": {
+"ine": "10905",
+"parts": 1121,
+"churches": 1,
+"shift": 49,
+"byChurch": true,
+"r": 532
+},
+"06902": {
+"ine": "06902",
+"parts": 2251,
+"churches": 0,
+"shift": 88,
+"byChurch": false,
+"r": 623
+},
+"10153": {
+"ine": "10153",
+"parts": 1003,
+"churches": 0,
+"shift": 46,
+"byChurch": false,
+"r": 470
+},
+"06109": {
+"ine": "06109",
+"parts": 5942,
+"churches": 1,
+"shift": 46,
+"byChurch": true,
+"r": 746
+},
+"10154": {
+"ine": "10154",
+"parts": 327,
+"churches": 0,
+"shift": 101,
+"byChurch": false,
+"r": 458
+},
+"06110": {
+"ine": "06110",
+"parts": 539,
+"churches": 1,
+"shift": 214,
+"byChurch": false,
+"r": 446
+},
+"06111": {
+"ine": "06111",
+"parts": 916,
+"churches": 1,
+"shift": 121,
+"byChurch": true,
+"r": 515
+},
+"06112": {
+"ine": "06112",
+"parts": 1253,
+"churches": 1,
+"shift": 147,
+"byChurch": false,
+"r": 494
+},
+"06113": {
+"ine": "06113",
+"parts": 4269,
+"churches": 1,
+"shift": 244,
+"byChurch": true,
+"r": 688
+},
+"10155": {
+"ine": "10155",
+"parts": 1725,
+"churches": 1,
+"shift": 34,
+"byChurch": false,
+"r": 568
+},
+"06114": {
+"ine": "06114",
+"parts": 458,
+"churches": 1,
+"shift": 81,
+"byChurch": true,
+"r": 442
+},
+"10156": {
+"ine": "10156",
+"parts": 381,
+"churches": 1,
+"shift": 18,
+"byChurch": false,
+"r": 432
+},
+"10158": {
+"ine": "10158",
+"parts": 1391,
+"churches": 1,
+"shift": 151,
+"byChurch": true,
+"r": 489
+},
+"10157": {
+"ine": "10157",
+"parts": 603,
+"churches": 1,
+"shift": 83,
+"byChurch": true,
+"r": 467
+},
+"10159": {
+"ine": "10159",
+"parts": 958,
+"churches": 0,
+"shift": 91,
+"byChurch": false,
+"r": 479
+},
+"10160": {
+"ine": "10160",
+"parts": 604,
+"churches": 1,
+"shift": 44,
+"byChurch": false,
+"r": 465
+},
+"10901": {
+"ine": "10901",
+"parts": 2115,
+"churches": 1,
+"shift": 175,
+"byChurch": false,
+"r": 576
+},
+"10161": {
+"ine": "10161",
+"parts": 537,
+"churches": 0,
+"shift": 6,
+"byChurch": false,
+"r": 430
+},
+"10162": {
+"ine": "10162",
+"parts": 1684,
+"churches": 1,
+"shift": 36,
+"byChurch": true,
+"r": 506
+},
+"06116": {
+"ine": "06116",
+"parts": 2826,
+"churches": 1,
+"shift": 113,
+"byChurch": true,
+"r": 603
+},
+"10163": {
+"ine": "10163",
+"parts": 1349,
+"churches": 0,
+"shift": 87,
+"byChurch": false,
+"r": 463
+},
+"06117": {
+"ine": "06117",
+"parts": 2479,
+"churches": 1,
+"shift": 105,
+"byChurch": true,
+"r": 596
+},
+"10164": {
+"ine": "10164",
+"parts": 1195,
+"churches": 1,
+"shift": 48,
+"byChurch": false,
+"r": 525
+},
+"06119": {
+"ine": "06119",
+"parts": 1113,
+"churches": 1,
+"shift": 116,
+"byChurch": true,
+"r": 541
+},
+"06123": {
+"ine": "06123",
+"parts": 6098,
+"churches": 1,
+"shift": 55,
+"byChurch": true,
+"r": 778
+},
+"06118": {
+"ine": "06118",
+"parts": 787,
+"churches": 1,
+"shift": 27,
+"byChurch": true,
+"r": 445
+},
+"06120": {
+"ine": "06120",
+"parts": 4851,
+"churches": 2,
+"shift": 191,
+"byChurch": true,
+"r": 723
+},
+"10165": {
+"ine": "10165",
+"parts": 874,
+"churches": 0,
+"shift": 121,
+"byChurch": false,
+"r": 476
+},
+"10167": {
+"ine": "10167",
+"parts": 692,
+"churches": 1,
+"shift": 169,
+"byChurch": true,
+"r": 473
+},
+"10166": {
+"ine": "10166",
+"parts": 873,
+"churches": 1,
+"shift": 37,
+"byChurch": false,
+"r": 478
+},
+"10168": {
+"ine": "10168",
+"parts": 821,
+"churches": 1,
+"shift": 48,
+"byChurch": true,
+"r": 474
+},
+"06121": {
+"ine": "06121",
+"parts": 3586,
+"churches": 1,
+"shift": 253,
+"byChurch": true,
+"r": 736
+},
+"10169": {
+"ine": "10169",
+"parts": 1609,
+"churches": 1,
+"shift": 316,
+"byChurch": true,
+"r": 497
+},
+"10170": {
+"ine": "10170",
+"parts": 671,
+"churches": 1,
+"shift": 398,
+"byChurch": true,
+"r": 467
+},
+"10171": {
+"ine": "10171",
+"parts": 820,
+"churches": 1,
+"shift": 29,
+"byChurch": false,
+"r": 488
+},
+"10172": {
+"ine": "10172",
+"parts": 1704,
+"churches": 1,
+"shift": 207,
+"byChurch": true,
+"r": 527
+},
+"10173": {
+"ine": "10173",
+"parts": 954,
+"churches": 0,
+"shift": 1099,
+"byChurch": false,
+"r": 554
+},
+"06124": {
+"ine": "06124",
+"parts": 3109,
+"churches": 2,
+"shift": 29,
+"byChurch": true,
+"r": 611
+},
+"10174": {
+"ine": "10174",
+"parts": 366,
+"churches": 1,
+"shift": 146,
+"byChurch": true,
+"r": 456
+},
+"10175": {
+"ine": "10175",
+"parts": 3562,
+"churches": 1,
+"shift": 161,
+"byChurch": false,
+"r": 589
+},
+"10176": {
+"ine": "10176",
+"parts": 861,
+"churches": 1,
+"shift": 143,
+"byChurch": true,
+"r": 491
+},
+"10177": {
+"ine": "10177",
+"parts": 2354,
+"churches": 1,
+"shift": 10,
+"byChurch": true,
+"r": 631
+},
+"06125": {
+"ine": "06125",
+"parts": 4273,
+"churches": 1,
+"shift": 204,
+"byChurch": true,
+"r": 611
+},
+"06126": {
+"ine": "06126",
+"parts": 2544,
+"churches": 1,
+"shift": 188,
+"byChurch": true,
+"r": 656
+},
+"06127": {
+"ine": "06127",
+"parts": 4970,
+"churches": 1,
+"shift": 750,
+"byChurch": true,
+"r": 694
+},
+"06128": {
+"ine": "06128",
+"parts": 3866,
+"churches": 1,
+"shift": 23,
+"byChurch": true,
+"r": 780
+},
+"10179": {
+"ine": "10179",
+"parts": 808,
+"churches": 1,
+"shift": 81,
+"byChurch": false,
+"r": 476
+},
+"10178": {
+"ine": "10178",
+"parts": 1555,
+"churches": 1,
+"shift": 266,
+"byChurch": false,
+"r": 533
+},
+"10180": {
+"ine": "10180",
+"parts": 3353,
+"churches": 2,
+"shift": 133,
+"byChurch": true,
+"r": 854
+},
+"06130": {
+"ine": "06130",
+"parts": 795,
+"churches": 1,
+"shift": 110,
+"byChurch": true,
+"r": 456
+},
+"10181": {
+"ine": "10181",
+"parts": 1121,
+"churches": 1,
+"shift": 143,
+"byChurch": false,
+"r": 532
+},
+"10904": {
+"ine": "10904",
+"parts": 1331,
+"churches": 1,
+"shift": 74,
+"byChurch": false,
+"r": 539
+},
+"10182": {
+"ine": "10182",
+"parts": 59,
+"churches": 1,
+"shift": 98,
+"byChurch": false,
+"r": 449
+},
+"10183": {
+"ine": "10183",
+"parts": 1373,
+"churches": 1,
+"shift": 83,
+"byChurch": false,
+"r": 553
+},
+"10187": {
+"ine": "10187",
+"parts": 975,
+"churches": 1,
+"shift": 30,
+"byChurch": true,
+"r": 501
+},
+"06131": {
+"ine": "06131",
+"parts": 2138,
+"churches": 1,
+"shift": 84,
+"byChurch": false,
+"r": 573
+},
+"10188": {
+"ine": "10188",
+"parts": 1285,
+"churches": 1,
+"shift": 142,
+"byChurch": false,
+"r": 504
+},
+"10185": {
+"ine": "10185",
+"parts": 949,
+"churches": 1,
+"shift": 364,
+"byChurch": false,
+"r": 519
+},
+"10186": {
+"ine": "10186",
+"parts": 1412,
+"churches": 1,
+"shift": 160,
+"byChurch": true,
+"r": 557
+},
+"10189": {
+"ine": "10189",
+"parts": 3643,
+"churches": 1,
+"shift": 40,
+"byChurch": true,
+"r": 668
+},
+"10190": {
+"ine": "10190",
+"parts": 1300,
+"churches": 1,
+"shift": 31,
+"byChurch": true,
+"r": 507
+},
+"06132": {
+"ine": "06132",
+"parts": 1367,
+"churches": 1,
+"shift": 421,
+"byChurch": true,
+"r": 553
+},
+"06133": {
+"ine": "06133",
+"parts": 2673,
+"churches": 1,
+"shift": 365,
+"byChurch": true,
+"r": 640
+},
+"10191": {
+"ine": "10191",
+"parts": 899,
+"churches": 1,
+"shift": 38,
+"byChurch": true,
+"r": 517
+},
+"10192": {
+"ine": "10192",
+"parts": 1811,
+"churches": 1,
+"shift": 28,
+"byChurch": true,
+"r": 530
+},
+"10193": {
+"ine": "10193",
+"parts": 2309,
+"churches": 1,
+"shift": 18,
+"byChurch": false,
+"r": 603
+},
+"10194": {
+"ine": "10194",
+"parts": 1355,
+"churches": 1,
+"shift": 11,
+"byChurch": false,
+"r": 511
+},
+"06134": {
+"ine": "06134",
+"parts": 953,
+"churches": 0,
+"shift": 87,
+"byChurch": false,
+"r": 514
+},
+"06135": {
+"ine": "06135",
+"parts": 1291,
+"churches": 1,
+"shift": 239,
+"byChurch": true,
+"r": 586
+},
+"10195": {
+"ine": "10195",
+"parts": 4644,
+"churches": 3,
+"shift": 425,
+"byChurch": true,
+"r": 890
+},
+"06129": {
+"ine": "06129",
+"parts": 825,
+"churches": 1,
+"shift": 221,
+"byChurch": true,
+"r": 520
+},
+"06136": {
+"ine": "06136",
+"parts": 2723,
+"churches": 1,
+"shift": 65,
+"byChurch": true,
+"r": 607
+},
+"10196": {
+"ine": "10196",
+"parts": 565,
+"churches": 1,
+"shift": 14,
+"byChurch": false,
+"r": 480
+},
+"06137": {
+"ine": "06137",
+"parts": 1882,
+"churches": 1,
+"shift": 311,
+"byChurch": true,
+"r": 557
+},
+"10197": {
+"ine": "10197",
+"parts": 384,
+"churches": 0,
+"shift": 41,
+"byChurch": false,
+"r": 434
+},
+"10198": {
+"ine": "10198",
+"parts": 2425,
+"churches": 0,
+"shift": 398,
+"byChurch": false,
+"r": 560
+},
+"10199": {
+"ine": "10199",
+"parts": 638,
+"churches": 1,
+"shift": 18,
+"byChurch": false,
+"r": 455
+},
+"06901": {
+"ine": "06901",
+"parts": 3028,
+"churches": 1,
+"shift": 36,
+"byChurch": true,
+"r": 668
+},
+"10200": {
+"ine": "10200",
+"parts": 1648,
+"churches": 1,
+"shift": 175,
+"byChurch": true,
+"r": 481
+},
+"10201": {
+"ine": "10201",
+"parts": 607,
+"churches": 0,
+"shift": 117,
+"byChurch": false,
+"r": 461
+},
+"10202": {
+"ine": "10202",
+"parts": 1385,
+"churches": 1,
+"shift": 270,
+"byChurch": true,
+"r": 517
+},
+"06138": {
+"ine": "06138",
+"parts": 1702,
+"churches": 1,
+"shift": 227,
+"byChurch": true,
+"r": 563
+},
+"10203": {
+"ine": "10203",
+"parts": 3724,
+"churches": 2,
+"shift": 128,
+"byChurch": true,
+"r": 776
+},
+"06139": {
+"ine": "06139",
+"parts": 1404,
+"churches": 1,
+"shift": 80,
+"byChurch": true,
+"r": 501
+},
+"06140": {
+"ine": "06140",
+"parts": 1315,
+"churches": 1,
+"shift": 155,
+"byChurch": true,
+"r": 526
+},
+"06141": {
+"ine": "06141",
+"parts": 3726,
+"churches": 1,
+"shift": 33,
+"byChurch": true,
+"r": 618
+},
+"06147": {
+"ine": "06147",
+"parts": 788,
+"churches": 1,
+"shift": 21,
+"byChurch": true,
+"r": 481
+},
+"06148": {
+"ine": "06148",
+"parts": 1159,
+"churches": 1,
+"shift": 263,
+"byChurch": true,
+"r": 562
+},
+"06146": {
+"ine": "06146",
+"parts": 2187,
+"churches": 1,
+"shift": 472,
+"byChurch": true,
+"r": 560
+},
+"06142": {
+"ine": "06142",
+"parts": 658,
+"churches": 1,
+"shift": 190,
+"byChurch": true,
+"r": 469
+},
+"06143": {
+"ine": "06143",
+"parts": 3688,
+"churches": 1,
+"shift": 321,
+"byChurch": true,
+"r": 738
+},
+"06144": {
+"ine": "06144",
+"parts": 1427,
+"churches": 1,
+"shift": 585,
+"byChurch": true,
+"r": 510
+},
+"06145": {
+"ine": "06145",
+"parts": 1517,
+"churches": 1,
+"shift": 52,
+"byChurch": true,
+"r": 554
+},
+"10204": {
+"ine": "10204",
+"parts": 843,
+"churches": 1,
+"shift": 120,
+"byChurch": true,
+"r": 494
+},
+"10205": {
+"ine": "10205",
+"parts": 3032,
+"churches": 1,
+"shift": 66,
+"byChurch": true,
+"r": 635
+},
+"10902": {
+"ine": "10902",
+"parts": 1431,
+"churches": 1,
+"shift": 90,
+"byChurch": false,
+"r": 539
+},
+"10206": {
+"ine": "10206",
+"parts": 759,
+"churches": 1,
+"shift": 132,
+"byChurch": true,
+"r": 461
+},
+"10207": {
+"ine": "10207",
+"parts": 1422,
+"churches": 1,
+"shift": 315,
+"byChurch": true,
+"r": 495
+},
+"10208": {
+"ine": "10208",
+"parts": 487,
+"churches": 1,
+"shift": 33,
+"byChurch": true,
+"r": 440
+},
+"06149": {
+"ine": "06149",
+"parts": 8665,
+"churches": 3,
+"shift": 44,
+"byChurch": true,
+"r": 990
+},
+"06150": {
+"ine": "06150",
+"parts": 1628,
+"churches": 1,
+"shift": 33,
+"byChurch": true,
+"r": 546
+},
+"06151": {
+"ine": "06151",
+"parts": 2233,
+"churches": 1,
+"shift": 118,
+"byChurch": true,
+"r": 573
+},
+"06152": {
+"ine": "06152",
+"parts": 2015,
+"churches": 1,
+"shift": 35,
+"byChurch": true,
+"r": 588
+},
+"10209": {
+"ine": "10209",
+"parts": 1142,
+"churches": 1,
+"shift": 149,
+"byChurch": true,
+"r": 471
+},
+"10210": {
+"ine": "10210",
+"parts": 1123,
+"churches": 1,
+"shift": 189,
+"byChurch": true,
+"r": 487
+},
+"06153": {
+"ine": "06153",
+"parts": 8648,
+"churches": 3,
+"shift": 54,
+"byChurch": true,
+"r": 1263
+},
+"10211": {
+"ine": "10211",
+"parts": 1233,
+"churches": 1,
+"shift": 326,
+"byChurch": true,
+"r": 500
+},
+"10212": {
+"ine": "10212",
+"parts": 2504,
+"churches": 1,
+"shift": 246,
+"byChurch": true,
+"r": 633
+},
+"06154": {
+"ine": "06154",
+"parts": 3014,
+"churches": 1,
+"shift": 281,
+"byChurch": true,
+"r": 693
+},
+"10214": {
+"ine": "10214",
+"parts": 756,
+"churches": 0,
+"shift": 69,
+"byChurch": false,
+"r": 462
+},
+"06156": {
+"ine": "06156",
+"parts": 816,
+"churches": 1,
+"shift": 56,
+"byChurch": true,
+"r": 580
+},
+"10213": {
+"ine": "10213",
+"parts": 1489,
+"churches": 0,
+"shift": 333,
+"byChurch": false,
+"r": 509
+},
+"06155": {
+"ine": "06155",
+"parts": 2773,
+"churches": 1,
+"shift": 51,
+"byChurch": false,
+"r": 630
+},
+"06157": {
+"ine": "06157",
+"parts": 1450,
+"churches": 1,
+"shift": 215,
+"byChurch": true,
+"r": 487
+},
+"10215": {
+"ine": "10215",
+"parts": 862,
+"churches": 1,
+"shift": 41,
+"byChurch": true,
+"r": 501
+},
+"06158": {
+"ine": "06158",
+"parts": 8069,
+"churches": 3,
+"shift": 267,
+"byChurch": true,
+"r": 1092
+},
+"06159": {
+"ine": "06159",
+"parts": 3835,
+"churches": 1,
+"shift": 292,
+"byChurch": true,
+"r": 669
+},
+"06160": {
+"ine": "06160",
+"parts": 4685,
+"churches": 1,
+"shift": 316,
+"byChurch": true,
+"r": 699
+},
+"06161": {
+"ine": "06161",
+"parts": 768,
+"churches": 1,
+"shift": 1278,
+"byChurch": true,
+"r": 474
+},
+"10216": {
+"ine": "10216",
+"parts": 2641,
+"churches": 1,
+"shift": 87,
+"byChurch": false,
+"r": 614
+},
+"10217": {
+"ine": "10217",
+"parts": 1892,
+"churches": 1,
+"shift": 295,
+"byChurch": true,
+"r": 503
+},
+"10218": {
+"ine": "10218",
+"parts": 2794,
+"churches": 2,
+"shift": 235,
+"byChurch": true,
+"r": 562
+},
+"10219": {
+"ine": "10219",
+"parts": 3752,
+"churches": 1,
+"shift": 208,
+"byChurch": true,
+"r": 572
+}
+}

@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guareña · 388 Pueblos</title>
+<meta name="description" content="Pueblo 001 de 388: el gemelo digital de Guareña (Badajoz), construido edificio a edificio con datos del Catastro.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/pueblo.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c" aria-label="Modelo 3D de Guareña. Arrastra para girar, rueda o pellizco para acercar."></canvas>
+<div id="labels"></div>
+
+<header class="top">
+  <a class="brand" href="index.html" aria-label="Volver a 388 Pueblos">388 <em>pueblos</em></a>
+  <div class="right">
+    <a class="btn" href="index.html#los388">← Los 388</a>
+    <a class="btn primary" href="index.html#unete">Quiero jugar aquí</a>
+  </div>
+</header>
+
+<aside class="panel" aria-label="Guareña">
+  <section class="glass">
+    <span class="kicker">Pueblo 001 de 388 · 06060</span>
+    <h1>Guareña<small>Vegas Altas del Guadiana, Badajoz</small></h1>
+    <div class="facts">
+      <div><b>6665</b><span>Vecinos 2025</span></div>
+      <div><b>285 m</b><span>Altitud</span></div>
+      <div><b>283 km²</b><span>Término</span></div>
+    </div>
+    <p>Tierra de castúos, cuna de Luis Chamizo y de Eugenio Frutos, y uno de los yacimientos tartésicos más importantes de la península. Este es su gemelo digital, versión 0.1.</p>
+    <div class="status mono"><span>Gemelo <b>v0.1</b></span><span><b id="n-parts">7.985</b> volúmenes</span><span>Catastro</span></div>
+  </section>
+
+  <section class="glass game paseo" aria-labelledby="t-paseo">
+    <span class="kicker">Vecinos conectados</span>
+    <h2 id="t-paseo">Pasea con otras personas</h2>
+    <p class="online mono" id="online"><i></i><span>Conectando…</span></p>
+    <button class="btn primary big" id="walk" type="button" aria-pressed="false">Pasear por el pueblo</button>
+    <div id="paseo-ui" hidden>
+      <p class="hint" style="margin-bottom:.6rem">Eres <b id="alias">vecino</b>. Muévete con WASD o las flechas, o toca una calle. Sin chat libre: saluda con frases y emojis.</p>
+      <div class="row" id="frases" style="margin-bottom:.5rem"></div>
+      <div class="row emo" id="emos"></div>
+    </div>
+    <div class="passbar mono" id="pass"><span>Tu pasaporte</span><span>…</span></div>
+  </section>
+
+  <section class="glass game" aria-labelledby="t-game">
+    <span class="kicker">Minijuego</span>
+    <h2 id="t-game">Encuentra los nidos de cigüeña</h2>
+    <div class="nests" id="nests" aria-live="polite"></div>
+    <p class="hint" id="hint">Gira el pueblo y busca los nidos sobre torres y tejados. Cada nido desbloquea una historia de Guareña.</p>
+  </section>
+
+  <section class="glass">
+    <span class="kicker">Lugares</span>
+    <div class="places" id="places"></div>
+    <div class="places"><button type="button" id="tur">Casas del Turuñuelo<span>Fuera del casco · próximamente</span></button></div>
+  </section>
+
+  <section class="glass">
+    <details>
+      <summary><span class="kicker">Calendario 2026</span></summary>
+      <div class="cal" style="margin-top:.8rem">
+        <div><span>13–17 feb</span><span>Carnaval</span></div>
+        <div><span>12–15 may</span><span>San Isidro, romería en el Pantano de San Roque</span></div>
+        <div><span>31 jul–1 ago</span><span>Desafío Castúo, Semana Juvenil</span></div>
+        <div><span>16–23 ago</span><span>Ferias y Fiestas de Agosto</span></div>
+        <div><span>11–14 sep</span><span>Fiestas del Cristo de las Aguas</span></div>
+        <div><span>oct–nov</span><span>Ruta del Melón</span></div>
+        <div><span>nov</span><span>Degusta el Miajón</span></div>
+      </div>
+      <p class="hint" style="margin-top:.7rem">En el juego, cada fiesta se celebrará a la vez que en el pueblo.</p>
+    </details>
+  </section>
+
+  <p class="mono" style="color:var(--niebla-2);padding:0 .3rem;line-height:1.7">Edificios: D. G. del Catastro (INSPIRE). Ubicaciones: © OpenStreetMap. Volumetría automática: no es cartografía oficial.</p>
+</aside>
+
+<aside class="card glass" id="card" hidden aria-live="polite">
+  <button class="x" type="button" id="card-x" aria-label="Cerrar">×</button>
+  <span class="kicker" id="card-k">Nido 1 de 9</span>
+  <h3 id="card-t"></h3>
+  <p id="card-p"></p>
+  <span class="src" id="card-s"></span>
+</aside>
+
+<div class="dock glass" role="group" aria-label="Hora del día">
+  <span class="lab mono">Luz</span>
+  <button class="btn" type="button" data-t="-1" aria-pressed="false">Mediodía</button>
+  <button class="btn" type="button" data-t="0" aria-pressed="true">Atardecer</button>
+  <button class="btn" type="button" data-t="1" aria-pressed="false">Noche</button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<div class="loading" id="loading"><div><b>Guareña</b><span class="mono" id="ld">Levantando 7.985 volúmenes…</span></div></div>
+
+<script type="module" src="js/guarena.js"></script>
+</body>
+</html>

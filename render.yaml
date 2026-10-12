@@ -1,0 +1,17 @@
+# Despliegue del servidor propio de 388 Pueblos en Render (web + multijugador + base de datos).
+# El disco persistente guarda la base de datos SQLite entre despliegues.
+services:
+  - type: web
+    name: 388-pueblos
+    runtime: python
+    plan: starter
+    buildCommand: python3 -m py_compile server/servidor.py
+    startCommand: python3 server/servidor.py --host 0.0.0.0 --port $PORT --db /var/data/388pueblos.sqlite3
+    healthCheckPath: /api/online
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+    disk:
+      name: datos
+      mountPath: /var/data
+      sizeGB: 1

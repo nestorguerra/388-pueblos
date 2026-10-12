@@ -1,0 +1,717 @@
+<title>388 Pueblos</title>
+<meta name="description" content="388 Pueblos: el gemelo digital y mundo online de los 388 municipios de Extremadura. Empezamos por Guareña.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Concepto: una noche sobre Extremadura. El scroll es un vuelo de cámara desde la plaza de Guareña
+   hasta las 388 luces; la interfaz es el HUD del gemelo digital (UTM, código INE, habitantes).
+   Secciones de noche (mundo 3D detrás) alternan con secciones de cal rematadas por un zócalo de añil. */
+:root {
+  color-scheme: dark;
+  --noche: #070a14;
+  --noche-2: #0d1326;
+  --noche-3: #151d36;
+  --linea: rgba(186, 198, 255, 0.16);
+  --cal: #eef0ec;
+  --cal-2: #e2e5df;
+  --tinta: #0c1122;
+  --niebla: #9ba4c8;
+  --niebla-2: #6c7598;
+  --sodio: #ffa94d;
+  --sodio-2: #ffcf91;
+  --anil: #34489c;
+  --anil-claro: #8fa2ff;
+  --almagre: #c2492b;
+  --vega: #6fa58a;
+
+  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --f-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --f-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+
+  --gutter: clamp(16px, 4vw, 56px);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io: cubic-bezier(0.76, 0, 0.24, 1);
+}
+* { box-sizing: border-box; }
+html { background: var(--noche); }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+body {
+  margin: 0;
+  background: var(--noche);
+  color: var(--cal);
+  font-family: var(--f-body);
+  font-size: clamp(1rem, 0.3vw + 0.92rem, 1.15rem);
+  line-height: 1.55;
+  font-variation-settings: "wdth" 100;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; }
+::selection { background: var(--sodio); color: var(--tinta); }
+:focus-visible { outline: 2px solid var(--sodio); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; font-weight: 800; }
+p { margin: 0; text-wrap: pretty; }
+.sr { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- tipografía ---------- */
+.mono { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.09em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.kicker { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sodio); display: inline-flex; gap: 0.8em; align-items: center; }
+.kicker::before { content: ""; width: 1.6em; height: 1px; background: currentColor; }
+.display { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; text-transform: uppercase; letter-spacing: -0.035em; line-height: 0.86; }
+.h2 { font-family: var(--f-display); font-variation-settings: "wdth" 112; font-weight: 750; font-size: clamp(2.3rem, 5.6vw, 5.6rem); line-height: 0.95; letter-spacing: -0.035em; }
+.serif { font-family: var(--f-serif); font-weight: 400; font-style: italic; letter-spacing: -0.01em; text-transform: none; }
+.lead { font-size: clamp(1.1rem, 1.2vw + 0.7rem, 1.45rem); line-height: 1.45; max-width: 38ch; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- capas fijas ---------- */
+#world { position: fixed; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; background: var(--noche); }
+#wlabels { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+.wlabel { position: absolute; left: 0; top: 0; opacity: 0; white-space: nowrap; font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cal); padding-left: 14px; transform-origin: 0 0; text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55); }
+.wlabel::before { content: ""; position: absolute; left: 0; top: 0.45em; width: 7px; height: 7px; border: 1px solid currentColor; border-radius: 50%; }
+.wlabel b { display: block; font-weight: 500; }
+.wlabel span { display: block; opacity: 0.7; font-size: 0.6rem; }
+.wlabel i { font-style: normal; }
+.wlabel.home { color: var(--sodio); }
+.wlabel.home b { font-size: 0.8rem; }
+.wlabel.city b { font-size: 0.66rem; }
+.wlabel.minor { color: var(--niebla); }
+.wlabel.prov { color: var(--niebla); font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.2em; padding-left: 0; }
+.wlabel.prov::before, .wlabel.country::before { display: none; }
+.wlabel.prov span { font-family: var(--f-mono); font-size: 0.6rem; letter-spacing: 0.12em; }
+.wlabel.country { color: var(--niebla-2); letter-spacing: 0.5em; padding-left: 0; }
+.grain { position: fixed; inset: -50%; z-index: 60; pointer-events: none; opacity: 0.07; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); animation: grain 1.2s steps(6) infinite; }
+@keyframes grain { 0% { transform: translate(0, 0); } 20% { transform: translate(-3%, 2%); } 40% { transform: translate(2%, -3%); } 60% { transform: translate(-2%, -1%); } 80% { transform: translate(3%, 3%); } 100% { transform: translate(0, 0); } }
+
+/* ---------- precarga ---------- */
+#loader { position: fixed; inset: 0; z-index: 80; background: var(--noche); display: grid; place-items: center; padding: var(--gutter); clip-path: inset(0 0 0 0); }
+#loader .inner { display: grid; gap: 1.4rem; justify-items: center; text-align: center; }
+#loader .count { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: clamp(5rem, 22vw, 15rem); line-height: 0.8; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; color: var(--cal); }
+#loader .count small { font-size: 0.24em; color: var(--niebla-2); letter-spacing: -0.02em; vertical-align: top; margin-left: 0.15em; }
+#loader .name { font-family: var(--f-serif); font-style: italic; font-size: clamp(1.4rem, 3vw, 2.2rem); color: var(--sodio); min-height: 1.3em; }
+#loader .status { color: var(--niebla); }
+#loader .bar { width: min(420px, 70vw); height: 1px; background: var(--linea); position: relative; overflow: hidden; }
+#loader .bar i { position: absolute; inset: 0; background: var(--sodio); transform-origin: 0 50%; transform: scaleX(0); }
+.no-webgl #loader { display: none; }
+
+/* ---------- navegación ---------- */
+.nav { position: fixed; top: env(safe-area-inset-top, 0px); left: 0; right: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 18px var(--gutter); pointer-events: none; mix-blend-mode: normal; }
+.nav > * { pointer-events: auto; }
+.brand { display: inline-flex; align-items: baseline; gap: 0.5rem; text-decoration: none; font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; text-transform: uppercase; }
+.brand em { font-family: var(--f-serif); font-weight: 400; font-style: italic; text-transform: none; letter-spacing: 0; font-size: 1.2rem; color: var(--sodio); }
+.nav ul { list-style: none; display: flex; gap: 0.25rem; margin: 0; padding: 4px; border: 1px solid var(--linea); border-radius: 999px; background: rgba(7, 10, 20, 0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.nav ul a { display: block; padding: 0.5rem 0.9rem; border-radius: 999px; text-decoration: none; font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--niebla); transition: color 0.2s, background 0.2s; }
+.nav ul a:hover, .nav ul a.on { color: var(--cal); background: rgba(255, 255, 255, 0.07); }
+.btn { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0.85rem 1.25rem; border-radius: 999px; border: 1px solid var(--linea); background: rgba(255, 255, 255, 0.04); color: var(--cal); font-family: var(--f-mono); font-size: 0.74rem; letter-spacing: 0.09em; text-transform: uppercase; text-decoration: none; cursor: pointer; transition: background 0.25s, color 0.25s, border-color 0.25s, transform 0.25s var(--ease-out); }
+.btn:hover { border-color: rgba(255, 255, 255, 0.4); background: rgba(255, 255, 255, 0.09); }
+.btn.primary { background: var(--sodio); color: var(--tinta); border-color: var(--sodio); font-weight: 500; }
+.btn.primary:hover { background: var(--sodio-2); border-color: var(--sodio-2); }
+.btn .arr { transition: transform 0.3s var(--ease-out); }
+.btn:hover .arr { transform: translateX(4px); }
+.nav .btn { padding: 0.65rem 1rem; background: rgba(7, 10, 20, 0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.nav .btn.primary { background: var(--sodio); }
+@media (max-width: 900px) { .nav ul { display: none; } }
+.nav .brand { transition: color 0.3s; }
+.nav.light .brand { color: var(--tinta); }
+.nav.light .brand em { color: var(--anil); }
+
+/* ---------- HUD de progreso ---------- */
+.hud { position: fixed; left: var(--gutter); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; gap: 1.2rem; align-items: center; color: var(--niebla); pointer-events: none; }
+.hud .coord { display: flex; gap: 1rem; flex-wrap: wrap; }
+.hud .coord b { color: var(--cal); font-weight: 500; }
+.hud-r { position: fixed; right: var(--gutter); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 40; color: var(--niebla); display: flex; align-items: center; gap: 0.8rem; pointer-events: none; }
+.hud-r .hbar { width: 90px; height: 1px; background: var(--linea); position: relative; }
+.hud-r .hbar i { position: absolute; inset: 0; background: var(--sodio); transform-origin: 0 50%; transform: scaleX(0); }
+@media (max-width: 700px) { .hud .coord span:nth-child(n+3) { display: none; } .hud-r { display: none; } }
+
+/* ---------- secciones ---------- */
+main { position: relative; z-index: 2; }
+section { position: relative; }
+.wrap { padding-inline: var(--gutter); }
+.night { background: transparent; }
+.day { background: var(--cal); color: var(--tinta); }
+.day .kicker { color: var(--anil); }
+.day ::selection { background: var(--anil); color: var(--cal); }
+.zocalo { position: relative; }
+.zocalo::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 18px; background: var(--anil); box-shadow: 0 -5px 0 var(--cal), 0 -7px 0 var(--anil); }
+
+/* hero */
+.hero { min-height: 100vh; min-height: 100svh; display: grid; align-content: end; padding: 120px var(--gutter) 116px; }
+.hero::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(7, 10, 20, 0) 30%, rgba(7, 10, 20, 0.28) 62%, rgba(7, 10, 20, 0.72) 100%), linear-gradient(90deg, rgba(7, 10, 20, 0.35), rgba(7, 10, 20, 0) 55%); }
+.hero > * { position: relative; }
+.hero h1 { font-size: clamp(2.6rem, 15vw, 17rem); color: var(--cal); text-shadow: 0 2px 40px rgba(20, 10, 0, 0.18); }
+.hero h1 .line { display: block; overflow: hidden; padding-bottom: 0.04em; }
+.hero h1 .line > span { display: inline-block; }
+.hero h1 .serif { font-size: 0.5em; letter-spacing: -0.02em; color: var(--cal); vertical-align: 0.42em; margin-left: 0.08em; }
+.hero .sub { display: flex; flex-wrap: wrap; gap: 1.6rem 3rem; align-items: end; justify-content: space-between; margin-top: 1.8rem; }
+.hero .sub p { max-width: 34ch; font-size: clamp(1.05rem, 1vw + 0.7rem, 1.4rem); line-height: 1.4; color: var(--cal); text-shadow: 0 1px 18px rgba(0, 0, 0, 0.35); }
+.hero .ctas { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.hero .ctas .btn:not(.primary) { background: rgba(7, 10, 20, 0.45); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.hero-tag { position: absolute; top: 96px; right: var(--gutter); text-align: right; color: var(--cal); display: grid; gap: 0.3rem; text-shadow: 0 1px 10px rgba(0, 0, 0, 0.4); }
+.hero-tag .big { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: 2.4rem; letter-spacing: -0.04em; line-height: 1; }
+.hero-tag .big small { color: var(--sodio); }
+@media (max-width: 700px) { .hero-tag { display: none; } }
+
+/* vuelo (prólogo con cámara) */
+.flight { height: 560vh; pointer-events: none; }
+.flight .skip { pointer-events: auto; }
+.flight .stick { position: sticky; top: 0; height: 100vh; height: 100svh; display: grid; align-items: center; padding: 90px var(--gutter); pointer-events: none; }
+.step { grid-area: 1 / 1; max-width: 30rem; padding: 1.6rem 1.6rem 1.4rem; border: 1px solid var(--linea); border-radius: 18px; background: rgba(7, 10, 20, 0.62); backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2); opacity: 0; transform: translateY(30px); pointer-events: auto; display: grid; gap: 0.9rem; }
+.step h2 { font-family: var(--f-display); font-variation-settings: "wdth" 110; font-weight: 750; font-size: clamp(1.7rem, 2.6vw, 2.5rem); line-height: 1; letter-spacing: -0.03em; }
+.step p { color: #d5d9e6; }
+.step .meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; color: var(--niebla); border-top: 1px solid var(--linea); padding-top: 0.9rem; }
+.step .meta b { color: var(--cal); font-weight: 500; }
+.step.right { justify-self: end; }
+.step.final { max-width: 38rem; justify-self: start; text-align: left; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--linea); border: 1px solid var(--linea); border-radius: 12px; overflow: hidden; }
+.stats div { background: rgba(7, 10, 20, 0.7); padding: 1rem 1.1rem; display: grid; gap: 0.2rem; }
+.stats strong { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: clamp(1.9rem, 3.4vw, 3rem); letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.stats strong.s { color: var(--sodio); }
+.stats span { font-size: 0.86rem; color: var(--niebla); line-height: 1.35; }
+.stats small { font-family: var(--f-mono); font-size: 0.62rem; color: var(--niebla-2); letter-spacing: 0.06em; }
+.skip { position: absolute; right: var(--gutter); top: 50%; writing-mode: vertical-rl; pointer-events: auto; }
+@media (max-width: 700px) { .step { align-self: end; margin-bottom: 40px; } .skip { display: none; } }
+@media (max-width: 480px) { .stats { grid-template-columns: 1fr; } .stats div { padding: 0.75rem 0.9rem; } .step.final h2 { font-size: 1.5rem; } }
+
+/* manifiesto */
+.manifesto { padding: 26vh var(--gutter) 22vh; background: linear-gradient(180deg, rgba(7, 10, 20, 0) 0%, rgba(7, 10, 20, 0.82) 22%, rgba(7, 10, 20, 0.9) 100%); }
+.manifesto .statement { font-family: var(--f-display); font-variation-settings: "wdth" 105; font-weight: 600; font-size: clamp(1.8rem, 4.2vw, 4.3rem); line-height: 1.06; letter-spacing: -0.03em; max-width: 22ch; margin-top: 1.4rem; }
+.manifesto .statement .w { opacity: 0.16; transition: opacity 0.2s linear; }
+.manifesto .statement .serif { font-weight: 400; color: var(--sodio); }
+.pillars { margin-top: 12vh; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(1rem, 3vw, 3rem); border-top: 1px solid var(--linea); padding-top: 2rem; }
+.pillars div { display: grid; gap: 0.7rem; align-content: start; min-width: 0; }
+.pillars h3 { font-family: var(--f-serif); font-style: italic; font-weight: 400; font-size: clamp(2rem, 3.4vw, 3.2rem); line-height: 1; color: var(--cal); }
+.pillars p { color: var(--niebla); max-width: 32ch; }
+@media (max-width: 760px) { .pillars { grid-template-columns: 1fr; } }
+
+/* origen: Ana */
+.origin { padding: 18vh var(--gutter) calc(14vh + 26px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(2rem, 6vw, 7rem); align-items: center; }
+.origin .plano { position: relative; aspect-ratio: 1 / 1; max-width: 100%; border: 1px solid rgba(12, 17, 34, 0.14); border-radius: 4px; overflow: hidden; background: var(--cal-2); }
+.origin .plano canvas { width: 100%; height: 100%; display: block; }
+.origin .plano figcaption { position: absolute; left: 14px; right: 14px; bottom: 12px; display: flex; justify-content: space-between; gap: 1rem; color: rgba(12, 17, 34, 0.6); }
+.origin .txt { display: grid; gap: 1.6rem; min-width: 0; }
+.origin h2 { font-size: clamp(2.4rem, 5vw, 5.2rem); }
+.origin h2 .serif { color: var(--anil); font-size: 1.08em; }
+.origin p { max-width: 58ch; color: #2a3048; }
+.quote { margin: 0.6rem 0 0; padding: 1.4rem 0 0; border-top: 1px solid rgba(12, 17, 34, 0.18); }
+.quote p { font-family: var(--f-serif); font-style: italic; font-size: clamp(1.6rem, 2.5vw, 2.35rem); line-height: 1.15; color: var(--tinta); max-width: 26ch; hanging-punctuation: first; }
+.quote cite { display: block; margin-top: 1rem; font-style: normal; color: var(--anil); }
+@media (max-width: 860px) { .origin { grid-template-columns: 1fr; } }
+
+/* capas del mundo (scroll horizontal) */
+.layers { height: 420vh; }
+.layers .stick { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: grid; grid-template-rows: auto 1fr; padding-top: 110px; background: var(--noche); }
+.layers header { padding-inline: var(--gutter); display: flex; justify-content: space-between; align-items: end; gap: 2rem; flex-wrap: wrap; }
+.layers header .h2 { max-width: 15ch; margin-top: 0.8rem; }
+.layers header p { max-width: 36ch; color: var(--niebla); }
+.track { display: flex; gap: clamp(1rem, 2vw, 2rem); padding: 5vh var(--gutter) 9vh; align-items: stretch; will-change: transform; }
+.layer { flex: 0 0 min(78vw, 560px); border: 1px solid var(--linea); border-radius: 22px; background: linear-gradient(180deg, var(--noche-2), var(--noche)); padding: clamp(1.4rem, 2.4vw, 2.2rem); display: grid; grid-template-rows: auto auto 1fr auto; gap: 1rem; position: relative; overflow: hidden; min-width: 0; }
+.layer .lvl { display: flex; justify-content: space-between; color: var(--niebla); }
+.layer .lvl b { color: var(--sodio); font-weight: 500; }
+.layer h3 { font-family: var(--f-display); font-variation-settings: "wdth" 115; font-weight: 750; font-size: clamp(1.8rem, 3vw, 2.8rem); line-height: 0.98; letter-spacing: -0.035em; }
+.layer h3 .serif { color: var(--sodio); font-weight: 400; }
+.layer p { color: #c9cee0; max-width: 44ch; }
+.layer ul { list-style: none; margin: 0; padding: 1rem 0 0; border-top: 1px solid var(--linea); display: grid; gap: 0.45rem; }
+.layer li { display: flex; justify-content: space-between; gap: 1rem; font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--niebla); }
+.layer li b { color: var(--cal); font-weight: 500; text-align: right; }
+.layer .viz { height: 150px; border-radius: 12px; border: 1px solid var(--linea); background: radial-gradient(120% 120% at 50% 100%, rgba(255, 169, 77, 0.08), transparent 60%); position: relative; overflow: hidden; }
+.layer .viz canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+@media (max-width: 760px) { .layers { height: auto; } .layers .stick { position: relative; height: auto; padding-bottom: 4rem; } .track { flex-direction: column; transform: none !important; } .layer { flex-basis: auto; } }
+
+/* cómo se juega */
+.play { padding: 18vh var(--gutter) 16vh; background: var(--noche); }
+.play header { display: grid; gap: 1rem; max-width: 60rem; }
+.cards { margin-top: 8vh; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(0.8rem, 1.6vw, 1.4rem); perspective: 1200px; }
+.card { position: relative; border-radius: 20px; padding: 1.5rem 1.5rem 1.4rem; min-height: 290px; display: grid; grid-template-rows: auto 1fr auto; gap: 1rem; background: var(--noche-2); border: 1px solid var(--linea); transform-style: preserve-3d; transition: transform 0.5s var(--ease-out), border-color 0.3s; min-width: 0; }
+.card:hover { border-color: rgba(255, 169, 77, 0.55); }
+.card .top { display: flex; justify-content: space-between; align-items: start; color: var(--niebla); }
+.card .glyph { width: 56px; height: 56px; color: var(--sodio); }
+.card h3 { font-family: var(--f-display); font-variation-settings: "wdth" 112; font-weight: 750; font-size: clamp(1.4rem, 2vw, 1.9rem); line-height: 1; letter-spacing: -0.03em; align-self: end; }
+.card p { color: var(--niebla); font-size: 0.98rem; }
+.card .tag { color: var(--sodio); }
+@media (max-width: 960px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .cards { grid-template-columns: 1fr; } }
+
+/* los 388: mapa vivo */
+.mapsec { height: 210vh; pointer-events: none; }
+.mapsec .stick { position: sticky; top: 0; height: 100vh; height: 100svh; pointer-events: none; }
+.mapsec .panel { position: absolute; left: var(--gutter); top: 96px; bottom: 24px; width: min(380px, calc(100vw - 2 * var(--gutter))); display: flex; flex-direction: column; gap: 0.9rem; pointer-events: auto; overflow-y: auto; scrollbar-width: none; overscroll-behavior: contain; }
+.mapsec .panel::-webkit-scrollbar { display: none; }
+.mapsec::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 30vh; background: linear-gradient(180deg, var(--noche), rgba(7, 10, 20, 0)); pointer-events: none; }
+.mapsec .panel .box { border: 1px solid var(--linea); border-radius: 18px; background: rgba(7, 10, 20, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 1.1rem; display: grid; gap: 0.85rem; }
+.mapsec h2 { font-family: var(--f-display); font-variation-settings: "wdth" 115; font-weight: 800; font-size: clamp(1.7rem, 2.6vw, 2.4rem); line-height: 0.95; letter-spacing: -0.035em; }
+.mapsec h2 .serif { color: var(--sodio); font-weight: 400; }
+.awake { display: flex; gap: 1rem; align-items: baseline; color: var(--niebla); }
+.awake b { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: 2rem; letter-spacing: -0.04em; color: var(--cal); line-height: 1; }
+.awake b.on { color: var(--sodio); }
+.search { position: relative; }
+.search input { width: 100%; padding: 0.85rem 1rem 0.85rem 2.4rem; border-radius: 12px; border: 1px solid var(--linea); background: rgba(255, 255, 255, 0.05); color: var(--cal); font: inherit; font-size: 0.98rem; }
+.search input::placeholder { color: var(--niebla-2); }
+.search svg { position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; color: var(--niebla); }
+.sugg { list-style: none; margin: 0.35rem 0 0; padding: 0.3rem; border-radius: 12px; border: 1px solid var(--linea); background: var(--noche-2); max-height: 230px; overflow: auto; position: absolute; left: 0; right: 0; z-index: 5; }
+.sugg li button { width: 100%; text-align: left; display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0.7rem; border: 0; border-radius: 8px; background: none; color: var(--cal); font: inherit; font-size: 0.95rem; cursor: pointer; }
+.sugg li button:hover, .sugg li button.act { background: rgba(255, 255, 255, 0.07); }
+.sugg li button span { color: var(--niebla-2); font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.06em; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.chip { border: 1px solid var(--linea); background: transparent; color: var(--niebla); border-radius: 999px; padding: 0.42rem 0.75rem; font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.07em; text-transform: uppercase; cursor: pointer; transition: all 0.2s; }
+.chip:hover { color: var(--cal); border-color: rgba(255, 255, 255, 0.35); }
+.chip[aria-pressed="true"] { background: var(--cal); color: var(--tinta); border-color: var(--cal); }
+.legend { display: grid; gap: 0.35rem; }
+.legend .ramp { height: 8px; border-radius: 4px; }
+.legend .ends { display: flex; justify-content: space-between; color: var(--niebla-2); }
+.rank { display: grid; gap: 0.15rem; }
+.rank li { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.92rem; padding: 0.3rem 0; border-bottom: 1px dashed var(--linea); }
+.rank li span:last-child { font-family: var(--f-mono); color: var(--sodio); font-size: 0.75rem; }
+.rank ol { list-style: none; margin: 0; padding: 0; }
+.muted { color: var(--niebla-2); font-size: 0.85rem; }
+.online-l { display: flex; gap: 0.5rem; align-items: center; margin: 0; color: var(--niebla); }
+.online-l i { width: 8px; height: 8px; border-radius: 50%; background: #6fdc8c; box-shadow: 0 0 10px #6fdc8c; flex: 0 0 auto; }
+.tip { position: fixed; left: 0; top: 0; z-index: 30; pointer-events: none; min-width: 210px; padding: 0.8rem 0.9rem; border-radius: 12px; border: 1px solid var(--linea); background: rgba(7, 10, 20, 0.86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: grid; gap: 0.35rem; opacity: 0; transition: opacity 0.15s; }
+.tip h4 { margin: 0; font-family: var(--f-display); font-variation-settings: "wdth" 110; font-weight: 750; font-size: 1.15rem; letter-spacing: -0.02em; }
+.tip .row { display: flex; justify-content: space-between; gap: 1rem; font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--niebla); }
+.tip .row b { color: var(--cal); font-weight: 500; }
+.sheet { position: absolute; right: var(--gutter); top: 96px; width: min(360px, calc(100vw - 2 * var(--gutter))); border: 1px solid var(--linea); border-radius: 18px; background: rgba(7, 10, 20, 0.8); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 1.2rem; display: grid; gap: 0.9rem; pointer-events: auto; }
+.sheet .x { position: absolute; top: 0.7rem; right: 0.7rem; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--linea); background: none; color: var(--cal); cursor: pointer; font-size: 1rem; line-height: 1; }
+.sheet h3 { font-family: var(--f-display); font-variation-settings: "wdth" 115; font-weight: 800; font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 0.95; letter-spacing: -0.035em; padding-right: 2rem; }
+.sheet .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--linea); border: 1px solid var(--linea); border-radius: 10px; overflow: hidden; }
+.sheet .grid div { background: var(--noche); padding: 0.6rem 0.7rem; display: grid; gap: 0.1rem; }
+.sheet .grid b { font-family: var(--f-display); font-variation-settings: "wdth" 115; font-weight: 750; font-size: 1.15rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.sheet .grid span { font-family: var(--f-mono); font-size: 0.6rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--niebla-2); }
+.status { display: inline-flex; align-items: center; gap: 0.5rem; font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--niebla); }
+.status i { width: 8px; height: 8px; border-radius: 50%; background: var(--niebla-2); }
+.status.on { color: var(--sodio); }
+.status.on i { background: var(--sodio); box-shadow: 0 0 12px var(--sodio); }
+.sheet .note { font-size: 0.86rem; color: var(--niebla); }
+.mapsec .mapcta { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); pointer-events: auto; }
+@media (max-width: 860px) {
+  .mapsec { height: auto; }
+  .mapsec .stick { position: relative; height: auto; min-height: 100svh; display: grid; align-content: end; padding: 60vh var(--gutter) 2rem; gap: 1rem; }
+  .mapsec .panel { position: relative; left: auto; top: auto; bottom: auto; width: 100%; }
+  .mapsec .sheet { position: relative; right: auto; top: auto; width: 100%; }
+  .mapsec .mapcta { position: relative; left: auto; bottom: auto; transform: none; justify-self: start; }
+  .rankbox { display: none !important; }
+}
+
+/* nombres */
+.names { padding: 10vh 0 12vh; overflow: hidden; background: var(--noche); border-top: 1px solid var(--linea); }
+.names header { padding-inline: var(--gutter); display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; align-items: end; margin-bottom: 5vh; }
+.names header p { color: var(--niebla); max-width: 40ch; }
+.row { display: flex; width: max-content; gap: 0; white-space: nowrap; will-change: transform; }
+.row button { border: 0; background: none; color: var(--niebla-2); font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; text-transform: uppercase; letter-spacing: -0.03em; font-size: clamp(1.8rem, 4.6vw, 4.4rem); line-height: 1.08; padding: 0 0.32em; cursor: pointer; transition: color 0.2s; }
+.row button::after { content: "·"; color: var(--linea); margin-left: 0.64em; }
+.row button:hover { color: var(--cal); }
+.row button.home { color: var(--sodio); }
+.row:nth-child(even) button { font-family: var(--f-serif); font-style: italic; font-weight: 400; text-transform: none; letter-spacing: -0.01em; font-size: clamp(2rem, 5vw, 4.8rem); }
+
+/* hoja de ruta */
+.route { padding: 18vh var(--gutter) calc(16vh + 26px); }
+.route header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr); gap: 2rem; align-items: end; }
+.route header p { color: #2a3048; max-width: 42ch; }
+.phases { margin-top: 9vh; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; position: relative; }
+.phases::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px; background: rgba(12, 17, 34, 0.18); }
+.phases .prog { position: absolute; left: 0; top: -1px; height: 3px; width: 100%; background: var(--anil); transform-origin: 0 50%; transform: scaleX(0); }
+.phase { padding: 1.6rem 1.4rem 0 0; display: grid; gap: 0.8rem; align-content: start; position: relative; min-width: 0; }
+.phase::before { content: ""; position: absolute; top: -6px; left: 0; width: 11px; height: 11px; border-radius: 50%; background: var(--cal); border: 2px solid var(--anil); }
+.phase.now::before { background: var(--sodio); border-color: var(--sodio); box-shadow: 0 0 0 6px rgba(255, 169, 77, 0.25); }
+.phase .n { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: clamp(3rem, 6vw, 5.5rem); line-height: 0.85; letter-spacing: -0.05em; color: transparent; -webkit-text-stroke: 1.2px var(--tinta); }
+.phase.now .n { color: var(--tinta); }
+.phase h3 { font-family: var(--f-display); font-variation-settings: "wdth" 110; font-weight: 750; font-size: clamp(1.25rem, 1.7vw, 1.6rem); line-height: 1.05; letter-spacing: -0.02em; }
+.phase .when { color: var(--anil); }
+.phase p { color: #2a3048; font-size: 0.97rem; }
+.phase ul { margin: 0; padding-left: 1.1rem; color: #2a3048; font-size: 0.93rem; display: grid; gap: 0.25rem; }
+.disclaim { margin-top: 3rem; color: rgba(12, 17, 34, 0.55); }
+@media (max-width: 900px) { .route header { grid-template-columns: 1fr; } .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 3rem; } }
+@media (max-width: 560px) { .phases { grid-template-columns: 1fr; } }
+
+/* ayuntamientos */
+.councils { padding: 16vh var(--gutter) calc(16vh + 26px); background: var(--cal-2); color: var(--tinta); }
+.councils .head { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: 2rem 4rem; align-items: end; }
+.councils .head p { color: #2a3048; max-width: 46ch; }
+.benefits { margin-top: 8vh; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: rgba(12, 17, 34, 0.14); border: 1px solid rgba(12, 17, 34, 0.14); }
+.benefits div { background: var(--cal-2); padding: 1.5rem 1.3rem; display: grid; gap: 0.7rem; align-content: start; min-width: 0; }
+.benefits h3 { font-family: var(--f-display); font-variation-settings: "wdth" 110; font-weight: 750; font-size: 1.3rem; line-height: 1.05; letter-spacing: -0.02em; }
+.benefits p { color: #2a3048; font-size: 0.95rem; }
+.benefits .mono { color: var(--anil); }
+.tiers { margin-top: 3rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.tier { background: var(--cal); border: 1px solid rgba(12, 17, 34, 0.14); border-radius: 18px; padding: 1.6rem; display: grid; gap: 1rem; align-content: start; min-width: 0; }
+.tier.feat { background: var(--tinta); color: var(--cal); border-color: var(--tinta); }
+.tier .mono { color: var(--anil); }
+.tier.feat .mono { color: var(--sodio); }
+.tier h3 { font-family: var(--f-display); font-variation-settings: "wdth" 120; font-weight: 800; font-size: clamp(1.6rem, 2.3vw, 2.2rem); line-height: 0.95; letter-spacing: -0.035em; text-transform: uppercase; }
+.tier ul { margin: 0; padding: 1rem 0 0; list-style: none; border-top: 1px solid rgba(12, 17, 34, 0.14); display: grid; gap: 0.5rem; font-size: 0.95rem; }
+.tier.feat ul { border-color: rgba(255, 255, 255, 0.16); }
+.tier li { display: flex; gap: 0.6rem; }
+.tier li::before { content: ""; flex: 0 0 auto; width: 6px; height: 6px; margin-top: 0.6em; background: var(--anil); }
+.tier.feat li::before { background: var(--sodio); }
+.tier .price { font-family: var(--f-mono); font-size: 0.78rem; letter-spacing: 0.04em; color: #2a3048; }
+.tier.feat .price { color: var(--niebla); }
+.councils .cta { margin-top: 3rem; display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+.councils .btn { color: var(--tinta); border-color: rgba(12, 17, 34, 0.25); background: transparent; }
+.councils .btn.primary { background: var(--tinta); color: var(--cal); border-color: var(--tinta); }
+@media (max-width: 960px) { .councils .head { grid-template-columns: 1fr; } .benefits { grid-template-columns: repeat(2, minmax(0, 1fr)); } .tiers { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .benefits { grid-template-columns: 1fr; } }
+
+/* únete */
+.join { padding: 16vh var(--gutter) 14vh; background: var(--noche); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap: clamp(2rem, 6vw, 6rem); align-items: center; }
+.join h2 { font-size: clamp(2.6rem, 6vw, 6rem); }
+.join h2 .serif { color: var(--sodio); }
+.join form { margin-top: 2rem; display: grid; gap: 0.9rem; max-width: 34rem; }
+.field { display: grid; gap: 0.4rem; }
+.field label, .field .lab { font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--niebla); }
+.field input[type="text"], .field input[type="email"] { width: 100%; padding: 0.9rem 1rem; border-radius: 12px; border: 1px solid var(--linea); background: rgba(255, 255, 255, 0.04); color: var(--cal); font: inherit; }
+.field input:focus { border-color: var(--sodio); outline: none; }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.9rem; }
+.check { display: flex; gap: 0.7rem; align-items: start; font-size: 0.9rem; color: var(--niebla); }
+.check input { margin-top: 0.25rem; accent-color: var(--sodio); width: 16px; height: 16px; flex: 0 0 auto; }
+.formmsg { min-height: 1.4em; font-size: 0.95rem; }
+.formmsg.ok { color: var(--sodio); }
+.formmsg.err { color: #ff8c73; }
+@media (max-width: 860px) { .join { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } }
+
+/* pasaporte */
+.passport { position: relative; aspect-ratio: 1.42 / 1; width: 100%; max-width: 560px; justify-self: center; border-radius: 22px; padding: clamp(1.1rem, 2.4vw, 1.8rem); background: radial-gradient(130% 120% at 100% 0%, rgba(255, 169, 77, 0.22), transparent 55%), linear-gradient(160deg, #1b2547, #0a0f20 70%); border: 1px solid rgba(255, 255, 255, 0.14); display: grid; grid-template-rows: auto 1fr auto; overflow: hidden; transform-style: preserve-3d; transition: transform 0.6s var(--ease-out); box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7); }
+.passport::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, transparent 0 22px, rgba(255, 255, 255, 0.025) 22px 23px); pointer-events: none; }
+.passport .ph { display: flex; justify-content: space-between; color: var(--niebla); position: relative; }
+.passport .pn { position: relative; align-self: center; display: grid; gap: 0.3rem; }
+.passport .pn .who { font-family: var(--f-serif); font-style: italic; font-size: clamp(1.6rem, 3.6vw, 2.6rem); line-height: 1; color: var(--cal); overflow-wrap: anywhere; }
+.passport .pn .town { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; text-transform: uppercase; font-size: clamp(1.6rem, 4.4vw, 3.2rem); letter-spacing: -0.04em; line-height: 0.95; color: var(--sodio); overflow-wrap: anywhere; }
+.passport .pf { position: relative; display: flex; justify-content: space-between; gap: 1rem; color: var(--niebla); flex-wrap: wrap; }
+.passport .pf b { color: var(--cal); font-weight: 500; }
+.passport .stamp { position: absolute; right: 6%; top: 18%; width: 84px; height: 84px; opacity: 0.85; border-radius: 50%; border: 2px solid rgba(255, 169, 77, 0.65); color: rgba(255, 169, 77, 0.8); display: grid; place-items: center; text-align: center; font-family: var(--f-mono); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; transform: rotate(-14deg); line-height: 1.3; }
+
+/* pie */
+.foot { position: relative; z-index: 2; background: var(--noche); border-top: 1px solid var(--linea); padding: 12vh var(--gutter) calc(110px + env(safe-area-inset-bottom, 0px)); overflow: hidden; }
+.foot .word { font-size: clamp(3.6rem, 16.5vw, 19rem); color: var(--cal); white-space: nowrap; }
+.foot .word .serif { color: var(--sodio); font-size: 0.45em; vertical-align: 0.5em; }
+.foot .cols { margin-top: 6vh; display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 2rem; border-top: 1px solid var(--linea); padding-top: 2rem; }
+.foot .cols > div { display: grid; gap: 0.6rem; align-content: start; min-width: 0; }
+.foot .cols p, .foot .cols li { color: var(--niebla); font-size: 0.92rem; }
+.foot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.foot a { text-decoration: none; color: var(--cal); }
+.foot a:hover { color: var(--sodio); }
+@media (max-width: 760px) { .foot .cols { grid-template-columns: 1fr; } }
+
+.no-webgl #world { background: radial-gradient(120% 90% at 50% 0%, #1b2547, var(--noche) 70%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .grain { animation: none; }
+  .manifesto .statement .w { opacity: 1 !important; }
+}
+</style>
+
+<div id="loader" role="status" aria-live="polite">
+  <div class="inner">
+    <div class="count"><span id="ld-n">000</span><small>/388</small></div>
+    <div class="name" id="ld-name">Guareña</div>
+    <div class="bar"><i id="ld-bar"></i></div>
+    <div class="status mono" id="ld-status">Cargando gemelo digital</div>
+  </div>
+</div>
+
+<canvas id="world" aria-hidden="true"></canvas>
+<div id="wlabels" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="#inicio" aria-label="388 Pueblos, inicio">388 <em>pueblos</em></a>
+  <nav aria-label="Secciones">
+    <ul>
+      <li><a href="#vuelo">El proyecto</a></li>
+      <li><a href="#origen">Origen</a></li>
+      <li><a href="#mundo">El mundo</a></li>
+      <li><a href="#los388">Los 388</a></li>
+      <li><a href="#ayuntamientos">Ayuntamientos</a></li>
+    </ul>
+  </nav>
+  <a class="btn primary" href="#unete">Únete <span class="arr" aria-hidden="true">→</span></a>
+</header>
+
+<div class="hud mono" aria-hidden="true">
+  <div class="coord" id="hud-coord"><span><b>06060</b> Guareña</span><span>38.859°N 6.103°W</span><span>285 msnm</span><span>UTM 29N</span></div>
+</div>
+<div class="hud-r mono" aria-hidden="true"><span id="hud-sec">Pueblo 001/388</span><span class="hbar"><i id="hud-bar"></i></span></div>
+
+<main>
+  <!-- PORTADA -->
+  <section id="inicio" class="hero night" aria-labelledby="t-hero">
+    <div class="hero-tag mono"><span class="big num">001<small>/388</small></span><span>Primer pueblo en el mundo</span><span>Guareña · Badajoz</span></div>
+    <h1 id="t-hero" class="display"><span class="line"><span>388</span></span><span class="line"><span>Pueblos<span class="serif"> de Extremadura</span></span></span></h1>
+    <div class="sub">
+      <p>Un gemelo digital de cada municipio de Extremadura convertido en un mundo online para conocer, jugar y encontrarse. Empezamos por Guareña.</p>
+      <div class="ctas">
+        <a class="btn primary" href="guarena.html">Entrar en Guareña <span class="arr" aria-hidden="true">→</span></a>
+        <a class="btn" href="#los388">Ver los 388</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- VUELO: de la plaza a la región -->
+  <section id="vuelo" class="flight night" aria-label="De Guareña a los 388 pueblos">
+    <div class="stick">
+      <article class="step" data-from="0.07" data-to="0.27">
+        <span class="kicker">Pueblo 001 · Guareña</span>
+        <h2>Esto es Guareña, edificio a edificio.</h2>
+        <p>Cada volumen que ves sale del Catastro, con su huella y su número real de plantas. Sobre la torre de Santa María, como en tantos campanarios extremeños, anidan las cigüeñas.</p>
+        <div class="meta mono"><span><b id="n-parts">7.985</b> volúmenes</span><span><b>6.665</b> vecinos</span><span>Fuente <b>Catastro</b></span></div>
+      </article>
+      <article class="step right" data-from="0.29" data-to="0.47">
+        <span class="kicker">Escala 1:10.000</span>
+        <h2>Desde arriba, un pueblo es una forma de vivir.</h2>
+        <p>Calles estrechas para guardar la sombra, patios, corrales y, alrededor, el mosaico de las Vegas Altas del Guadiana: olivar en marco, viña, cereal y regadío.</p>
+        <div class="meta mono"><span>Comarca <b>Vegas Altas</b></span><span>Término <b>283 km²</b></span></div>
+      </article>
+      <article class="step" data-from="0.5" data-to="0.68">
+        <span class="kicker">Escala 1:500.000</span>
+        <h2>Guareña es uno de 388.</h2>
+        <p>Al lado están Don Benito, Villanueva de la Serena, Valdetorres, Cristina o Manchita. Cada uno tiene su torre, su fiesta, sus apodos y su manera de hablar.</p>
+        <div class="meta mono"><span>Badajoz <b>165</b></span><span>Cáceres <b>223</b></span></div>
+      </article>
+      <article class="step final" data-from="0.75" data-to="1.01">
+        <span class="kicker">Extremadura · Padrón INE 2025</span>
+        <h2>388 pueblos. Una luz por cada uno.</h2>
+        <div class="stats">
+          <div><strong class="num" data-count="388">388</strong><span>municipios, todos levantados ya en 3D</span><small>165 Badajoz · 223 Cáceres</small></div>
+          <div><strong class="num" data-count="1051638">1.051.638</strong><span>habitantes</span><small>INE, 1 de enero de 2025</small></div>
+          <div><strong class="num s" data-count="222">222</strong><span>pueblos con menos de 1.000 vecinos</span><small>125 por debajo de 500</small></div>
+          <div><strong class="num s" data-count="335">335</strong><span>tienen hoy menos habitantes que en 2001</span><small>o que en su primer padrón</small></div>
+        </div>
+      </article>
+      <a class="skip mono btn" href="#los388">Saltar al mapa ↓</a>
+    </div>
+  </section>
+
+  <!-- MANIFIESTO -->
+  <section id="manifiesto" class="manifesto night" aria-labelledby="t-man">
+    <span class="kicker" id="t-man">Por qué existe 388 Pueblos</span>
+    <p class="statement" data-words>Cuando un pueblo se vacía no solo se van sus vecinos. Se van sus fiestas, sus apodos, sus juegos de calle y su forma de nombrar las cosas. Nosotros construimos una copia viva de cada uno, <span class="serif">para que se pueda visitar, jugar y habitar desde cualquier lugar del mundo.</span></p>
+    <div class="pillars">
+      <div><h3>Conocer</h3><p>Iglesias, plazas, ermitas y calles reconstruidas con datos públicos y fotografía. La memoria del pueblo contada por su gente.</p></div>
+      <div><h3>Jugar</h3><p>Misiones, fiestas en directo, retos entre pueblos vecinos y un pasaporte que se sella pueblo a pueblo.</p></div>
+      <div><h3>Encontrarse</h3><p>Un lugar abierto para jóvenes de aquí y para quienes se fueron: amigos, primos, nietos y curiosos de cualquier parte.</p></div>
+    </div>
+  </section>
+
+  <!-- ORIGEN -->
+  <section id="origen" class="origin day zocalo" aria-labelledby="t-origen">
+    <figure class="plano" style="margin:0">
+      <canvas id="plano" width="900" height="900" aria-label="Plano de Guareña dibujado con las huellas de sus edificios"></canvas>
+      <figcaption class="mono"><span>Guareña · huella edificada</span><span>Catastro INSPIRE</span></figcaption>
+    </figure>
+    <div class="txt">
+      <span class="kicker">El origen · Guareña, Badajoz</span>
+      <h2 id="t-origen" class="h2">Todo empieza en un pueblo de las <span class="serif">Vegas Altas.</span></h2>
+      <p>388 Pueblos es la idea de Ana Pérez Toledo, emprendedora de Guareña. Su generación pasa horas en mundos digitales que no tienen nada que ver con su sitio. Ella se preguntó por qué uno de esos mundos no podía ser su propio pueblo.</p>
+      <p>De ahí nace el proyecto: recrear con rigor la realidad y la idiosincrasia de los pueblos extremeños en un universo digital abierto. Que no queden en el olvido, que sirvan para pensar mejor su urbanismo y que cualquiera, viva donde viva, pueda entrar, jugar y quedarse.</p>
+      <blockquote class="quote">
+        <p>“No quiero que mi pueblo sea solo un recuerdo. Quiero que sea un sitio al que se pueda volver desde cualquier parte.”</p>
+        <cite class="mono">Ana Pérez Toledo · fundadora</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- EL MUNDO: capas -->
+  <section id="mundo" class="layers" aria-labelledby="t-mundo">
+    <div class="stick">
+      <header>
+        <div><span class="kicker">El mundo · cuatro capas</span><h2 id="t-mundo" class="h2">Un pueblo de verdad, por dentro y por fuera.</h2></div>
+        <p>Cada municipio se construye en capas: primero el dato, encima el juego, alrededor la gente y, al final, las decisiones.</p>
+      </header>
+      <div class="track" id="track">
+        <article class="layer">
+          <div class="lvl mono"><span>Capa <b>1</b> de 4</span><span>Datos abiertos</span></div>
+          <h3>Gemelo <span class="serif">digital</span></h3>
+          <p>El pueblo tal y como es. Volumetría del Catastro, relieve LiDAR del IGN y fotogrametría de fachadas, iglesias y rincones. Medible y actualizable.</p>
+          <ul><li>Edificios<b>1:1 desde el Catastro</b></li><li>Relieve<b>LiDAR PNOA</b></li><li>Patrimonio<b>Fotogrametría</b></li></ul>
+        </article>
+        <article class="layer">
+          <div class="lvl mono"><span>Capa <b>2</b> de 4</span><span>Juego</span></div>
+          <h3>Mundo <span class="serif">jugable</span></h3>
+          <p>Un sitio donde pasan cosas. Se entra desde el navegador o el móvil, sin instalar nada. Misiones, minijuegos, eventos y un calendario de fiestas en directo.</p>
+          <ul><li>Acceso<b>Navegador y móvil</b></li><li>Sesiones<b>Multijugador</b></li><li>Contenido<b>Por pueblo</b></li></ul>
+        </article>
+        <article class="layer">
+          <div class="lvl mono"><span>Capa <b>3</b> de 4</span><span>Comunidad</span></div>
+          <h3>Gente de aquí <span class="serif">y de fuera</span></h3>
+          <p>Jóvenes del pueblo, extremeños que viven fuera y jugadores de cualquier país. Avatares, grupos por pueblo, chat moderado y espacios seguros para menores.</p>
+          <ul><li>Grupos<b>Uno por pueblo</b></li><li>Moderación<b>Activa</b></li><li>Menores<b>Consentimiento +14</b></li></ul>
+        </article>
+        <article class="layer">
+          <div class="lvl mono"><span>Capa <b>4</b> de 4</span><span>Urbanismo</span></div>
+          <h3>Laboratorio <span class="serif">urbano</span></h3>
+          <p>Probar antes de construir. Simular una peatonalización, la sombra de un arbolado, un mercado o la rehabilitación de una casa, y preguntar a los vecinos antes de decidir.</p>
+          <ul><li>Simulación<b>Sombra y usos</b></li><li>Participación<b>Votaciones</b></li><li>Para<b>Ayuntamientos</b></li></ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- CÓMO SE JUEGA -->
+  <section id="juego" class="play" aria-labelledby="t-juego">
+    <header>
+      <span class="kicker">Cómo se juega</span>
+      <h2 id="t-juego" class="h2">Lo de siempre en un pueblo, ahora también online.</h2>
+    </header>
+    <div class="cards">
+      <article class="card"><div class="top mono"><span class="tag">Ya disponible</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="9" y="7" width="38" height="42" rx="3"/><circle cx="28" cy="26" r="9"/><path d="M19 41h18"/></svg></div><h3>Pasaporte de los 388</h3><p>Cada pueblo que visitas te sella el pasaporte. Cuando vayas de verdad, también en su plaza. Coleccionar Extremadura entera es el reto largo.</p></article>
+      <article class="card"><div class="top mono"><span>En directo</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M28 6v8M28 42v8M6 28h8M42 28h8M12 12l6 6M38 38l6 6M44 12l-6 6M18 38l-6 6"/><circle cx="28" cy="28" r="7"/></svg></div><h3>Fiestas a la vez</h3><p>Cuando el pueblo está en fiestas, el mundo también. Verbena, procesión o romería vividas online por quien no puede ir.</p></article>
+      <article class="card"><div class="top mono"><span>Historias</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M10 10h22l14 14v22H10z"/><path d="M32 10v14h14M17 32h22M17 39h15"/></svg></div><h3>Leyendas y misiones</h3><p>Misiones escritas con los mayores de cada pueblo: oficios, apodos, leyendas y lugares que ya no salen en ningún mapa.</p></article>
+      <article class="card"><div class="top mono"><span>Competición</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M18 8h20v10a10 10 0 0 1-20 0zM18 12H9c0 7 4 11 9 11M38 12h9c0 7-4 11-9 11M28 28v10M19 48h18M22 38h12v10H22z"/></svg></div><h3>Liga de pueblos</h3><p>El pique sano de siempre entre pueblos vecinos, con retos semanales y clasificación por comarcas.</p></article>
+      <article class="card"><div class="top mono"><span class="tag">Ya disponible</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 46V24l20-14 20 14v22z"/><path d="M22 46V32h12v14M8 24h40"/></svg></div><h3>Pasea con otros</h3><p>Entra en cualquiera de los 388 con tu avatar y encuéntrate con quien esté allí en ese momento. Sin chat libre: frases y emojis, pensado para menores.</p></article>
+      <article class="card"><div class="top mono"><span class="tag">Ya disponible</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="28" cy="28" r="20"/><circle cx="28" cy="28" r="3" fill="currentColor"/><path d="M28 4v8M28 44v8M4 28h8M44 28h8"/></svg></div><h3>Despierta tu pueblo</h3><p>Vota qué pueblo se modela después. Los votos se llevan a cada ayuntamiento como prueba de que hay gente esperando.</p></article>
+    </div>
+  </section>
+
+  <!-- LOS 388 -->
+  <section id="los388" class="mapsec night" aria-labelledby="t-388">
+    <div class="stick">
+      <div class="panel" data-lenis-prevent>
+        <div class="box">
+          <span class="kicker">Los 388 · mapa vivo</span>
+          <h2 id="t-388">Un pueblo despierto. <span class="serif">387 por despertar.</span></h2>
+          <div class="awake mono"><span><b class="on num" id="c-awake">1</b> despierto</span><span><b class="num" id="c-sleep">388</b> levantados</span><span><b class="num" id="c-votes">0</b> votos</span></div>
+          <p class="muted" style="margin:0">Los 388 ya tienen su gemelo automático con los edificios del Catastro. Toca cualquiera y entra a pasear.</p>
+          <p class="mono online-l" id="online-l" hidden><i></i><span></span></p>
+          <div class="search">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+            <label class="sr" for="q">Busca tu pueblo</label>
+            <input id="q" type="text" autocomplete="off" placeholder="Busca tu pueblo" aria-controls="sugg">
+            <ul class="sugg" id="sugg" role="listbox" hidden></ul>
+          </div>
+          <div class="chips"><button class="chip" type="button" id="rnd">Pueblo al azar</button><button class="chip" type="button" id="home">Ir a Guareña</button><button class="chip" type="button" id="all">Vista general</button></div>
+        </div>
+        <div class="box">
+          <div class="field"><span class="lab">Altura y color según</span>
+            <div class="chips" role="group" aria-label="Variable del mapa">
+              <button class="chip" type="button" data-mode="pop" aria-pressed="true">Habitantes</button>
+              <button class="chip" type="button" data-mode="loss" aria-pressed="false">Cambio 2001–2025</button>
+              <button class="chip" type="button" data-mode="alt" aria-pressed="false">Altitud</button>
+              <button class="chip" type="button" data-mode="votes" aria-pressed="false">Votos</button>
+            </div>
+          </div>
+          <div class="legend"><div class="ramp" id="ramp"></div><div class="ends mono"><span id="lg-a">80 hab.</span><span id="lg-b">150.000 hab.</span></div></div>
+          <div class="field"><span class="lab">Destacar</span>
+            <div class="chips" role="group" aria-label="Filtro">
+              <button class="chip" type="button" data-filter="all" aria-pressed="true">Todos</button>
+              <button class="chip" type="button" data-filter="1000" aria-pressed="false">&lt; 1.000 hab.</button>
+              <button class="chip" type="button" data-filter="500" aria-pressed="false">&lt; 500 hab.</button>
+              <button class="chip" type="button" data-filter="loss" aria-pressed="false">Pierden población</button>
+            </div>
+          </div>
+          <p class="muted" id="f-count">388 pueblos destacados</p>
+        </div>
+        <div class="box rankbox">
+          <span class="lab mono" style="color:var(--niebla)">Más votados para despertar</span>
+          <div class="rank"><ol id="rank"><li><span class="muted">Aún no hay votos. El primero puede ser el tuyo.</span></li></ol></div>
+        </div>
+      </div>
+      <aside class="sheet" id="sheet" hidden aria-live="polite">
+        <button class="x" type="button" id="sheet-x" aria-label="Cerrar ficha">×</button>
+        <span class="status" id="s-status"><i></i><span>Por despertar</span></span>
+        <h3 id="s-name">Guareña</h3>
+        <div class="mono" style="color:var(--niebla)" id="s-meta">06060 · Badajoz</div>
+        <div class="grid">
+          <div><b id="s-pop">6.665</b><span>Habitantes 2025</span></div>
+          <div><b id="s-chg">−10,4 %</b><span>Desde 2001</span></div>
+          <div><b id="s-alt">285 m</b><span>Altitud</span></div>
+          <div><b id="s-area">283 km²</b><span>Término</span></div>
+        </div>
+        <p class="note" id="s-note"></p>
+        <div class="chips" id="s-actions"></div>
+      </aside>
+      <div class="tip" id="tip" role="tooltip"></div>
+    </div>
+  </section>
+
+  <!-- NOMBRES -->
+  <section class="names" aria-labelledby="t-names">
+    <header><div><span class="kicker">Los nombres</span><h2 id="t-names" class="h2" style="margin-top:.8rem">Cada nombre, un pueblo entero.</h2></div><p>Toca cualquiera para verlo en el mapa. Están todos, de Abadía a Zorita.</p></header>
+    <div class="rows" id="rows"></div>
+    <ul class="sr" id="names-list"></ul>
+  </section>
+
+  <!-- HOJA DE RUTA -->
+  <section id="ruta" class="route day zocalo" aria-labelledby="t-ruta">
+    <header>
+      <div><span class="kicker">Hoja de ruta</span><h2 id="t-ruta" class="h2" style="margin-top:.8rem">De un pueblo a los 388.</h2></div>
+      <p>Primero demostrar que funciona en Guareña y reunir una comunidad real. Con jugadores dentro, ir pueblo a pueblo con los ayuntamientos que quieran sumarse.</p>
+    </header>
+    <div class="phases" id="phases">
+      <span class="prog" id="ph-prog"></span>
+      <div class="phase now"><span class="n">0</span><span class="when mono">Oct – dic 2026 · ahora</span><h3>Semilla</h3><ul><li>Esta web, el mapa de los 388 y los votos</li><li>Los 388 levantados en automático desde el Catastro</li><li>Paseo con otras personas y pasaporte de sellos</li><li>Prueba cerrada con alumnado del IES Eugenio Frutos</li></ul></div>
+      <div class="phase"><span class="n">1</span><span class="when mono">Feb – abr 2027</span><h3>Guareña jugable</h3><ul><li>Beta pública en Carnaval</li><li>Plaza, Santa María y primeras misiones</li><li>Primer evento en directo</li><li>Objetivo: 1.000 jugadores</li></ul></div>
+      <div class="phase"><span class="n">2</span><span class="when mono">May 2027 – 2028</span><h3>Las Vegas Altas</h3><ul><li>Presentación a ayuntamientos, Diputación y ADEVAG con datos de uso y votos</li><li>Primeros pueblos financiados tras el verano</li><li>Liga de pueblos, pasaporte y Día de Extremadura</li><li>Objetivo: 25–40 pueblos</li></ul></div>
+      <div class="phase"><span class="n">3</span><span class="when mono">2029 en adelante</span><h3>Los 388</h3><ul><li>Badajoz y Cáceres completas</li><li>Laboratorio urbano para municipios</li><li>Extremadura entera, abierta al mundo</li></ul></div>
+    </div>
+    <p class="disclaim mono">Calendario orientativo. Cada fase depende de la comunidad conseguida y de la financiación.</p>
+  </section>
+
+  <!-- AYUNTAMIENTOS -->
+  <section id="ayuntamientos" class="councils zocalo" aria-labelledby="t-ayto">
+    <div class="head">
+      <div><span class="kicker" style="color:var(--anil)">Para ayuntamientos</span><h2 id="t-ayto" class="h2" style="margin-top:.8rem">Tu pueblo, en el mapa del mundo.</h2></div>
+      <p>Tu pueblo ya está levantado en volumen con datos del Catastro, y la gente puede entrar a pasear. Despertarlo sirve para mucho más que jugar: documenta el patrimonio, ayuda a decidir el urbanismo, atrae visitas y devuelve al pueblo a quienes viven lejos.</p>
+    </div>
+    <div class="benefits">
+      <div><span class="mono">Patrimonio</span><h3>Memoria documentada</h3><p>Iglesias, ermitas, casas y calles registradas en 3D antes de que cambien o desaparezcan.</p></div>
+      <div><span class="mono">Urbanismo</span><h3>Decidir con el modelo</h3><p>Probar una obra, una peatonalización o un arbolado sobre el pueblo real y enseñarlo a los vecinos.</p></div>
+      <div><span class="mono">Reto demográfico</span><h3>Jóvenes y diáspora</h3><p>Un motivo para que los jóvenes se queden conectados y para que los que se fueron vuelvan, aunque sea en verano.</p></div>
+      <div><span class="mono">Turismo</span><h3>El pueblo, visible</h3><p>Una puerta de entrada a fiestas, rutas y producto local para gente que nunca habría encontrado el pueblo.</p></div>
+    </div>
+    <div class="tiers">
+      <article class="tier"><span class="mono">Nivel 1</span><h3>Pueblo semilla</h3><ul><li>Casco urbano completo desde Catastro, LiDAR y ortofoto del PNOA</li><li>Iglesia, plaza y ayuntamiento capturados en 3D</li><li>Ficha del pueblo, un minijuego y sello del pasaporte</li></ul><span class="price">Orientativo: 6.000–12.000 € · cabe en un contrato menor</span></article>
+      <article class="tier feat"><span class="mono">Nivel 2 · recomendado</span><h3>Pueblo vivo</h3><ul><li>Todo lo del nivel 1</li><li>Fachadas calle a calle e interiores de la iglesia</li><li>Misiones con historias del pueblo y habla local</li><li>Fiestas jugables en directo y multijugador</li></ul><span class="price">Orientativo: 15.000–35.000 €</span></article>
+      <article class="tier"><span class="mono">Nivel 3</span><h3>Pueblo laboratorio</h3><ul><li>Todo lo del nivel 2</li><li>Vuelo con dron y capas de planeamiento</li><li>Simulación urbana y votaciones vecinales</li><li>Panel de visitas y datos para el ayuntamiento</li></ul><span class="price">Orientativo: 40.000–90.000 €</span></article>
+    </div>
+    <p class="mono" style="margin-top:1.2rem;color:#2a3048;line-height:1.7">Importes sin IVA, más una licencia anual. Como referencia, la Diputación de Badajoz licitó en 2024 gemelos digitales turísticos para 20 municipios por 954.690 €, unos 47.700 € por pueblo. Automatizar la base con datos abiertos es lo que permite llegar a los pueblos pequeños.</p>
+    <div class="cta"><a class="btn primary" href="#unete" data-role="Ayuntamiento">Solicitar una presentación <span class="arr" aria-hidden="true">→</span></a><span class="mono" style="color:#2a3048">También para diputaciones, grupos de acción local y centros educativos</span></div>
+  </section>
+
+  <!-- ÚNETE -->
+  <section id="unete" class="join" aria-labelledby="t-unete">
+    <div>
+      <span class="kicker">Lista de espera · beta de Guareña</span>
+      <h2 id="t-unete" class="h2" style="margin-top:.8rem">Hazte <span class="serif">vecino</span> de los 388.</h2>
+      <form id="form" novalidate>
+        <div class="two">
+          <div class="field"><label for="f-alias">Tu nombre o alias</label><input id="f-alias" type="text" maxlength="40" autocomplete="nickname" placeholder="Cómo quieres que te llamen"></div>
+          <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" autocomplete="email" placeholder="para avisarte de la beta" required></div>
+        </div>
+        <div class="field"><label for="f-town">Tu pueblo</label><input id="f-town" type="text" list="towns" autocomplete="off" placeholder="Escribe y elige de la lista"><datalist id="towns"></datalist></div>
+        <div class="field"><span class="lab">Vienes como</span>
+          <div class="chips" role="group" aria-label="Perfil" id="roles">
+            <button class="chip" type="button" data-role="Jugador" aria-pressed="true">Jugador</button>
+            <button class="chip" type="button" data-role="Creador" aria-pressed="false">Creador</button>
+            <button class="chip" type="button" data-role="Desde fuera" aria-pressed="false">Extremeño fuera</button>
+            <button class="chip" type="button" data-role="Ayuntamiento" aria-pressed="false">Ayuntamiento</button>
+          </div>
+        </div>
+        <label class="check" for="f-age"><input id="f-age" type="checkbox"> Tengo 14 años o más. Si tengo menos, me apuntará mi madre, mi padre o mi tutor.</label>
+        <label class="check" for="f-ok"><input id="f-ok" type="checkbox"> Acepto que 388 Pueblos guarde estos datos solo para avisarme del proyecto.</label>
+        <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap"><button class="btn primary" type="submit">Apuntarme <span class="arr" aria-hidden="true">→</span></button><span class="formmsg" id="f-msg" role="status"></span></div>
+      </form>
+    </div>
+    <div class="passport" id="passport" aria-label="Vista previa de tu pasaporte de vecino">
+      <div class="ph mono"><span>Pasaporte de vecino</span><span id="pp-no">Nº —</span></div>
+      <div class="pn"><span class="who" id="pp-who">Tu nombre</span><span class="town" id="pp-town">Tu pueblo</span></div>
+      <div class="pf mono"><span>INE <b id="pp-ine">—</b></span><span id="pp-ll">—</span><span>Sellos <b id="pp-st">0/388</b></span></div>
+      <div class="stamp" aria-hidden="true">Vecino<br>fundador<br>2026</div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="word display">388 <span class="serif">pueblos</span></div>
+  <div class="cols">
+    <div><p>Un proyecto de Ana Pérez Toledo. Hecho en Guareña, Badajoz, pueblo a pueblo.</p><p><a href="guarena.html">Entrar en Guareña →</a></p></div>
+    <div><span class="mono" style="color:var(--niebla-2)">Explora</span><ul><li><a href="#vuelo">El proyecto</a></li><li><a href="#los388">Mapa de los 388</a></li><li><a href="#ayuntamientos">Ayuntamientos</a></li><li><a href="#unete">Lista de espera</a></li></ul></div>
+    <div><span class="mono" style="color:var(--niebla-2)">Datos abiertos</span><ul><li>Edificios: Dirección General del Catastro (INSPIRE)</li><li>Límites municipales: IGN, vía es-atlas</li><li>Población: INE, Padrón 2025, vía Wikidata</li><li>Ubicaciones: © colaboradores de OpenStreetMap</li></ul></div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<script type="module" src="js/main.js"></script>
