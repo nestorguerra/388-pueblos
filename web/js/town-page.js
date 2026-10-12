@@ -6,6 +6,7 @@ import {
 } from './world.js';
 import { createPaseo, FRASES, EMOJIS } from './paseo.js';
 import { stamp } from './pasaporte.js';
+import { createPlay, canEmbed } from './jugar.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -17,7 +18,7 @@ export function townError(msg) {
   $('#loading').innerHTML = `<div class="err"><b style="font-size:2.4rem">388 Pueblos</b><p>${msg}</p><p><a class="btn" href="index.html#los388">Volver al mapa de los 388</a></p></div>`;
 }
 
-export function createTownPage({ data, churches, ine, name, places = [], facts = [], firstFacts = {}, radius = 1200 }) {
+export function createTownPage({ data, churches, ine, name, places = [], facts = [], firstFacts = {}, radius = 1200, playable = false }) {
   if (!document.createElement('canvas').getContext('webgl2')) {
     townError('Tu navegador no puede mostrar el modelo 3D. Prueba con una versión reciente de Chrome, Safari, Edge o Firefox.');
     return;
@@ -204,33 +205,69 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
   resize();
   addEventListener('resize', resize);
 
+  // ---- jugar: la cámara baja hasta el dron del juego y el juego toma el relevo sin salir de la página ----
+  let todStart = 0, fovGoal = null;
+  const play = playable && canEmbed() ? createPlay({
+    camera, controls, canvas,
+    onStart: () => {
+      todStart = tod;
+      fly = null;
+      card.hidden = true;
+      if (paseo.active) togglePaseo(false);
+      requestAnimationFrame(resize);
+    },
+    onExit: ({ fov }) => { todGoal = todStart; fovGoal = fov; requestAnimationFrame(resize); },
+  }) : null;
+  for (const b of $$('[data-jugar]')) {
+    if (!play) continue; // (en el visor de claude.ai el enlace abre el juego en otra pestaña)
+    b.addEventListener('pointerenter', () => play.warm(), { once: true });
+    b.addEventListener('focus', () => play.warm(), { once: true });
+    b.addEventListener('click', (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); play.start(); });
+  }
+  const MORNING = new THREE.Vector3(0.62, 0.62, 0.48).normalize(); // (el juego arranca a las 10:36)
+
   const clock = new THREE.Clock();
   let t = 0;
   const v3 = new THREE.Vector3();
   function frame() {
     requestAnimationFrame(frame);
-    const dt = Math.min(0.05, clock.getDelta());
+    tick(Math.min(0.05, clock.getDelta()));
+  }
+  if (/[?&]debug/.test(location.search)) window.__tp = { tick, camera, controls, play };
+  function tick(dt) {
     t += dt;
-    if (fly) {
-      controls.target.lerp(fly.tgt, 0.06);
-      camera.position.lerp(fly.pos, 0.06);
-      if (camera.position.distanceTo(fly.pos) < 1) fly = null;
+    let mix = null;
+    if (play && play.active) {
+      if (play.playing) return; // el juego ya está a la vista: la web deja de dibujar
+      mix = play.update(dt);
+    } else {
+      if (fly) {
+        controls.target.lerp(fly.tgt, 0.06);
+        camera.position.lerp(fly.pos, 0.06);
+        if (camera.position.distanceTo(fly.pos) < 1) fly = null;
+      }
+      paseo.update(dt, t);
+      if (fovGoal !== null) {
+        camera.fov = lerp(camera.fov, fovGoal, 0.06);
+        if (Math.abs(camera.fov - fovGoal) < 0.05) { camera.fov = fovGoal; fovGoal = null; }
+        camera.updateProjectionMatrix();
+      }
+      controls.update();
     }
-    paseo.update(dt, t);
-    controls.update();
-    tod = lerp(tod, todGoal, 0.04);
+    tod = mix !== null ? lerp(todStart, -0.9, mix) : lerp(tod, todGoal, 0.04);
     applyTimeOfDay(ctx, tod);
     const night = Math.max(0, tod);
     T.lampMat.opacity = Math.min(1, Math.max(0, (night - 0.25) / 0.4));
     const sunY = tod < 0 ? lerp(0.2, 0.75, -tod) : 0.2 - 0.14 * night;
     const sunDir = new THREE.Vector3(-0.82, sunY, 0.22).normalize();
+    if (mix !== null) sunDir.lerp(MORNING, mix).normalize();
     sky.uniforms.uSunDir.value.copy(sunDir);
-    lights.sun.target.position.copy(controls.target).setY(0);
+    lights.sun.target.position.copy(mix !== null ? v3.set(110, 0, -200) : controls.target).setY(0);
     lights.sun.position.copy(lights.sun.target.position).addScaledVector(sunDir, 2000);
     const d = camera.position.distanceTo(controls.target);
     scene.fog.color.copy(sky.uniforms.uHorizon.value);
-    scene.fog.near = d * 1.4 + 200;
-    scene.fog.far = d * 7 + 1500;
+    scene.fog.near = mix !== null ? lerp(d * 1.4 + 200, 3000, mix) : d * 1.4 + 200;
+    scene.fog.far = mix !== null ? lerp(d * 7 + 1500, 14000, mix) : d * 7 + 1500;
     ground.uniforms.uCam.value = d;
     sky.mesh.position.copy(camera.position);
     sky.mesh.scale.setScalar(camera.far * 0.5);

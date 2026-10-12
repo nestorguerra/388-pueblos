@@ -126,3 +126,11 @@ details[open] summary::after { content: "−"; }
 .sleep.on i { background: var(--sodio); box-shadow: 0 0 10px var(--sodio); }
 
 .brand img { display: block; height: 44px; width: auto; filter: drop-shadow(0 1px 8px rgba(0, 0, 0, 0.35)); }
+
+/* jugar: el juego se carga debajo y toma el relevo con un fundido */
+.game-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 40; opacity: 0; pointer-events: none; transition: opacity 1.1s ease; background: transparent; color-scheme: normal; }
+.game-frame.on { opacity: 1; }
+.game-frame.live { pointer-events: auto; }
+body.jugando .top, body.jugando .panel, body.jugando .card, body.jugando .dock, body.jugando #labels, body.jugando .toast { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.6s ease; }
+body.jugando { overflow: hidden; }
+body.jugando #c { height: 100% !important; }

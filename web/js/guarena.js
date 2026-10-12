@@ -30,7 +30,7 @@ const PLACES = [
     townError('No se pudo cargar el modelo de Guareña.');
     return;
   }
-  createTownPage({ data, churches: GUARENA_CHURCHES, ine: '06060', name: 'Guareña', places: PLACES, facts: FACTS, firstFacts: FIRST, radius: 1400 });
+  createTownPage({ data, churches: GUARENA_CHURCHES, ine: '06060', name: 'Guareña', places: PLACES, facts: FACTS, firstFacts: FIRST, radius: 1400, playable: true });
   document.querySelector('#tur')?.addEventListener('click', () => {
     document.querySelector('#card-k').textContent = 'Próximamente · modo arqueología';
     document.querySelector('#card-t').textContent = 'Casas del Turuñuelo';
