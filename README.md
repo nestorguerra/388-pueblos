@@ -58,7 +58,7 @@ Y abrir http://localhost:8388. Abre el mismo pueblo en dos pestañas, pulsa "Pas
 - Exportar la lista de espera: `python3 server/servidor.py --export-lista --db <ruta>`.
 - Límites: 64 personas por pueblo, 20 mensajes por segundo por persona y 30 escrituras por minuto por IP.
 - Un voto por dispositivo no impide el fraude de quien borre su navegador: para decisiones con dinero público, cruzar con la lista de espera verificada.
-- **Despliegue:** `render.yaml` crea el servicio en Render con un disco de 1 GB para la base de datos (plan de pago). Con un dominio propio (p. ej. 388pueblos.es) la misma carpeta `web/` funciona sin cambios.
+- **Despliegue (beta):** `render.yaml` crea el servicio en el plan gratuito de Render. Sin disco, la base de datos es temporal: votos, pasaportes e inscripciones se vacían en cada reinicio o despliegue, y el servicio se duerme tras unos minutos sin visitas. Para conservar datos, cambiar a `plan: starter` y añadir `disk: {name: datos, mountPath: /var/data, sizeGB: 1}` con `--db /var/data/388pueblos.sqlite3`. Con un dominio propio (p. ej. 388pueblos.es) la misma carpeta `web/` funciona sin cambios.
 - Dentro del Artifact de claude.ai la web sigue usando las capacidades del Artifact; fuera, detecta el servidor propio por `window.P388`.
 
 ## Decisiones de diseño
