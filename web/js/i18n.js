@@ -9,7 +9,8 @@ export const fmt = new Intl.NumberFormat(locale);
 const EN_PAGES = { 'index.html': 'index.html', 'guarena.html': 'guarena.html', 'pueblo.html': 'town.html', 'privacidad.html': 'privacy.html', 'ayuntamientos.html': '../ayuntamientos.html' };
 export function page(href) {
   if (lang !== 'en') return href;
-  const [file, rest = ''] = href.split(/(?=[?#])/);
+  const i = href.search(/[?#]/);
+  const [file, rest] = i < 0 ? [href, ''] : [href.slice(0, i), href.slice(i)];
   return (EN_PAGES[file] || `../${file}`) + rest;
 }
 
@@ -54,7 +55,8 @@ const T = {
 
 export function t(key, vars = {}) {
   const s = T[lang][key] ?? T.es[key] ?? key;
-  return typeof s === 'function' ? s(vars) : s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ''));
+  if (typeof s === 'function') return s(vars);
+  return typeof s === 'string' ? s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? '')) : s; // (también listas)
 }
 // para que cada módulo añada sus propios textos sin tocar este archivo
 export function addTexts(dict) {

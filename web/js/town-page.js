@@ -7,23 +7,47 @@ import {
 import { stamp } from './pasaporte.js';
 import { createPlay, canEmbed } from './jugar.js';
 import { whenShown } from './red.js';
+import { t as tr, addTexts, page, locale } from './i18n.js';
+
+addTexts({
+  es: {
+    'tp.reintentar': 'Reintentar', 'tp.volver': 'Volver al mapa de los 388',
+    'tp.sin3d': 'Tu navegador no puede mostrar el modelo 3D. Prueba con una versión reciente de Chrome, Safari, Edge o Firefox.',
+    'tp.fuente': ({ s }) => `Fuente: ${s}`, 'tp.lugar': 'Lugar',
+    'tp.nido': ({ i, n }) => `Nido ${i} de ${n}`, 'tp.nidoSin': ({ i }) => `Nido ${i} sin encontrar`, 'tp.nidoOk': ({ i }) => `Nido ${i} encontrado`,
+    'tp.todos': '¡Todos los nidos! Eres vecino de honor', 'tp.todosDe': ({ name }) => `Has encontrado todos los nidos de ${name}.`,
+    'tp.acercate': 'Acércate más: los nidos son pequeños. Empieza por lo alto de la torre de la iglesia.',
+    'tp.pasaporte': 'Pasaporte', 'tp.beta': 'Disponible al abrir la beta', 'tp.tupasaporte': 'Tu pasaporte',
+    'tp.sellos': ({ n }) => `<b>${n}</b>/388 sellos`, 'tp.sello': ({ name, n }) => `Sello de ${name} añadido · ${n}/388`,
+  },
+  en: {
+    'tp.reintentar': 'Try again', 'tp.volver': 'Back to the map of the 388',
+    'tp.sin3d': 'Your browser cannot show the 3D model. Try a recent version of Chrome, Safari, Edge or Firefox.',
+    'tp.fuente': ({ s }) => `Source: ${s}`, 'tp.lugar': 'Place',
+    'tp.nido': ({ i, n }) => `Nest ${i} of ${n}`, 'tp.nidoSin': ({ i }) => `Nest ${i} not found yet`, 'tp.nidoOk': ({ i }) => `Nest ${i} found`,
+    'tp.todos': 'Every nest! You are an honorary local', 'tp.todosDe': ({ name }) => `You have found every nest in ${name}.`,
+    'tp.acercate': 'Get closer: the nests are small. Start at the top of the church tower.',
+    'tp.pasaporte': 'Passport', 'tp.beta': 'Available when the beta opens', 'tp.tupasaporte': 'Your passport',
+    'tp.sellos': ({ n }) => `<b>${n}</b>/388 stamps`, 'tp.sello': ({ name, n }) => `${name} stamp added · ${n}/388`,
+  },
+});
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 const lerp = (a, b, t) => a + (b - a) * t;
-const fmt = new Intl.NumberFormat('es-ES');
+const fmt = new Intl.NumberFormat(locale);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export function townError(msg, { retry = false } = {}) {
-  const again = retry ? '<button class="btn primary" type="button" id="retry">Reintentar</button> ' : '';
+  const again = retry ? `<button class="btn primary" type="button" id="retry">${tr('tp.reintentar')}</button> ` : '';
   $('#loading').classList.remove('relevo'); // (el aviso, sobre el fondo de la noche)
-  $('#loading').innerHTML = `<div class="err" role="alert"><b style="font-size:2.4rem">388 Pueblos</b><p>${msg}</p><p>${again}<a class="btn" href="index.html#los388">Volver al mapa de los 388</a></p></div>`;
+  $('#loading').innerHTML = `<div class="err" role="alert"><b style="font-size:2.4rem">388 Pueblos</b><p>${msg}</p><p>${again}<a class="btn" href="${page('index.html#los388')}">${tr('tp.volver')}</a></p></div>`;
   $('#retry')?.addEventListener('click', () => location.reload());
 }
 
 export async function createTownPage({ data, churches, ine, name, places = [], facts = [], firstFacts = {}, radius = 1200, playable = false }) {
   if (!document.createElement('canvas').getContext('webgl2')) {
-    townError('Tu navegador no puede mostrar el modelo 3D. Prueba con una versión reciente de Chrome, Safari, Edge o Firefox.');
+    townError(tr('tp.sin3d'));
     return;
   }
   const canvas = $('#c');
@@ -68,7 +92,7 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
     $('#card-k').textContent = k;
     $('#card-t').textContent = t;
     $('#card-p').textContent = p;
-    $('#card-s').textContent = s ? `Fuente: ${s}` : '';
+    $('#card-s').textContent = s ? tr('tp.fuente', { s }) : '';
     card.hidden = false;
   };
   $('#card-x').addEventListener('click', () => { card.hidden = true; });
@@ -85,7 +109,7 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
   const game = T.nests.filter((n) => n.kind === 'tejado' || n.big).slice(0, Math.max(1, facts.length + Object.keys(firstFacts).length));
   const found = new Set();
   const nestsEl = $('#nests');
-  if (nestsEl) nestsEl.innerHTML = game.map((_, i) => `<i aria-label="Nido ${i + 1} sin encontrar">${i + 1}</i>`).join('');
+  if (nestsEl) nestsEl.innerHTML = game.map((_, i) => `<i aria-label="${tr('tp.nidoSin', { i: i + 1 })}">${i + 1}</i>`).join('');
   const glowMat = new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffa94d, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
   const glows = game.map((n) => {
     const s = new THREE.Sprite(glowMat.clone());
@@ -101,13 +125,13 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
     const n = game[i];
     const fact = firstFacts[n.kind] && !firstFacts[n.kind].used ? (firstFacts[n.kind].used = true, firstFacts[n.kind]) : facts[Math.min(facts.length - 1, factIdx++)];
     const dot = nestsEl?.children[i];
-    if (dot) { dot.classList.add('got'); dot.setAttribute('aria-label', `Nido ${i + 1} encontrado`); }
+    if (dot) { dot.classList.add('got'); dot.setAttribute('aria-label', tr('tp.nidoOk', { i: i + 1 })); }
     glows[i].userData.on = true;
-    if (fact) showCard(`Nido ${found.size} de ${game.length}`, fact.t, fact.p, fact.s);
+    if (fact) showCard(tr('tp.nido', { i: found.size, n: game.length }), fact.t, fact.p, fact.s);
     if (found.size === game.length) {
-      say('¡Todos los nidos! Eres vecino de honor');
-      if ($('#hint')) $('#hint').textContent = `Has encontrado todos los nidos de ${name}.`;
-    } else say(`Nido ${found.size} de ${game.length}`);
+      say(tr('tp.todos'));
+      if ($('#hint')) $('#hint').textContent = tr('tp.todosDe', { name });
+    } else say(tr('tp.nido', { i: found.size, n: game.length }));
   }
 
   // ---- lugares ----
@@ -138,7 +162,7 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
     const tgt = new THREE.Vector3(pl.x, pl.h, -pl.y);
     const pos = tgt.clone().addScaledVector(dir, pl.d * 0.8).setY(pl.h + pl.d * 0.62);
     fly = { tgt, pos };
-    if (pl.p) showCard(pl.tag || 'Lugar', pl.name, pl.p, pl.s);
+    if (pl.p) showCard(pl.tag || tr('tp.lugar'), pl.name, pl.p, pl.s);
   }
   controls.addEventListener('start', () => { fly = null; controls.autoRotate = false; });
 
@@ -159,7 +183,7 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
       if (d < bd && dist < 900) { bd = d; best = i; }
     });
     if (best >= 0) collect(best);
-    else if (found.size === 0 && $('#hint')) $('#hint').textContent = 'Acércate más: los nidos son pequeños. Empieza por lo alto de la torre de la iglesia.';
+    else if (found.size === 0 && $('#hint')) $('#hint').textContent = tr('tp.acercate');
   });
 
   // ---- luz del día ----
@@ -300,9 +324,9 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
     // ---- sello del pasaporte ----
     stamp(ine).then((r) => {
       const el = $('#pass');
-      if (!r) { if (el) el.innerHTML = '<span>Pasaporte</span><span>Disponible al abrir la beta</span>'; return; }
-      if (el) el.innerHTML = `<span>Tu pasaporte</span><span><b>${r.count}</b>/388 sellos</span>`;
-      if (r.isNew) setTimeout(() => say(`Sello de ${name} añadido · ${r.count}/388`), 1400);
+      if (!r) { if (el) el.innerHTML = `<span>${tr('tp.pasaporte')}</span><span>${tr('tp.beta')}</span>`; return; }
+      if (el) el.innerHTML = `<span>${tr('tp.tupasaporte')}</span><span>${tr('tp.sellos', { n: r.count })}</span>`;
+      if (r.isNew) setTimeout(() => say(tr('tp.sello', { name, n: r.count })), 1400);
     });
   });
 

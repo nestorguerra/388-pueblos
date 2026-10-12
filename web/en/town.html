@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Town · 388 Pueblos</title>
+<meta name="description" content="Automatic digital twin of a town in Extremadura, built from open Catastro (Spain’s land registry) data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Instrument+Serif:ital@1&family=Geist+Mono:wght@400;500&display=swap">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="388 Pueblos">
+<meta property="og:image" content="../assets/logo/og-388pueblos.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070a14">
+<link rel="icon" href="../assets/logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/logo/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="alternate" hreflang="es" href="../pueblo.html">
+<link rel="alternate" hreflang="en" href="town.html">
+<link rel="stylesheet" href="../css/pueblo.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+</head>
+<body>
+<canvas id="c" aria-label="3D model of the town. Drag to rotate; scroll or pinch to zoom."></canvas>
+<div id="labels"></div>
+
+<header class="top">
+  <a class="brand" href="index.html" aria-label="Back to 388 Pueblos"><img src="../assets/logo/logo-388.svg" alt="388 Pueblos" width="64" height="34"></a>
+  <div class="right">
+    <a class="btn" href="../pueblo.html" hreflang="es" lang="es">ES</a>
+    <a class="btn" href="index.html#los388">← The 388</a>
+    <button class="btn" type="button" id="rnd">Random town</button>
+    <a class="btn" href="index.html#unete" id="mine">It’s my town</a>
+    <a class="btn primary" href="guarena.html?jugar">Play in Guareña</a>
+  </div>
+</header>
+
+<aside class="panel" aria-label="Town">
+  <section class="glass">
+    <span class="kicker" id="p-kicker">Town in Extremadura</span>
+    <h1 id="p-name">…<small id="p-sub"></small></h1>
+    <div class="facts">
+      <div><b id="p-pop">—</b><span>Residents 2025</span></div>
+      <div><b id="p-alt">—</b><span>Altitude</span></div>
+      <div><b id="p-area">—</b><span>Area</span></div>
+    </div>
+    <p id="p-desc"></p>
+    <div class="status mono"><span class="sleep" id="p-sleep"><i></i>Asleep</span><span><b id="n-parts">—</b> volumes</span><span>Catastro</span></div>
+  </section>
+
+  <section class="glass game" aria-labelledby="t-paseo">
+    <span class="kicker">The game</span>
+    <h2 id="t-paseo">Walk around Guareña</h2>
+    <p class="hint">For now, the game is played in Guareña, town 001: its real streets, its locals and its first quests. Vote below to make this town the next one.</p>
+    <a class="btn primary big" href="guarena.html?jugar">Walk around Guareña <span aria-hidden="true">→</span></a>
+    <div class="passbar mono" id="pass"><span>Your passport</span><span>…</span></div>
+  </section>
+
+  <section class="glass" aria-labelledby="t-vote">
+    <span class="kicker">Wake this town up</span>
+    <h2 id="t-vote" style="margin:0;font-variation-settings:'wdth' 112;font-weight:750;font-size:1.35rem;letter-spacing:-.025em;line-height:1.05">Vote for it to be next</h2>
+    <p class="hint" id="v-note">Waking a town up means modelling its square, its church and its streets in detail, and opening it up to the game. We take the votes to each town council.</p>
+    <div class="queue" id="q-box" hidden></div>
+    <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap"><button class="btn primary" type="button" id="vote">Wake this town up</button><a class="btn" id="q-join" href="index.html#unete">Sign up for this town</a><span class="mono" id="v-count" style="color:var(--niebla)"></span></div>
+  </section>
+
+  <section class="glass game" aria-labelledby="t-game">
+    <span class="kicker">Mini-game</span>
+    <h2 id="t-game">Find the storks’ nests</h2>
+    <div class="nests" id="nests" aria-live="polite"></div>
+    <p class="hint" id="hint">Turn the town and look for nests on the tower and the rooftops. Each nest unlocks a fact about the town.</p>
+  </section>
+
+  <section class="glass">
+    <span class="kicker">Places</span>
+    <div class="places" id="places"></div>
+  </section>
+
+  <p class="mono" style="color:var(--niebla-2);padding:0 .3rem;line-height:1.7">Buildings: D. G. del Catastro (INSPIRE). Churches: © OpenStreetMap. Population: INE via Wikidata. Automatic building volumes: not official mapping.</p>
+</aside>
+
+<aside class="card glass" id="card" hidden aria-live="polite">
+  <button class="x" type="button" id="card-x" aria-label="Close">×</button>
+  <span class="kicker" id="card-k"></span>
+  <h3 id="card-t"></h3>
+  <p id="card-p"></p>
+  <span class="src" id="card-s"></span>
+</aside>
+
+<div class="dock glass" role="group" aria-label="Time of day">
+  <span class="lab mono">Light</span>
+  <button class="btn" type="button" data-t="-1" aria-pressed="false">Midday</button>
+  <button class="btn" type="button" data-t="0" aria-pressed="true">Sunset</button>
+  <button class="btn" type="button" data-t="1" aria-pressed="false">Night</button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<div class="loading" id="loading"><div><b id="ld-name">388</b><span class="mono" id="ld">Building the town…</span></div></div>
+
+<script type="module" src="../js/pueblo.js"></script>
+</body>
+</html>

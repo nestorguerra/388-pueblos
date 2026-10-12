@@ -2,6 +2,7 @@
 // Sistema de coordenadas: metros, origen en la Plaza de España de Guareña (UTM 29N).
 // three.js: X = este, Y = altura, Z = -norte.
 import * as THREE from 'three';
+import { lang } from './i18n.js';
 
 export const LANDMARKS = {
   plaza: { x: 0, y: 0, name: 'Plaza de España' },
@@ -1036,7 +1037,8 @@ export function makeRenderer(canvas) {
     d.id = 'gl-lost';
     d.setAttribute('role', 'status');
     d.style.cssText = 'position:fixed;inset:auto 16px 16px;z-index:95;padding:12px 16px;border-radius:14px;background:rgba(7,10,20,.88);color:#eef0ec;font:14px/1.4 system-ui,sans-serif;text-align:center';
-    d.innerHTML = 'El 3D se ha detenido para ahorrar memoria. <button type="button" style="margin-left:8px;font:inherit;color:#0c1122;background:#ffa94d;border:0;border-radius:999px;padding:6px 12px;cursor:pointer">Recargar</button>';
+    const [msg, btn] = lang === 'en' ? ['3D has stopped to save memory.', 'Reload'] : ['El 3D se ha detenido para ahorrar memoria.', 'Recargar'];
+    d.innerHTML = `${msg} <button type="button" style="margin-left:8px;font:inherit;color:#0c1122;background:#ffa94d;border:0;border-radius:999px;padding:6px 12px;cursor:pointer">${btn}</button>`;
     d.querySelector('button').addEventListener('click', () => location.reload());
     document.body.append(d);
   });

@@ -1,0 +1,411 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>388 Pueblos · the online world of Extremadura’s 388 towns</title>
+<meta name="description" content="388 Pueblos is an open, free online world with all 388 municipalities of Extremadura, built from real data. An open-source project. We’re starting with Guareña: sign up and play.">
+<meta name="theme-color" content="#070a14">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="388 Pueblos">
+<meta property="og:locale" content="en_GB">
+<meta property="og:title" content="388 Pueblos · the online world of Extremadura’s 388 towns">
+<meta property="og:description" content="Open, free and open source. We’re starting with Guareña: sign up and join the beta.">
+<meta property="og:image" content="../assets/logo/og-388pueblos.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="388 towns of Extremadura">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../assets/logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/logo/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="alternate" hreflang="es" href="../index.html">
+<link rel="alternate" hreflang="en" href="index.html">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js" crossorigin>
+<link rel="preload" href="../data/guarena.json" as="fetch" crossorigin>
+<link rel="preload" href="../data/municipios.json" as="fetch" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Instrument+Serif:ital@1&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../css/landing.css">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body>
+
+<div id="loader" role="status" aria-live="polite">
+  <div class="inner">
+    <div class="count"><span id="ld-n">000</span><small>/388</small></div>
+    <div class="name" id="ld-name">Guareña</div>
+    <div class="bar"><i id="ld-bar"></i></div>
+    <div class="status mono" id="ld-status">Loading digital twin</div>
+  </div>
+</div>
+
+<canvas id="world" aria-hidden="true"></canvas>
+<div id="wlabels" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="brand" href="#inicio" aria-label="388 Pueblos, home"><img class="b-dark" src="../assets/logo/logo-388.svg" alt="388 Pueblos" width="68" height="36"><img class="b-light" src="../assets/logo/logo-388-noche.svg" alt="" width="68" height="36"></a>
+  <nav aria-label="Sections">
+    <ul>
+      <li><a href="#vuelo">The project</a></li>
+      <li><a href="#origen">Origins</a></li>
+      <li><a href="#mundo">The world</a></li>
+      <li><a href="#los388">The 388</a></li>
+      <li><a href="#ayuntamientos">Town councils</a></li>
+      <li><a href="#unete">Waiting list</a></li>
+      <li><a href="../index.html" hreflang="es" lang="es" aria-label="Versión en español">ES</a></li>
+    </ul>
+  </nav>
+  <a class="btn primary" href="guarena.html?jugar">Play <span class="arr" aria-hidden="true">→</span></a>
+</header>
+
+<div class="hud mono" aria-hidden="true">
+  <div class="coord" id="hud-coord"><span><b>06060</b> Guareña</span><span>38.859°N 6.103°W</span><span>285 m a.s.l.</span><span>UTM 29N</span></div>
+</div>
+<div class="hud-r mono" aria-hidden="true"><span id="hud-sec">Town 001/388</span><span class="hbar"><i id="hud-bar"></i></span></div>
+
+<main>
+  <!-- HERO -->
+  <section id="inicio" class="hero night" aria-labelledby="t-hero">
+    <div class="hero-tag mono"><span class="big num">001<small>/388</small></span><span>First town in our world</span><span>Guareña · Badajoz</span></div>
+    <h1 id="t-hero" class="display"><span class="line"><span>388</span></span><span class="line"><span>Pueblos<span class="serif"> of Extremadura</span></span></span></h1>
+    <div class="sub">
+      <p>An open, free online world with all 388 municipalities of Extremadura. Get to know them, play and meet people. We’re starting with Guareña.</p>
+      <div class="ctas">
+        <a class="btn primary" href="guarena.html?jugar">Play in Guareña <span class="arr" aria-hidden="true">→</span></a>
+        <a class="btn" href="#los388">See all 388</a>
+        <span class="beta mono"><i></i>Beta in testing · waiting list · open source</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLIGHT: from the square to the region -->
+  <section id="vuelo" class="flight night" aria-label="From Guareña to the 388 towns">
+    <div class="stick">
+      <article class="step" data-from="0.07" data-to="0.27">
+        <span class="kicker">Town 001 · Guareña</span>
+        <h2>This is Guareña, building by building.</h2>
+        <p>Every volume you see comes from the Catastro (Spain’s land registry), with its real footprint and its real number of floors. Storks nest on the tower of Santa María, as they do on so many bell towers in Extremadura.</p>
+        <div class="meta mono"><span><b id="n-parts">7,985</b> volumes</span><span><b>6,665</b> residents</span><span>Source <b>Catastro</b></span></div>
+      </article>
+      <article class="step right" data-from="0.29" data-to="0.47">
+        <span class="kicker">Scale 1:10,000</span>
+        <h2>From above, a town is a way of life.</h2>
+        <p>Narrow streets that hold on to the shade, patios, farmyards and, all around, the patchwork of the Vegas Altas del Guadiana: olive groves in neat rows, vineyards, cereal fields and irrigated land.</p>
+        <div class="meta mono"><span>District <b>Vegas Altas</b></span><span>Municipal area <b>283 km²</b></span></div>
+      </article>
+      <article class="step" data-from="0.5" data-to="0.68">
+        <span class="kicker">Scale 1:500,000</span>
+        <h2>Guareña is one of 388.</h2>
+        <p>Next door are Don Benito, Villanueva de la Serena, Valdetorres, Cristina and Manchita. Each one has its own tower, its own festival, its nicknames and its way of speaking.</p>
+        <div class="meta mono"><span>Badajoz <b>165</b></span><span>Cáceres <b>223</b></span></div>
+      </article>
+      <article class="step final" data-from="0.75" data-to="1.01">
+        <span class="kicker">Extremadura · INE population register 2025</span>
+        <h2>388 towns. One light for each.</h2>
+        <div class="stats">
+          <div><strong class="num" data-count="388">388</strong><span>municipalities, all already built in 3D</span><small>165 Badajoz · 223 Cáceres</small></div>
+          <div><strong class="num" data-count="1051638">1,051,638</strong><span>inhabitants</span><small>INE, 1 January 2025</small></div>
+          <div><strong class="num s" data-count="222">222</strong><span>towns with fewer than 1,000 residents</span><small>125 below 500</small></div>
+          <div><strong class="num s" data-count="335">335</strong><span>have fewer inhabitants today than in 2001</span><small>or than in their first register</small></div>
+        </div>
+      </article>
+      <a class="skip mono btn" href="#los388">Skip to the map of the 388 ↓</a>
+    </div>
+  </section>
+
+  <!-- MANIFESTO -->
+  <section id="manifiesto" class="manifesto night" aria-labelledby="t-man">
+    <span class="kicker" id="t-man">Why 388 Pueblos exists</span>
+    <p class="statement" data-words>When a town empties, it isn’t only the people who leave. Its festivals go too, and its nicknames, its street games and its way of naming things. We build a living copy of each one, <span class="serif">so it can be visited, played and lived in from anywhere in the world.</span></p>
+    <div class="pillars">
+      <div><h3>Discover</h3><p>Churches, squares, chapels and streets rebuilt from public data and photography. The town’s memory, told by its own people.</p></div>
+      <div><h3>Play</h3><p>Quests, live festivals, challenges between neighbouring towns and a passport that gets stamped town by town.</p></div>
+      <div><h3>Meet up</h3><p>An open place for young people from here and for those who left: friends, cousins, grandchildren and curious people from anywhere.</p></div>
+    </div>
+  </section>
+
+  <!-- ORIGINS -->
+  <section id="origen" class="origin day zocalo" aria-labelledby="t-origen">
+    <figure class="plano" style="margin:0">
+      <canvas id="plano" width="900" height="900" aria-label="Map of Guareña drawn from the footprints of its buildings"></canvas>
+      <figcaption class="mono"><span>Guareña · building footprints</span><span>Catastro INSPIRE</span></figcaption>
+    </figure>
+    <div class="txt">
+      <span class="kicker">Origins · Guareña, Badajoz</span>
+      <h2 id="t-origen" class="h2">It all starts in a town in the <span class="serif">Vegas Altas.</span></h2>
+      <p>388 Pueblos is the idea of Ana Pérez Toledo, an entrepreneur from Guareña. Her generation spends hours in digital worlds that have nothing to do with where they come from. She asked herself why one of those worlds couldn’t be her own town.</p>
+      <p>That’s where the project comes from: to recreate, carefully and accurately, the reality and character of Extremadura’s towns in an open digital universe. So they are not forgotten, so they help us plan them better, and so anyone, wherever they live, can come in, play and stay.</p>
+      <blockquote class="quote">
+        <p>“I don’t want my town to be just a memory. I want it to be a place you can come back to from anywhere.”</p>
+        <cite class="mono">Ana Pérez Toledo · founder</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- THE WORLD: layers -->
+  <section id="mundo" class="layers" aria-labelledby="t-mundo">
+    <div class="stick">
+      <header>
+        <div><span class="kicker">The world · four layers</span><h2 id="t-mundo" class="h2">A real town, inside and out.</h2></div>
+        <p>Each municipality is built in layers: data first, the game on top, people all around and, finally, decisions.</p>
+      </header>
+      <div class="track" id="track">
+        <article class="layer">
+          <div class="lvl mono"><span>Layer <b>1</b> of 4</span><span>Open data</span></div>
+          <h3>Digital <span class="serif">twin</span></h3>
+          <p>The town as it really is. Building volumes from the Catastro, LiDAR terrain from the IGN (Spain’s National Geographic Institute) and photogrammetry of façades, churches and corners. Measurable and easy to update.</p>
+          <ul><li>Buildings<b>1:1 from the Catastro</b></li><li>Terrain<b>LiDAR PNOA</b></li><li>Heritage<b>Photogrammetry</b></li></ul>
+        </article>
+        <article class="layer">
+          <div class="lvl mono"><span>Layer <b>2</b> of 4</span><span>Game</span></div>
+          <h3>Playable <span class="serif">world</span></h3>
+          <p>A place where things happen. You get in from your browser or your phone, with nothing to install. Quests, mini-games, events and a calendar of live festivals.</p>
+          <ul><li>Access<b>Browser and mobile</b></li><li>Sessions<b>Multiplayer</b></li><li>Content<b>Town by town</b></li></ul>
+        </article>
+        <article class="layer">
+          <div class="lvl mono"><span>Layer <b>3</b> of 4</span><span>Community</span></div>
+          <h3>People from here <span class="serif">and beyond</span></h3>
+          <p>Young locals, Extremadurans living elsewhere and players from any country. Avatars, groups for each town, moderated chat and safe spaces for minors.</p>
+          <ul><li>Groups<b>One per town</b></li><li>Moderation<b>Active</b></li><li>Minors<b>Consent 14+</b></li></ul>
+        </article>
+        <article class="layer">
+          <div class="lvl mono"><span>Layer <b>4</b> of 4</span><span>Urban planning</span></div>
+          <h3>Urban <span class="serif">lab</span></h3>
+          <p>Test before you build. Simulate a pedestrian zone, the shade of new trees, a market or the restoration of a house, and ask residents before deciding.</p>
+          <ul><li>Simulation<b>Shade and uses</b></li><li>Participation<b>Votes</b></li><li>For<b>Town councils</b></li></ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW TO PLAY -->
+  <section id="juego" class="play" aria-labelledby="t-juego">
+    <header>
+      <span class="kicker">How to play</span>
+      <h2 id="t-juego" class="h2">Village life as it’s always been, now online too.</h2>
+    </header>
+    <div class="cards">
+      <article class="card"><div class="top mono"><span class="tag">Available now</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="9" y="7" width="38" height="42" rx="3"/><circle cx="28" cy="26" r="9"/><path d="M19 41h18"/></svg></div><h3>The 388 passport</h3><p>Every town you visit stamps your passport. When you go there for real, you get stamped in its square as well. Collecting the whole of Extremadura is the long game.</p></article>
+      <article class="card"><div class="top mono"><span>Live</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M28 6v8M28 42v8M6 28h8M42 28h8M12 12l6 6M38 38l6 6M44 12l-6 6M18 38l-6 6"/><circle cx="28" cy="28" r="7"/></svg></div><h3>Festivals in sync</h3><p>When the town is celebrating, so is the world. Open-air dances, processions and country pilgrimages, lived online by those who can’t be there.</p></article>
+      <article class="card"><div class="top mono"><span>Stories</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M10 10h22l14 14v22H10z"/><path d="M32 10v14h14M17 32h22M17 39h15"/></svg></div><h3>Legends and quests</h3><p>Quests written with each town’s elders: old trades, nicknames, legends and places that no longer appear on any map.</p></article>
+      <article class="card"><div class="top mono"><span>Competition</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M18 8h20v10a10 10 0 0 1-20 0zM18 12H9c0 7 4 11 9 11M38 12h9c0 7-4 11-9 11M28 28v10M19 48h18M22 38h12v10H22z"/></svg></div><h3>Town league</h3><p>The friendly rivalry neighbouring towns have always had, with weekly challenges and rankings by district.</p></article>
+      <article class="card"><div class="top mono"><span class="tag">Available now</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 46V24l20-14 20 14v22z"/><path d="M22 46V32h12v14M8 24h40"/></svg></div><h3>Play in Guareña</h3><p>Wherever you press Play or Walk around, you land in Guareña: its real streets, its locals and its first quests. The other towns will join one by one.</p></article>
+      <article class="card"><div class="top mono"><span class="tag">Available now</span><svg class="glyph" viewBox="0 0 56 56" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="28" cy="28" r="20"/><circle cx="28" cy="28" r="3" fill="currentColor"/><path d="M28 4v8M28 44v8M4 28h8M44 28h8"/></svg></div><h3>Wake your town up</h3><p>Vote for the town that gets modelled next. We take the votes to each town council as proof that people are waiting.</p></article>
+    </div>
+  </section>
+
+  <!-- OPEN AND FREE -->
+  <section id="abierto" class="open" aria-labelledby="t-abierto">
+    <header>
+      <span class="kicker">Open and free</span>
+      <h2 id="t-abierto" class="h2">All 388 towns, <span class="serif">open to everyone.</span></h2>
+      <p>388 Pueblos is an open-source project. <strong>For now, everything is free.</strong> Entering the towns and spending time with other people always will be.</p>
+    </header>
+    <div class="opens">
+      <article><span class="mono">Free, always</span><h3>Getting in costs nothing</h3><p>Access to the 388 towns, and spending time with other people inside them, is and always will be completely free. So are many activities and games.</p></article>
+      <article><span class="mono">Today, everything’s free</span><h3>And tomorrow, no walls</h3><p>Right now, nothing costs money. Later on there may be some paid services or games inside a town, always alongside many free ones and without shutting anyone out. The project is funded by the town councils that choose to wake their town up.</p></article>
+      <article class="feat"><span class="mono">Open source · MIT and CC BY-SA</span><h3>Improve your own town</h3><p>The code and the towns are open. Anyone can suggest improvements and edit their town: its streets, its places, its stories and its festivals.</p><a class="btn" href="https://github.com/nestorguerra/388-pueblos" target="_blank" rel="noopener">See the code on GitHub <span aria-hidden="true">↗</span></a></article>
+    </div>
+  </section>
+
+  <!-- THE 388 -->
+  <section id="los388" class="mapsec night" aria-labelledby="t-388">
+    <div class="stick">
+      <div class="panel" data-lenis-prevent>
+        <div class="box">
+          <span class="kicker">The 388 · live map</span>
+          <h2 id="t-388">One town awake. <span class="serif">387 still to wake.</span></h2>
+          <div class="awake mono"><span><b class="on num" id="c-awake">1</b> awake</span><span><b class="num" id="c-sleep">388</b> built</span><span><b class="num" id="c-votes">0</b> votes</span><span class="cl" hidden><b class="num" id="c-list">0</b> signed up</span></div>
+          <p class="muted" style="margin:0">All 388 already have an automatic twin built from Catastro buildings. Tap any of them to enter its twin.</p>
+          <div class="search">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+            <label class="sr" for="q">Find your town</label>
+            <input id="q" type="text" autocomplete="off" placeholder="Find your town" aria-controls="sugg">
+            <ul class="sugg" id="sugg" role="listbox" hidden></ul>
+          </div>
+          <div class="chips"><button class="chip" type="button" id="rnd">Random town</button><button class="chip" type="button" id="home">Go to Guareña</button><button class="chip" type="button" id="all">Overview</button></div>
+        </div>
+        <div class="box">
+          <div class="field"><span class="lab">Height and colour by</span>
+            <div class="chips" role="group" aria-label="Map variable">
+              <button class="chip" type="button" data-mode="pop" aria-pressed="true">Population</button>
+              <button class="chip" type="button" data-mode="loss" aria-pressed="false">Change 2001–2025</button>
+              <button class="chip" type="button" data-mode="alt" aria-pressed="false">Altitude</button>
+              <button class="chip" type="button" data-mode="votes" aria-pressed="false">Votes</button>
+            </div>
+          </div>
+          <div class="legend"><div class="ramp" id="ramp"></div><div class="ends mono"><span id="lg-a">80 pop.</span><span id="lg-b">150,000 pop.</span></div></div>
+          <div class="field"><span class="lab">Highlight</span>
+            <div class="chips" role="group" aria-label="Filter">
+              <button class="chip" type="button" data-filter="all" aria-pressed="true">All</button>
+              <button class="chip" type="button" data-filter="1000" aria-pressed="false">&lt; 1,000 pop.</button>
+              <button class="chip" type="button" data-filter="500" aria-pressed="false">&lt; 500 pop.</button>
+              <button class="chip" type="button" data-filter="loss" aria-pressed="false">Losing population</button>
+            </div>
+          </div>
+          <p class="muted" id="f-count">388 towns highlighted</p>
+        </div>
+        <div class="box rankbox">
+          <span class="lab mono" style="color:var(--niebla)">Most votes to wake up</span>
+          <div class="rank"><ol id="rank"><li><span class="muted">No votes yet. The first one could be yours.</span></li></ol></div>
+        </div>
+      </div>
+      <aside class="sheet" id="sheet" hidden aria-live="polite">
+        <button class="x" type="button" id="sheet-x" aria-label="Close card">×</button>
+        <span class="status" id="s-status"><i></i><span>Not awake yet</span></span>
+        <h3 id="s-name">Guareña</h3>
+        <div class="mono" style="color:var(--niebla)" id="s-meta">06060 · Badajoz</div>
+        <div class="grid">
+          <div><b id="s-pop">6,665</b><span>Population 2025</span></div>
+          <div><b id="s-chg">−10.4 %</b><span>Since 2001</span></div>
+          <div><b id="s-alt">285 m</b><span>Altitude</span></div>
+          <div><b id="s-area">283 km²</b><span>Area</span></div>
+        </div>
+        <div class="queue" id="s-queue" hidden></div>
+        <p class="note" id="s-note"></p>
+        <div class="chips" id="s-actions"></div>
+      </aside>
+      <div class="tip" id="tip" role="tooltip"></div>
+    </div>
+  </section>
+
+  <!-- NAMES -->
+  <section class="names" aria-labelledby="t-names">
+    <header><div><span class="kicker">The names</span><h2 id="t-names" class="h2" style="margin-top:.8rem">Every name, a whole town.</h2></div><p>Tap any name to see it on the map. They’re all here, from Abadía to Zorita.</p></header>
+    <div class="rows" id="rows"></div>
+    <ul class="sr" id="names-list"></ul>
+  </section>
+
+  <!-- ROADMAP -->
+  <section id="ruta" class="route day zocalo" aria-labelledby="t-ruta">
+    <header>
+      <div><span class="kicker">Roadmap</span><h2 id="t-ruta" class="h2" style="margin-top:.8rem">From one town to all 388.</h2></div>
+      <p>First, prove that it works in Guareña and bring together a real community. With players on board, go town by town with the councils that want to join.</p>
+    </header>
+    <div class="phases" id="phases">
+      <span class="prog" id="ph-prog"></span>
+      <div class="phase now"><span class="n">0</span><span class="when mono">Oct – Dec 2026 · now</span><h3>Seed</h3><ul><li>This website, the map of the 388 and the votes</li><li>All 388 built automatically from the Catastro</li><li>Guareña beta with a waiting list and a stamp passport</li><li>An open-source project from day one</li><li>Testing with students from the IES Eugenio Frutos secondary school</li></ul></div>
+      <div class="phase"><span class="n">1</span><span class="when mono">Feb – Apr 2027</span><h3>Playable Guareña</h3><ul><li>Public beta at Carnival</li><li>The square, Santa María and the first quests</li><li>First live event</li><li>Goal: 1,000 players</li></ul></div>
+      <div class="phase"><span class="n">2</span><span class="when mono">May 2027 – 2028</span><h3>The Vegas Altas</h3><ul><li>Presentation to town councils, the Diputación (provincial council) and ADEVAG, with usage data and votes</li><li>First funded towns after the summer</li><li>Town league, passport and Extremadura Day</li><li>Goal: 25–40 towns</li></ul></div>
+      <div class="phase"><span class="n">3</span><span class="when mono">2029 onwards</span><h3>All 388</h3><ul><li>Badajoz and Cáceres complete</li><li>Urban lab for municipalities</li><li>All of Extremadura, open to the world</li></ul></div>
+    </div>
+    <p class="disclaim mono">Indicative timeline. Each phase depends on the community we build and on funding.</p>
+  </section>
+
+  <!-- BUILD LOG -->
+  <section id="diario" class="diary" aria-labelledby="t-diario">
+    <header>
+      <div><span class="kicker">Build log</span><h2 id="t-diario" class="h2" style="margin-top:.8rem">What we’ve done <span class="serif">this week.</span></h2></div>
+      <p>Every change to the website and the game is out in the open, because all the code is open. Here’s the latest, straight from the repositories.</p>
+    </header>
+    <ol class="entries" id="diary" aria-live="polite"><li class="muted">Loading the latest changes…</li></ol>
+    <p class="more"><a class="btn" href="https://github.com/nestorguerra/388-pueblos/commits/main" target="_blank" rel="noopener" id="diary-all">See every change <span aria-hidden="true">↗</span></a></p>
+  </section>
+
+  <!-- TOWN COUNCILS -->
+  <section id="ayuntamientos" class="councils zocalo" aria-labelledby="t-ayto">
+    <div class="head">
+      <div><span class="kicker" style="color:var(--anil)">For town councils</span><h2 id="t-ayto" class="h2" style="margin-top:.8rem">Your town, on the world map.</h2></div>
+      <p>Your town is already built in 3D from Catastro data, and anyone can go in and see it. Waking it up does much more than offer a game: it documents heritage, helps with planning decisions, attracts visitors and brings the town back to those who live far away.</p>
+    </div>
+    <div class="benefits">
+      <div><span class="mono">Heritage</span><h3>Documented memory</h3><p>Churches, chapels, houses and streets recorded in 3D before they change or disappear.</p></div>
+      <div><span class="mono">Urban planning</span><h3>Decide with the model</h3><p>Try out building works, a pedestrian zone or tree planting on the real town and show it to residents.</p></div>
+      <div><span class="mono">Depopulation</span><h3>Young people and diaspora</h3><p>A reason for young people to stay connected, and for those who left to come back, even if only in summer.</p></div>
+      <div><span class="mono">Tourism</span><h3>A town people can see</h3><p>A gateway to festivals, routes and local produce for people who would never have found the town.</p></div>
+    </div>
+    <div class="tiers">
+      <article class="tier"><span class="mono">Service 1 · one-off payment</span><h3>Model my town</h3><ul><li>The whole town centre, building by building, at its real height</li><li>The church, the square and the town hall, recognisable at first glance</li><li>The town open in the 388 Pueblos world, free for all its residents</li><li>Its own info card, passport stamp and way into the game</li></ul><span class="price">€500 to €2,000 depending on the size of the municipality</span></article>
+      <article class="tier feat"><span class="mono">Service 2 · per change</span><h3>Plan in 3D</h3><ul><li>We model a planning proposal on the real town: a square, a pedestrian zone, tree planting, a building</li><li>Before-and-after views, to show at a council meeting or out on the street</li><li>Residents consulted inside the world, with their opinions and votes in the dashboard</li></ul><span class="price">€300 per change</span></article>
+      <article class="tier"><span class="mono">Service 3 · annual fee</span><h3>Council dashboard</h3><ul><li>Dashboard with statistics on visits, players and residents signed up</li><li>Activities and festivals published in the world, and notices to residents</li><li>Model updates when the town changes</li><li>Participation indicators and an annual report</li></ul><span class="price">€25/month · €300 a year</span></article>
+    </div>
+    <p class="mono" style="margin-top:1.2rem;color:#2a3048;line-height:1.7">Prices exclude VAT. Each service fits within a minor services contract (article 118 of Spain’s Public Sector Contracts Act, Ley 9/2017): a fixed payment to model the town and, if the council wishes, the annual dashboard fee and any changes it commissions. Because the project is open source and access is free, whatever a council funds stays available to everyone.</p>
+    <div class="cta"><a class="btn primary" href="../ayuntamientos.html" hreflang="es">See the proposal for town councils (in Spanish) <span class="arr" aria-hidden="true">→</span></a><a class="btn" href="../assets/dossier/388-pueblos-dossier-ayuntamientos.pdf" hreflang="es" download>Download the dossier (PDF, in Spanish)</a><span class="mono" style="color:#2a3048">Also for provincial councils, local action groups and schools</span></div>
+  </section>
+
+  <!-- COMMUNITY -->
+  <section id="comunidad" class="community" aria-labelledby="t-com">
+    <div>
+      <span class="kicker">Community</span>
+      <h2 id="t-com" class="h2" style="margin-top:.8rem">The town, <span class="serif">outside the game too.</span></h2>
+      <p>On the 388 Pueblos Discord, people meet up to play, suggest ideas for each town and follow the build log live. One channel per district, moderation from day one and clear rules designed for young people.</p>
+      <p class="cta"><a class="btn primary" id="discord" href="#comunidad" aria-disabled="true">Our Discord opens very soon</a></p>
+    </div>
+    <ul class="channels mono" aria-label="Some of the Discord channels">
+      <li><b>#bienvenida</b><span>rules and first steps</span></li>
+      <li><b>#plaza-mayor</b><span>general chat</span></li>
+      <li><b>#vegas-altas</b><span>one channel per district</span></li>
+      <li><b>#busco-partida</b><span>to play together</span></li>
+      <li><b>#ideas-para-mi-pueblo</b><span>what your town is missing</span></li>
+      <li><b>#diario-de-obra</b><span>every change, live</span></li>
+    </ul>
+  </section>
+
+  <!-- QUESTIONS -->
+  <section id="preguntas" class="faq" aria-labelledby="t-faq">
+    <div><span class="kicker">Questions</span><h2 id="t-faq" class="h2" style="margin-top:.8rem">What people <span class="serif">ask us most.</span></h2></div>
+    <div class="qs">
+      <details><summary>How much does it cost?</summary><p>For now, everything is free. Entering the 388 towns and spending time with other people will always stay free; in the future there may be some paid services or games inside a town, alongside many free ones.</p></details>
+      <details><summary>What does it take to wake my town up?</summary><p>Residents and a town council. Each town has its own queue: when it reaches 100 people signed up, we take that data to its town council so it can commission the work. Sign up by choosing your town, and tell your friends and family.</p></details>
+      <details><summary>Where can I talk to other players?</summary><p>On the 388 Pueblos Discord, with a channel for each district, the build log and a space to suggest ideas. You’ll find it in the “Community” section.</p></details>
+      <details><summary>Can I play now?</summary><p>Yes. We’re testing with a waiting list: sign up with your email and you get into the Guareña beta straight away.</p></details>
+      <details><summary>Can I edit my town?</summary><p>Yes. 388 Pueblos is open source: the code is licensed under MIT, and the towns and their content under CC BY-SA 4.0. In the repository we explain how to propose changes to your town. The goal is for you to be able to do it without knowing how to code, too.</p></details>
+      <details><summary>I’m from a town council. What do we do?</summary><p>Your town is already built automatically. Waking it up in detail (square, church, streets, quests and festivals) is done together with the town council: look at the options above or ask us for a presentation.</p></details>
+      <details><summary>What do you do with my data?</summary><p>We only store your email and, if you want, your alias and your town, to keep you posted about the project. We explain it in the <a href="privacy.html">privacy policy</a>.</p></details>
+    </div>
+  </section>
+
+  <!-- JOIN -->
+  <section id="unete" class="join" aria-labelledby="t-unete">
+    <div>
+      <span class="kicker">Waiting list · beta in testing</span>
+      <h2 id="t-unete" class="h2" style="margin-top:.8rem">Become a <span class="serif">resident</span> of the 388.</h2>
+      <p class="lead">We’re testing. Join the waiting list and get into the Guareña beta right now; we’ll let you know about news and about every town that wakes up. Getting in is free and always will be.</p>
+      <form id="form" novalidate>
+        <div class="two">
+          <div class="field"><label for="f-alias">Your name or alias</label><input id="f-alias" type="text" maxlength="40" autocomplete="nickname" placeholder="What should we call you?"></div>
+          <div class="field"><label for="f-email">Email</label><input id="f-email" type="email" autocomplete="email" placeholder="so we can tell you about the beta" required></div>
+        </div>
+        <div class="field"><label for="f-town">Your town</label><input id="f-town" type="text" list="towns" autocomplete="off" placeholder="Type and pick from the list"><datalist id="towns"></datalist></div>
+        <div class="field"><span class="lab">You’re joining as</span>
+          <div class="chips" role="group" aria-label="Profile" id="roles">
+            <button class="chip" type="button" data-role="Jugador" aria-pressed="true">Player</button>
+            <button class="chip" type="button" data-role="Creador" aria-pressed="false">Creator</button>
+            <button class="chip" type="button" data-role="Desde fuera" aria-pressed="false">Extremaduran abroad</button>
+            <button class="chip" type="button" data-role="Ayuntamiento" aria-pressed="false">Town council</button>
+          </div>
+        </div>
+        <label class="check" for="f-age"><input id="f-age" type="checkbox"> I’m 14 or older. If I’m younger, my mum, dad or guardian will sign me up.</label>
+        <label class="check" for="f-ok"><input id="f-ok" type="checkbox"> I’ve read the <a href="privacy.html">privacy policy</a> and agree that 388 Pueblos may store this data only to keep me posted about the project.</label>
+        <input class="trap" id="f-web" type="text" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap"><button class="btn primary" type="submit">Join the list <span class="arr" aria-hidden="true">→</span></button><span class="formmsg" id="f-msg" role="status"></span></div>
+      </form>
+      <div class="queues" id="queues" hidden>
+        <p class="mono qt" id="q-total"></p>
+        <ol id="q-top"></ol>
+        <p class="hint">Each town wakes up when 100 locals have signed up: we take those numbers to its town council.</p>
+      </div>
+    </div>
+    <div class="passport" id="passport" aria-label="Preview of your resident passport">
+      <div class="ph mono"><span>Resident passport</span><span id="pp-no">No. —</span></div>
+      <div class="pn"><span class="who" id="pp-who">Your name</span><span class="town" id="pp-town">Your town</span></div>
+      <div class="pf mono"><span>INE <b id="pp-ine">—</b></span><span id="pp-ll">—</span><span>Stamps <b id="pp-st">0/388</b></span></div>
+      <div class="stamp" aria-hidden="true">Founding<br>resident<br>2026</div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="word display">388 <span class="serif">pueblos</span></div>
+  <div class="cols">
+    <div><p>A project by Ana Pérez Toledo. Made in Guareña, Badajoz, town by town.</p><p>Open source: the code under the MIT licence, and the towns and content under CC BY-SA 4.0. Third-party data keeps its own licences.</p><p><a href="guarena.html?jugar">Play in Guareña →</a></p><p><a href="https://github.com/nestorguerra/388-pueblos" target="_blank" rel="noopener">Code on GitHub ↗</a> · <a href="privacy.html">Privacy</a></p></div>
+    <div><span class="mono" style="color:var(--niebla-2)">Explore</span><ul><li><a href="#vuelo">The project</a></li><li><a href="#los388">Map of the 388</a></li><li><a href="../ayuntamientos.html" hreflang="es">For town councils</a></li><li><a href="#abierto">Open and free</a></li><li><a href="#diario">Build log</a></li><li><a href="#comunidad">Community on Discord</a></li><li><a href="#preguntas">Questions</a></li><li><a href="#unete">Waiting list</a></li><li><a href="../index.html" hreflang="es" lang="es">Español</a></li></ul></div>
+    <div><span class="mono" style="color:var(--niebla-2)">Open data</span><ul><li>Buildings: Dirección General del Catastro (INSPIRE)</li><li>Municipal boundaries: IGN, via es-atlas</li><li>Population: INE, 2025 population register, via Wikidata</li><li>Locations: © OpenStreetMap contributors</li></ul></div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script type="module" src="../js/main.js"></script>
+</body></html>

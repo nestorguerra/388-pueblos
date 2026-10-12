@@ -3,15 +3,69 @@ import { createLandingWorld } from './landing-world.js';
 import { readPassport } from './pasaporte.js';
 import { SHARED, loadVotes, sendVote, wake, loadSignupCounts } from './backend.js';
 import { META_DESPERTAR, DISCORD_URL } from './config.js';
-import { t } from './i18n.js';
+import { t, addTexts, lang, page, locale } from './i18n.js';
 import { markListed, saveSignup, queueSignup } from './lista.js';
 import { getJSON, prerender } from './red.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
-const fmt = new Intl.NumberFormat('es-ES');
-const pct = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1, minimumFractionDigits: 1, signDisplay: 'exceptZero' });
+const fmt = new Intl.NumberFormat(locale);
+const pct = new Intl.NumberFormat(locale, { maximumFractionDigits: 1, minimumFractionDigits: 1, signDisplay: 'exceptZero' });
+
+// textos de la portada en español e inglés (los de varias páginas están en i18n.js)
+addTexts({
+  es: {
+    'm.levantando': 'Levantando el pueblo…', 'm.sin3d': 'Tu navegador no muestra 3D: verás la versión ligera', 'm.listo': 'Listo',
+    'hud.comarca': '<span><b>Vegas Altas</b> del Guadiana</span><span>Escala 1:500.000</span><span>Badajoz</span>',
+    'hud.region': '<span><b>Extremadura</b></span><span>41.634 km²</span><span>388 municipios</span><span>1.051.638 hab.</span>',
+    'hud.pueblo': '<span><b>06060</b> Guareña</span><span>38.859°N 6.103°W</span><span>285 msnm</span><span>UTM 29N</span>',
+    'sec.inicio': 'Pueblo 001/388', 'sec.vuelo': 'El vuelo', 'sec.manifiesto': 'Manifiesto', 'sec.origen': 'Origen', 'sec.mundo': 'El mundo',
+    'sec.juego': 'Cómo se juega', 'sec.los388': 'Los 388', 'sec.ruta': 'Hoja de ruta', 'sec.diario': 'Diario de obra',
+    'sec.ayuntamientos': 'Ayuntamientos', 'sec.comunidad': 'Comunidad', 'sec.unete': 'Únete',
+    'r.pop': ['menos de 100 hab.', '150.000 hab.'], 'r.loss': ['pierde 45 %', 'gana 30 %'], 'r.alt': ['150 m', '1.100 m'], 'r.votes': ['sin votos', 'más votado'],
+    'tip.despierto': 'Despierto', 'tip.auto': 'Gemelo automático', 'tip.hab': 'Habitantes', 'tip.desde': 'Desde 2001', 'tip.alt': 'Altitud', 'tip.votos': 'Votos',
+    'st.home': 'Despierto · primer pueblo', 'st.auto': 'Levantado en automático · por despertar',
+    'note.home': 'Guareña es el primer pueblo del mundo de 388 Pueblos: Santa María (BIC, iniciada en 1557), la casa del poeta Luis Chamizo y el yacimiento tartésico de Casas del Turuñuelo.',
+    'note.auto': ({ n }) => `Ya tiene su gemelo automático con los edificios del Catastro: puedes entrar a verlo. Despertarlo (plaza, iglesia y calles al detalle, misiones y fiestas) depende de que su ayuntamiento se sume. ${n ? `Ya lo piden ${n} ${n === 1 ? 'persona' : 'personas'}.` : 'Aún nadie lo ha pedido.'}`,
+    'a.jugar': 'Jugar en Guareña', 'a.gemelo': 'Ver su gemelo', 'a.tuvoto': 'Tu voto es para este pueblo', 'a.despertar': ({ name }) => `Despertar ${name}`, 'a.entrar': 'Entrar en su gemelo',
+    'f.count': ({ n, loss }) => `${n} ${n === 1 ? 'pueblo destacado' : 'pueblos destacados'}${loss ? ' · han perdido población desde 2001' : ''}`,
+    'v.votos': ({ n }) => `${n} ${n === 1 ? 'voto' : 'votos'}`, 'v.vacio': 'Aún no hay votos. El primero puede ser el tuyo.',
+    'd.error': 'Ahora mismo no podemos cargar el diario. Puedes verlo en GitHub.',
+    'pp.fundador': 'Nº fundador', 'pp.nombre': 'Tu nombre', 'pp.pueblo': 'Tu pueblo',
+    'fm.email': 'Escribe un email válido para poder avisarte.', 'fm.edad': 'Marca la casilla de edad. Si tienes menos de 14 años, pide a un adulto que te apunte.',
+    'fm.ok': 'Necesitamos tu permiso para guardar el email.', 'fm.guardando': 'Guardando…',
+    'fm.apuntado': ({ name }) => `Apuntado. Te avisaremos de cada novedad${name ? ` y de cuando ${name} despierte` : ''}.`,
+    'fm.entrar': 'Entrar ya en Guareña →', 'fm.cola': 'Te hemos apuntado en este dispositivo y lo enviaremos en cuanto haya conexión.',
+    'fm.429': 'Demasiados intentos seguidos. Prueba de nuevo en un minuto.', 'fm.400': 'Revisa el email: no parece válido.',
+    'fm.error': 'No hemos podido guardar tu inscripción. Vuelve a intentarlo en un momento.', 'fm.preview': 'Esta vista previa no puede guardar inscripciones.',
+  },
+  en: {
+    'm.levantando': 'Raising the town…', 'm.sin3d': 'Your browser cannot show 3D: you will see the light version', 'm.listo': 'Ready',
+    'hud.comarca': '<span><b>Vegas Altas</b> del Guadiana</span><span>Scale 1:500,000</span><span>Badajoz</span>',
+    'hud.region': '<span><b>Extremadura</b></span><span>41,634 km²</span><span>388 municipalities</span><span>1,051,638 people</span>',
+    'hud.pueblo': '<span><b>06060</b> Guareña</span><span>38.859°N 6.103°W</span><span>285 m above sea level</span><span>UTM 29N</span>',
+    'sec.inicio': 'Town 001/388', 'sec.vuelo': 'The flight', 'sec.manifiesto': 'Manifesto', 'sec.origen': 'Origin', 'sec.mundo': 'The world',
+    'sec.juego': 'How you play', 'sec.los388': 'The 388', 'sec.ruta': 'Roadmap', 'sec.diario': 'Work diary',
+    'sec.ayuntamientos': 'Town councils', 'sec.comunidad': 'Community', 'sec.unete': 'Join',
+    'r.pop': ['under 100 people', '150,000 people'], 'r.loss': ['loses 45 %', 'gains 30 %'], 'r.alt': ['150 m', '1,100 m'], 'r.votes': ['no votes', 'most voted'],
+    'tip.despierto': 'Awake', 'tip.auto': 'Automatic twin', 'tip.hab': 'Population', 'tip.desde': 'Since 2001', 'tip.alt': 'Altitude', 'tip.votos': 'Votes',
+    'st.home': 'Awake · first town', 'st.auto': 'Raised automatically · waiting to wake up',
+    'note.home': 'Guareña is the first town in the 388 Pueblos world: Santa María church (a listed monument begun in 1557), the house of the poet Luis Chamizo and the Tartessian site of Casas del Turuñuelo.',
+    'note.auto': ({ n }) => `It already has its automatic twin built from Catastro (Spain's land registry) buildings: you can go in and see it. Waking it up (square, church and streets in detail, quests and festivities) depends on its town council joining. ${n ? `${n} ${n === 1 ? 'person has' : 'people have'} asked for it.` : 'Nobody has asked for it yet.'}`,
+    'a.jugar': 'Play in Guareña', 'a.gemelo': 'See its twin', 'a.tuvoto': 'Your vote goes to this town', 'a.despertar': ({ name }) => `Wake up ${name}`, 'a.entrar': 'Enter its twin',
+    'f.count': ({ n, loss }) => `${n} ${n === 1 ? 'town highlighted' : 'towns highlighted'}${loss ? ' · lost population since 2001' : ''}`,
+    'v.votos': ({ n }) => `${n} ${n === 1 ? 'vote' : 'votes'}`, 'v.vacio': 'No votes yet. The first one could be yours.',
+    'd.error': 'We cannot load the diary right now. You can see it on GitHub.',
+    'pp.fundador': 'Founder no.', 'pp.nombre': 'Your name', 'pp.pueblo': 'Your town',
+    'fm.email': 'Enter a valid email so we can let you know.', 'fm.edad': 'Tick the age box. If you are under 14, ask an adult to sign you up.',
+    'fm.ok': 'We need your permission to keep your email.', 'fm.guardando': 'Saving…',
+    'fm.apuntado': ({ name }) => `You are on the list. We will tell you about every update${name ? ` and when ${name} wakes up` : ''}.`,
+    'fm.entrar': 'Go into Guareña now →', 'fm.cola': 'We have signed you up on this device and will send it as soon as there is a connection.',
+    'fm.429': 'Too many attempts in a row. Try again in a minute.', 'fm.400': 'Check your email: it does not look valid.',
+    'fm.error': 'We could not save your sign-up. Please try again in a moment.', 'fm.preview': 'This preview cannot save sign-ups.',
+  },
+});
 const norm = (s) => s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const gsap = window.gsap;
@@ -65,7 +119,7 @@ document.addEventListener('click', (e) => {
 const RELEVO = '388:relevo';
 function enterTown(href, name, idx) {
   // mientras dura el descenso, el navegador ya va levantando la página del pueblo (llega lista)
-  prerender(href, href.startsWith('pueblo.html#') ? `data/pueblos/${href.split('#')[1]}.json` : null);
+  prerender(href, /^(pueblo|town)\.html#/.test(href) ? `data/pueblos/${href.split('#')[1]}.json` : null);
   const guarena = href.startsWith('guarena.html');
   let ov = null, gone = false;
   if (!guarena) {
@@ -73,7 +127,7 @@ function enterTown(href, name, idx) {
     ov.className = 'dive-ov';
     ov.innerHTML = '<div><b></b><span class="mono"></span></div>';
     ov.querySelector('b').textContent = name;
-    ov.querySelector('span').textContent = 'Levantando el pueblo…';
+    ov.querySelector('span').textContent = t('m.levantando');
     document.body.append(ov);
   }
   document.documentElement.classList.add('diving');
@@ -103,7 +157,7 @@ function follow(href) {
   enterTown(href, world.munis[idx].n, idx);
 }
 document.addEventListener('click', (e) => {
-  const a = e.target.closest('a[href^="guarena.html"], a[href^="pueblo.html#"]');
+  const a = e.target.closest('a[href^="guarena.html"], a[href^="pueblo.html#"], a[href^="town.html#"]');
   if (!a || e.metaKey || e.ctrlKey || e.shiftKey || world?.diving) return;
   const href = a.getAttribute('href');
   // (jugar: directamente, sin formulario por medio; la lista de espera tiene su sitio en la portada)
@@ -133,7 +187,7 @@ const hasWebGL = (() => {
 async function boot() {
   if (!hasWebGL) {
     document.documentElement.classList.add('no-webgl');
-    ld.status.textContent = 'Tu navegador no muestra 3D: verás la versión ligera';
+    ld.status.textContent = t('m.sin3d');
   } else {
     try {
       world = await createLandingWorld({
@@ -158,7 +212,7 @@ async function boot() {
 }
 
 function revealPage() {
-  ld.status.textContent = 'Listo';
+  ld.status.textContent = t('m.listo');
   const tl = gsap.timeline();
   tl.to('#loader .inner', { yPercent: -30, opacity: 0, duration: 0.6, ease: 'power3.in' }, 0.25)
     .to('#loader', { clipPath: 'inset(0 0 100% 0)', duration: 1.1, ease: 'power4.inOut' }, 0.5)
@@ -182,11 +236,7 @@ function initScroll() {
   const setHud = (stage) => {
     if (stage === hudStage) return;
     hudStage = stage;
-    const H = {
-      pueblo: '<span><b>06060</b> Guareña</span><span>38.859°N 6.103°W</span><span>285 msnm</span><span>UTM 29N</span>',
-      comarca: '<span><b>Vegas Altas</b> del Guadiana</span><span>Escala 1:500.000</span><span>Badajoz</span>',
-      region: '<span><b>Extremadura</b></span><span>41.634 km²</span><span>388 municipios</span><span>1.051.638 hab.</span>',
-    };
+    const H = { pueblo: t('hud.pueblo'), comarca: t('hud.comarca'), region: t('hud.region') };
     hudCoord.innerHTML = H[stage];
   };
 
@@ -288,9 +338,7 @@ function initScroll() {
 
   // HUD de sección
   const secs = [
-    ['#inicio', 'Pueblo 001/388'], ['#vuelo', 'El vuelo'], ['#manifiesto', 'Manifiesto'], ['#origen', 'Origen'],
-    ['#mundo', 'El mundo'], ['#juego', 'Cómo se juega'], ['#los388', 'Los 388'], ['#ruta', 'Hoja de ruta'],
-    ['#diario', 'Diario de obra'], ['#ayuntamientos', 'Ayuntamientos'], ['#comunidad', 'Comunidad'], ['#unete', 'Únete'],
+    ...['inicio', 'vuelo', 'manifiesto', 'origen', 'mundo', 'juego', 'los388', 'ruta', 'diario', 'ayuntamientos', 'comunidad', 'unete'].map((k) => [`#${k}`, t(`sec.${k}`)]),
   ];
   for (const [sel, label] of secs) {
     ScrollTrigger.create({ trigger: sel, start: 'top 50%', end: 'bottom 50%', onToggle: (s) => { if (s.isActive) $('#hud-sec').textContent = label; } });
@@ -371,10 +419,10 @@ const tip = $('#tip');
 const sheet = $('#sheet');
 const HOME = '06060';
 const RAMPS = {
-  pop: ['linear-gradient(90deg,#141b38,#7a7790)', 'menos de 100 hab.', '150.000 hab.'],
-  loss: ['linear-gradient(90deg,#b5381e,#2a2633 50%,#3f9a72)', 'pierde 45 %', 'gana 30 %'],
-  alt: ['linear-gradient(90deg,#1e3a22,#8e8b84)', '150 m', '1.100 m'],
-  votes: ['linear-gradient(90deg,#141b38,#ff9a3c)', 'sin votos', 'más votado'],
+  pop: ['linear-gradient(90deg,#141b38,#7a7790)', ...t('r.pop')],
+  loss: ['linear-gradient(90deg,#b5381e,#2a2633 50%,#3f9a72)', ...t('r.loss')],
+  alt: ['linear-gradient(90deg,#1e3a22,#8e8b84)', ...t('r.alt')],
+  votes: ['linear-gradient(90deg,#141b38,#ff9a3c)', ...t('r.votes')],
 };
 
 function muniFacts(m) {
@@ -394,7 +442,7 @@ function onHover(i, ptr, move) {
   const m = munis[i];
   if (!move) {
     const f = muniFacts(m);
-    tip.innerHTML = `<h4>${m.n}</h4><div class="row"><span>${m.id} · ${f.prov}</span><b>${m.id === HOME ? 'Despierto' : 'Gemelo automático'}</b></div><div class="row"><span>Habitantes</span><b>${f.pop}</b></div><div class="row"><span>Desde 2001</span><b>${f.chg}</b></div><div class="row"><span>Altitud</span><b>${f.alt}</b></div>${votes[m.id] ? `<div class="row"><span>Votos</span><b>${votes[m.id]}</b></div>` : ''}`;
+    tip.innerHTML = `<h4>${m.n}</h4><div class="row"><span>${m.id} · ${f.prov}</span><b>${t(m.id === HOME ? 'tip.despierto' : 'tip.auto')}</b></div><div class="row"><span>${t('tip.hab')}</span><b>${f.pop}</b></div><div class="row"><span>${t('tip.desde')}</span><b>${f.chg}</b></div><div class="row"><span>${t('tip.alt')}</span><b>${f.alt}</b></div>${votes[m.id] ? `<div class="row"><span>${t('tip.votos')}</span><b>${votes[m.id]}</b></div>` : ''}`;
   }
   tip.style.opacity = 1;
   const r = canvas.getBoundingClientRect();
@@ -418,21 +466,21 @@ function selectMuni(i, { fly = false } = {}) {
   $('#s-area').textContent = f.area;
   const stt = $('#s-status');
   stt.classList.toggle('on', home);
-  stt.querySelector('span').textContent = home ? 'Despierto · primer pueblo' : 'Levantado en automático · por despertar';
+  stt.querySelector('span').textContent = t(home ? 'st.home' : 'st.auto');
   renderQueue(m);
   const acts = $('#s-actions');
   acts.innerHTML = '';
   if (home) {
-    $('#s-note').textContent = 'Guareña es el primer pueblo del mundo de 388 Pueblos: Santa María (BIC, iniciada en 1557), la casa del poeta Luis Chamizo y el yacimiento tartésico de Casas del Turuñuelo.';
-    acts.innerHTML = '<a class="btn primary" href="guarena.html?jugar">Jugar en Guareña <span class="arr" aria-hidden="true">→</span></a><a class="btn" href="guarena.html">Ver su gemelo</a>';
+    $('#s-note').textContent = t('note.home');
+    acts.innerHTML = `<a class="btn primary" href="${page('guarena.html?jugar')}">${t('a.jugar')} <span class="arr" aria-hidden="true">→</span></a><a class="btn" href="${page('guarena.html')}">${t('a.gemelo')}</a>`;
   } else {
     const n = votes[m.id] || 0;
     const mine = myVote === m.id;
-    $('#s-note').textContent = `Ya tiene su gemelo automático con los edificios del Catastro: puedes entrar a verlo. Despertarlo (plaza, iglesia y calles al detalle, misiones y fiestas) depende de que su ayuntamiento se sume. ${n ? `Ya lo piden ${n} ${n === 1 ? 'persona' : 'personas'}.` : 'Aún nadie lo ha pedido.'}`;
+    $('#s-note').textContent = t('note.auto', { n });
     const b = document.createElement('button');
     b.className = 'btn primary';
     b.type = 'button';
-    b.textContent = mine ? 'Tu voto es para este pueblo' : `Despertar ${m.n}`;
+    b.textContent = mine ? t('a.tuvoto') : t('a.despertar', { name: m.n });
     b.disabled = mine;
     b.addEventListener('click', () => castVote(m.id));
     const j = document.createElement('a');
@@ -442,8 +490,8 @@ function selectMuni(i, { fly = false } = {}) {
     j.addEventListener('click', () => { $('#f-town').value = m.n; updatePassport(); });
     const v = document.createElement('a');
     v.className = 'btn';
-    v.href = `pueblo.html#${m.id}`;
-    v.innerHTML = 'Entrar en su gemelo <span class="arr" aria-hidden="true">→</span>';
+    v.href = page(`pueblo.html#${m.id}`);
+    v.innerHTML = `${t('a.entrar')} <span class="arr" aria-hidden="true">→</span>`;
     acts.append(v, b, j);
   }
   sheet.hidden = false;
@@ -474,7 +522,7 @@ function setFilter(kind) {
   }[kind];
   world?.setFilter(fn);
   const n = fn ? munis.filter(fn).length : munis.length;
-  $('#f-count').textContent = `${fmt.format(n)} ${n === 1 ? 'pueblo destacado' : 'pueblos destacados'}${kind === 'loss' ? ' · han perdido población desde 2001' : ''}`;
+  $('#f-count').textContent = t('f.count', { n: fmt.format(n), loss: kind === 'loss' });
 }
 
 function initMapUI() {
@@ -533,8 +581,8 @@ function renderVotes() {
   const top = Object.entries(votes).sort((a, b) => b[1] - a[1]).slice(0, 5);
   const rank = $('#rank');
   rank.innerHTML = top.length
-    ? top.map(([id, n]) => { const m = munis.find((x) => x.id === id); return `<li><span>${m ? m.n : id}</span><span>${n} ${n === 1 ? 'voto' : 'votos'}</span></li>`; }).join('')
-    : '<li><span class="muted">Aún no hay votos. El primero puede ser el tuyo.</span></li>';
+    ? top.map(([id, n]) => { const m = munis.find((x) => x.id === id); return `<li><span>${m ? m.n : id}</span><span>${t('v.votos', { n })}</span></li>`; }).join('')
+    : `<li><span class="muted">${t('v.vacio')}</span></li>`;
   world?.setVotes(votes);
   if (selected >= 0) selectMuni(selected);
 }
@@ -618,7 +666,7 @@ async function loadDiary() {
       items = all.flat().filter((x) => x.title && !/^Merge /.test(x.title)).sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 6);
       try { sessionStorage.setItem('388p:diario', JSON.stringify({ t: Date.now(), items })); } catch { /* ignore */ }
     } catch {
-      list.innerHTML = '<li class="muted">Ahora mismo no podemos cargar el diario. Puedes verlo en GitHub.</li>';
+      list.innerHTML = `<li class="muted">${t('d.error')}</li>`;
       return;
     }
   }
@@ -694,7 +742,7 @@ async function initLive() {
   const r = await readPassport();
   if (!r) return;
   $('#pp-st').textContent = `${r.count}/388`;
-  if (r.count && window.claude?.use) $('#pp-no').textContent = 'Nº fundador';
+  if (r.count && window.claude?.use) $('#pp-no').textContent = t('pp.fundador');
 }
 
 // ---------------- nombres en movimiento ----------------
@@ -761,8 +809,8 @@ function updatePassport() {
   const alias = $('#f-alias').value.trim();
   const town = $('#f-town').value.trim();
   const m = munis.find((x) => norm(x.n) === norm(town));
-  $('#pp-who').textContent = alias || 'Tu nombre';
-  $('#pp-town').textContent = m ? m.n : town || 'Tu pueblo';
+  $('#pp-who').textContent = alias || t('pp.nombre');
+  $('#pp-town').textContent = m ? m.n : town || t('pp.pueblo');
   $('#pp-ine').textContent = m ? m.id : '—';
   $('#pp-ll').textContent = m ? `${m.ll[0].toFixed(3)}°N ${Math.abs(m.ll[1]).toFixed(3)}°W` : '—';
 }
@@ -784,23 +832,23 @@ function initForm() {
     e.preventDefault();
     msg.className = 'formmsg';
     const email = $('#f-email').value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = 'Escribe un email válido para poder avisarte.'; msg.classList.add('err'); $('#f-email').focus(); return; }
-    if (!$('#f-age').checked) { msg.textContent = 'Marca la casilla de edad. Si tienes menos de 14 años, pide a un adulto que te apunte.'; msg.classList.add('err'); return; }
-    if (!$('#f-ok').checked) { msg.textContent = 'Necesitamos tu permiso para guardar el email.'; msg.classList.add('err'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg.textContent = t('fm.email'); msg.classList.add('err'); $('#f-email').focus(); return; }
+    if (!$('#f-age').checked) { msg.textContent = t('fm.edad'); msg.classList.add('err'); return; }
+    if (!$('#f-ok').checked) { msg.textContent = t('fm.ok'); msg.classList.add('err'); return; }
     const town = munis.find((x) => norm(x.n) === norm($('#f-town').value.trim()));
     const entry = { alias: $('#f-alias').value.trim().slice(0, 40), email, pueblo: town ? town.id : null, pueblo_texto: town ? '' : $('#f-town').value.trim().slice(0, 60), perfil: role, origen: 'formulario', edad14: true, acepto: true, web: $('#f-web').value };
     const btn = $('#form [type=submit]');
     btn.disabled = true;
-    msg.textContent = 'Guardando…';
+    msg.textContent = t('fm.guardando');
     try {
       await saveSignup(entry);
       markListed();
       msg.innerHTML = '';
       if (town && counts) msg.append(`${t('cola.eres', { n: (counts.pueblos[town.id] || 0) + 1, name: town.n, meta: META_DESPERTAR })} `);
-      else msg.append(`Apuntado. Te avisaremos de cada novedad${town ? ` y de cuando ${town.n} despierte` : ''}. `);
+      else msg.append(`${t('fm.apuntado', { name: town?.n })} `);
       const go = document.createElement('a');
-      go.href = 'guarena.html?jugar';
-      go.textContent = 'Entrar ya en Guareña →';
+      go.href = page('guarena.html?jugar');
+      go.textContent = t('fm.entrar');
       msg.append(go);
       if (DISCORD_URL) {
         const d = document.createElement('a');
@@ -810,21 +858,18 @@ function initForm() {
       }
       loadCounts();
       msg.classList.add('ok');
-      $('#pp-no').textContent = 'Nº fundador';
+      $('#pp-no').textContent = t('pp.fundador');
     } catch (err) {
       if (!err.status && (SHARED || window.claude?.use)) {
         // sin conexión o el servidor despertando: se guarda aquí y se envía sola en cuanto se pueda
         queueSignup(entry);
         markListed();
-        msg.textContent = 'Te hemos apuntado en este dispositivo y lo enviaremos en cuanto haya conexión.';
+        msg.textContent = t('fm.cola');
         msg.classList.add('ok');
-        $('#pp-no').textContent = 'Nº fundador';
+        $('#pp-no').textContent = t('pp.fundador');
         return;
       }
-      msg.textContent = err.status === 429 ? 'Demasiados intentos seguidos. Prueba de nuevo en un minuto.'
-        : err.status === 400 ? 'Revisa el email: no parece válido.'
-        : SHARED || window.claude?.use ? 'No hemos podido guardar tu inscripción. Vuelve a intentarlo en un momento.'
-        : 'Esta vista previa no puede guardar inscripciones.';
+      msg.textContent = t(err.status === 429 ? 'fm.429' : err.status === 400 ? 'fm.400' : SHARED || window.claude?.use ? 'fm.error' : 'fm.preview');
       msg.classList.add('err');
     } finally {
       btn.disabled = false;

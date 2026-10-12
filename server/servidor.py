@@ -288,7 +288,9 @@ CACHE = {".html": "no-cache", ".js": "no-cache", ".css": "no-cache", ".json": "p
 
 
 def static(path):
-    rel = urllib.parse.unquote(path.split("?")[0]).lstrip("/") or "index.html"
+    rel = urllib.parse.unquote(path.split("?")[0]).lstrip("/")
+    if rel == "" or rel.endswith("/"):
+        rel += "index.html"  # (la portada de cada carpeta: / y /en/)
     full = os.path.realpath(os.path.join(ROOT, rel))
     if not full.startswith(ROOT + os.sep) or not os.path.isfile(full):
         return 404, b"No encontrado", "text/plain; charset=utf-8", "no-store"
@@ -334,7 +336,7 @@ async def handle(reader, writer):
             elif url.path.startswith("/api/"):
                 status, obj = api(method, url.path, query, body, ip)
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
-            elif method in ("GET", "HEAD") and args.site and (url.path == "/" or url.path.endswith(".html")):
+            elif method in ("GET", "HEAD") and args.site and (url.path.endswith("/") or url.path.endswith(".html")):
                 # la web vive en el CDN: las páginas de aquí llevan allí (la API sigue aquí)
                 status, payload, ctype = 301, b"", "text/plain"
                 location = args.site.rstrip("/") + url.path + (("?" + url.query) if url.query else "")

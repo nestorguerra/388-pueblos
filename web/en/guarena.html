@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guareña · 388 Pueblos</title>
+<meta name="description" content="Town 001 of 388: the digital twin of Guareña (Badajoz), built building by building from Catastro (Spain’s land registry) data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Instrument+Serif:ital@1&family=Geist+Mono:wght@400;500&display=swap">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="388 Pueblos">
+<meta property="og:title" content="Guareña · 388 Pueblos">
+<meta property="og:description" content="Town 001 of 388: Guareña, building by building. Sign up and join the game’s beta.">
+<meta property="og:image" content="../assets/logo/og-388pueblos.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#070a14">
+<link rel="icon" href="../assets/logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/logo/apple-touch-icon.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="alternate" hreflang="es" href="../guarena.html">
+<link rel="alternate" hreflang="en" href="guarena.html">
+<link rel="stylesheet" href="../css/pueblo.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js" crossorigin>
+<link rel="preload" href="../data/guarena.json" as="fetch" crossorigin>
+</head>
+<body>
+<div class="loading relevo" id="loading"><img id="relevo" alt="" decoding="sync"></div>
+<script>(function () {
+  // The first image, before anything else: the last frame of the descent from the home page (sessionStorage '388:relevo',
+  // if it is from a moment ago) or, when arriving from somewhere else, the Guareña poster from that same framing. Never a
+  // black screen. With ?jugar the image keeps zooming in slowly while the model is built (a CSS transition: smooth
+  // even when the page is busy); town-page.js picks up that zoom and the camera carries on from there into the game.
+  var box = document.getElementById('loading'), img = document.getElementById('relevo'), r = null;
+  try { r = JSON.parse(sessionStorage.getItem('388:relevo') || 'null'); sessionStorage.removeItem('388:relevo'); } catch (e) { /* no hand-over */ }
+  var fresh = !!(r && r.img && Date.now() - r.t < 30000);
+  box.style.background = fresh && r.mean ? r.mean : '#71543e';
+  img.src = fresh ? r.img : '../assets/guarena-inicio.jpg';
+  var jugar = /[?&]jugar\b/.test(location.search);
+  if (jugar) document.body.classList.add('jugando'); // (no panels: straight from the image into the game)
+  if (jugar) requestAnimationFrame(function () { requestAnimationFrame(function () { img.style.transition = 'transform 14s cubic-bezier(0.35, 0, 0.65, 1)'; img.style.transform = 'scale(1.4)'; }); });
+})();</script>
+<canvas id="c" aria-label="3D model of Guareña. Drag to rotate; scroll or pinch to zoom."></canvas>
+<div id="labels"></div>
+
+<header class="top">
+  <a class="brand" href="index.html" aria-label="Back to 388 Pueblos"><img src="../assets/logo/logo-388.svg" alt="388 Pueblos" width="64" height="34"></a>
+  <div class="right">
+    <a class="btn" href="../guarena.html" hreflang="es" lang="es">ES</a>
+    <a class="btn" href="index.html#los388">← The 388</a>
+    <a class="btn primary" data-jugar href="https://nestorguerra.github.io/guarena-hq/" target="_blank" rel="noopener">I want to play here</a>
+  </div>
+</header>
+
+<aside class="panel" aria-label="Guareña">
+  <section class="glass">
+    <span class="kicker">Town 001 of 388 · 06060</span>
+    <h1>Guareña<small>Vegas Altas del Guadiana, Badajoz</small></h1>
+    <div class="facts">
+      <div><b>6665</b><span>Residents 2025</span></div>
+      <div><b>285 m</b><span>Altitude</span></div>
+      <div><b>283 km²</b><span>Area</span></div>
+    </div>
+    <p>Land of castúos, birthplace of Luis Chamizo and Eugenio Frutos, and home to one of the most important Tartessian archaeological sites on the Iberian Peninsula. This is its digital twin, version 0.1.</p>
+    <a class="btn primary big" data-jugar href="https://nestorguerra.github.io/guarena-hq/" target="_blank" rel="noopener" style="justify-self:start">Play in Guareña <span aria-hidden="true">→</span></a>
+    <div class="status mono"><span>Twin <b>v0.1</b></span><span><b id="n-parts">7,985</b> volumes</span><span>Catastro</span></div>
+  </section>
+
+  <section class="glass game" aria-labelledby="t-paseo">
+    <span class="kicker">The game</span>
+    <h2 id="t-paseo">Walk around Guareña</h2>
+    <p class="hint">Its real streets, its locals and its first quests. The camera drops down from here to Annie’s front door on Calle Malfeitos, and you start playing.</p>
+    <a class="btn primary big" data-jugar href="https://nestorguerra.github.io/guarena-hq/" target="_blank" rel="noopener">Walk around the town</a>
+    <div class="passbar mono" id="pass"><span>Your passport</span><span>…</span></div>
+  </section>
+
+  <section class="glass game" aria-labelledby="t-game">
+    <span class="kicker">Mini-game</span>
+    <h2 id="t-game">Find the storks’ nests</h2>
+    <div class="nests" id="nests" aria-live="polite"></div>
+    <p class="hint" id="hint">Turn the town and look for nests on towers and rooftops. Each nest unlocks a story about Guareña.</p>
+  </section>
+
+  <section class="glass">
+    <span class="kicker">Places</span>
+    <div class="places" id="places"></div>
+    <div class="places"><button type="button" id="tur">Casas del Turuñuelo<span>Outside the town centre · coming soon</span></button></div>
+  </section>
+
+  <section class="glass">
+    <details>
+      <summary><span class="kicker">2026 calendar</span></summary>
+      <div class="cal" style="margin-top:.8rem">
+        <div><span>13–17 Feb</span><span>Carnival</span></div>
+        <div><span>12–15 May</span><span>San Isidro, romería (country pilgrimage) at the Pantano de San Roque reservoir</span></div>
+        <div><span>31 Jul–1 Aug</span><span>Desafío Castúo, Youth Week</span></div>
+        <div><span>16–23 Aug</span><span>Ferias y Fiestas de Agosto (August fair and festivities)</span></div>
+        <div><span>11–14 Sep</span><span>Fiestas del Cristo de las Aguas</span></div>
+        <div><span>Oct–Nov</span><span>Ruta del Melón (melon route)</span></div>
+        <div><span>Nov</span><span>Degusta el Miajón (food tasting)</span></div>
+      </div>
+      <p class="hint" style="margin-top:.7rem">In the game, each festival will be celebrated at the same time as in the town.</p>
+    </details>
+  </section>
+
+  <p class="mono" style="color:var(--niebla-2);padding:0 .3rem;line-height:1.7">Buildings: D. G. del Catastro (INSPIRE). Locations: © OpenStreetMap. Automatic building volumes: not official mapping.</p>
+</aside>
+
+<aside class="card glass" id="card" hidden aria-live="polite">
+  <button class="x" type="button" id="card-x" aria-label="Close">×</button>
+  <span class="kicker" id="card-k">Nest 1 of 9</span>
+  <h3 id="card-t"></h3>
+  <p id="card-p"></p>
+  <span class="src" id="card-s"></span>
+</aside>
+
+<div class="dock glass" role="group" aria-label="Time of day">
+  <span class="lab mono">Light</span>
+  <button class="btn" type="button" data-t="-1" aria-pressed="false">Midday</button>
+  <button class="btn" type="button" data-t="0" aria-pressed="true">Sunset</button>
+  <button class="btn" type="button" data-t="1" aria-pressed="false">Night</button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+
+<script type="module" src="../js/guarena.js"></script>
+</body>
+</html>

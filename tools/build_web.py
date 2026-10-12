@@ -3,7 +3,8 @@
 - Cada página se convierte en un documento HTML completo (server/pagina.py), con la URL de la API propia si se da.
 - Los JS y CSS llevan ?v=<huella del contenido> en todas sus referencias (HTML e imports entre módulos), así el CDN
   y el navegador pueden guardarlos un año sin riesgo de servir versiones viejas tras un despliegue.
-- Escribe robots.txt y sitemap.xml para la URL pública.
+- Escribe robots.txt y sitemap.xml para la URL pública, y pone absolutas las URLs canónicas, las de las versiones
+  en otra lengua (hreflang) y la imagen para redes sociales. Las páginas en inglés están en web/en/.
 
 uso: python3 tools/build_web.py [--api https://…/api] [--site https://…]
 """
@@ -13,6 +14,7 @@ import os
 import re
 import shutil
 import sys
+import urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
@@ -38,7 +40,7 @@ for d in ("js", "css"):
             h.update(name.encode() + f.read())
 V = h.hexdigest()[:10]
 
-LOCAL_ASSET = re.compile(r'((?:src|href)=")((?:\./)?(?:js|css)/[\w.-]+\.(?:js|css))(")')
+LOCAL_ASSET = re.compile(r'((?:src|href)=")((?:\.\.?/)?(?:js|css)/[\w.-]+\.(?:js|css))(")')
 JS_IMPORT = re.compile(r"""((?:from|import)\s*\(?\s*['"])(\.\.?/[\w./-]+\.js)(['"])""")
 
 
@@ -46,10 +48,12 @@ def version_js(text):
     return JS_IMPORT.sub(lambda m: f"{m.group(1)}{m.group(2)}?v={V}{m.group(3)}", text)
 
 
+# las páginas: las de la raíz (español) y las de en/ (inglés), con su ruta relativa ("index.html", "en/town.html")
+PAGES = [n for n in sorted(os.listdir(OUT)) if n.endswith(".html")]
+PAGES += [f"en/{n}" for n in sorted(os.listdir(os.path.join(OUT, "en"))) if n.endswith(".html")] if os.path.isdir(os.path.join(OUT, "en")) else []
+
 n_html = 0
-for name in os.listdir(OUT):
-    if not name.endswith(".html"):
-        continue
+for name in PAGES:
     p = os.path.join(OUT, name)
     with open(p, "rb") as f:
         body = documento(f.read(), args.api or None).decode("utf-8")
@@ -70,22 +74,24 @@ site = args.site.rstrip("/")
 with open(os.path.join(OUT, "robots.txt"), "w") as f:
     f.write("User-agent: *\nAllow: /\n" + (f"Sitemap: {site}/sitemap.xml\n" if site else ""))
 if site:
-    urls = ["/", "/guarena.html", "/ayuntamientos.html", "/privacidad.html"]
+    urls = ["/", "/guarena.html", "/ayuntamientos.html", "/privacidad.html", "/en/", "/en/guarena.html", "/en/privacy.html"]
     with open(os.path.join(OUT, "sitemap.xml"), "w") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
         f.writelines(f"  <url><loc>{site}{u}</loc></url>\n" for u in urls)
         f.write("</urlset>\n")
     # las etiquetas para redes sociales necesitan URLs absolutas
-    for name in os.listdir(OUT):
-        if name.endswith(".html"):
-            p = os.path.join(OUT, name)
-            with open(p, encoding="utf-8") as f:
-                body = f.read()
-            body = body.replace('content="assets/logo/og-388pueblos.png"', f'content="{site}/assets/logo/og-388pueblos.png"')
-            canon = f"{site}/" if name == "index.html" else f"{site}/{name}"
-            if name != "pueblo.html":
-                body = body.replace("</head>", f'<link rel="canonical" href="{canon}"><meta property="og:url" content="{canon}"></head>', 1)
-            with open(p, "w", encoding="utf-8") as f:
-                f.write(body)
+    for name in PAGES:
+        p = os.path.join(OUT, name)
+        with open(p, encoding="utf-8") as f:
+            body = f.read()
+        canon = f"{site}/{name[:-len('index.html')] if name.endswith('index.html') else name}"
+        body = re.sub(r'content="(?:\.\./)?assets/logo/og-388pueblos\.png"', f'content="{site}/assets/logo/og-388pueblos.png"', body)
+        # (alternativas en otra lengua: relativas en el código, absolutas para los buscadores)
+        body = re.sub(r'(<link rel="alternate" hreflang="[\w-]+" href=")([^"]+)(")',
+                      lambda m: m.group(1) + urllib.parse.urljoin(canon, m.group(2)).replace("/index.html", "/") + m.group(3), body)
+        if name not in ("pueblo.html", "en/town.html"):  # (una sola página para todos los pueblos: sin canónica)
+            body = body.replace("</head>", f'<link rel="canonical" href="{canon}"><meta property="og:url" content="{canon}"></head>', 1)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(body)
 
 print(f"dist/web listo · versión {V} · {n_html} páginas · API {args.api or '—'} · sitio {site or '—'}")

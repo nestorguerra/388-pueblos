@@ -31,6 +31,8 @@ CC BY-SA 4.0 ([LICENCIAS.md](LICENCIAS.md)).
 - **Para ayuntamientos** (`ayuntamientos.html`): tres servicios por contrato menor (modelado del pueblo, propuestas
   urbanísticas en 3D y panel municipal), calculadora por municipio y dossier en PDF (`dossier.html?ine=<INE>`,
   `python3 tools/dossier_pdf.py`). Precios y datos del proveedor en `web/js/config.js`.
+- **En inglés** (`web/en/`): portada, Guareña, ficha de pueblo y privacidad. Los textos que escribe el JavaScript
+  están en `web/js/i18n.js` y en cada módulo (`addTexts`); la lengua sale de `<html lang>`.
 
 ```
 web/                      La web, sin paso de compilación

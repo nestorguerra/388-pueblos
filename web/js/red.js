@@ -1,6 +1,12 @@
+import { ROOT } from './i18n.js';
+
+// Las rutas de datos son relativas a la raíz de la web: desde las páginas en inglés (en/) se piden con «../» delante
+const fromRoot = (url) => (/^([a-z]+:|\/)/i.test(url) ? url : ROOT + url);
+
 // Descargas robustas: tiempo límite y reintentos con espera creciente (redes móviles que se cortan, un CDN lento).
 // Un 404 no se reintenta: el archivo no existe.
 export async function getJSON(url, { timeout = 20000, retries = 2 } = {}) {
+  url = fromRoot(url);
   for (let i = 0; ; i++) {
     const ctl = new AbortController();
     const t = setTimeout(() => ctl.abort(), timeout);
@@ -33,7 +39,7 @@ export function prerender(href, dataUrl) {
       l.rel = 'prefetch';
       l.as = 'fetch';
       l.crossOrigin = 'anonymous';
-      l.href = dataUrl;
+      l.href = fromRoot(dataUrl);
       document.head.append(l);
     }
   } catch { /* es solo una ayuda */ }

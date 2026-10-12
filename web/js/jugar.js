@@ -17,6 +17,12 @@
 //   web → juego  guarena:go {t}  (ya fundidos: construye)        guarena:shown  (ya se te ve: sigue hasta Annie)
 //   juego → web  guarena:picture  (la foto ya se acerca)          guarena:salir  (volver a la web: la web cierra el
 //                juego y recupera su cámara)
+import { t, addTexts } from './i18n.js';
+
+addTexts({
+  es: { 'j.fallo': 'No hemos podido abrir el juego ahora mismo.', 'j.reintentar': 'Reintentar', 'j.pestana': 'Abrir en otra pestaña', 'j.titulo': 'Guareña, el juego', 'j.cargando': 'Cargando el juego…' },
+  en: { 'j.fallo': 'We could not open the game right now.', 'j.reintentar': 'Try again', 'j.pestana': 'Open in a new tab', 'j.titulo': 'Guareña, the game', 'j.cargando': 'Loading the game…' },
+});
 import { THREE } from './world.js';
 
 const DEFAULT_GAME = 'https://nestorguerra.github.io/guarena-hq/';
@@ -77,7 +83,7 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     const box = document.createElement('div');
     box.className = 'game-status on fail';
     box.setAttribute('role', 'alert');
-    box.innerHTML = '<span>No hemos podido abrir el juego ahora mismo.</span> <button type="button">Reintentar</button> <a target="_blank" rel="noopener">Abrir en otra pestaña</a>';
+    box.innerHTML = `<span>${t('j.fallo')}</span> <button type="button">${t('j.reintentar')}</button> <a target="_blank" rel="noopener">${t('j.pestana')}</a>`;
     box.querySelector('a').href = href;
     box.querySelector('button').addEventListener('click', () => { box.remove(); start(); });
     document.body.append(box);
@@ -107,7 +113,7 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     if (iframe) return;
     iframe = document.createElement('iframe');
     iframe.className = 'game-frame';
-    iframe.title = 'Guareña, el juego';
+    iframe.title = t('j.titulo');
     iframe.allow = 'fullscreen; gamepad; autoplay';
     iframe.tabIndex = -1;
     iframe.setAttribute('aria-hidden', 'true');
@@ -187,7 +193,7 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
       st.z += st.v * dt;
       camera.fov = lens(fovEnd, st.z);
       camera.updateProjectionMatrix();
-      if (st.t > 1.2 && !ready) status('Cargando el juego…');
+      if (st.t > 1.2 && !ready) status(t('j.cargando'));
       // (sin noticias del juego: 9 s después de que el iframe esté cargado y de haber pulsado, o 40 s en total)
       const timedOut = (loaded && performance.now() - Math.max(loaded, st.at) > 9000) || st.t > 40;
       if (timedOut && !ready) { fail(); return null; } // (el juego no ha llegado a responder)
