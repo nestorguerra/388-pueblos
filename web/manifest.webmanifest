@@ -1,0 +1,15 @@
+{
+  "name": "388 Pueblos",
+  "short_name": "388",
+  "description": "El mundo online, abierto y gratuito, de los 388 pueblos de Extremadura.",
+  "lang": "es",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#070a14",
+  "theme_color": "#070a14",
+  "icons": [
+    { "src": "assets/logo/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "assets/logo/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/logo/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

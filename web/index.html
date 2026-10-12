@@ -1,9 +1,28 @@
-<title>388 Pueblos</title>
-<meta name="description" content="388 Pueblos: el gemelo digital y mundo online de los 388 municipios de Extremadura. Empezamos por Guareña.">
+<title>388 Pueblos · el mundo online de los 388 pueblos de Extremadura</title>
+<meta name="description" content="388 Pueblos es un mundo online, abierto y gratuito, con los 388 municipios de Extremadura construidos con datos reales. Proyecto de código abierto. Empezamos por Guareña: apúntate y juega.">
+<meta name="theme-color" content="#070a14">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="388 Pueblos">
+<meta property="og:locale" content="es_ES">
+<meta property="og:title" content="388 Pueblos · el mundo online de los 388 pueblos de Extremadura">
+<meta property="og:description" content="Abierto, gratuito y de código abierto. Empezamos por Guareña: apúntate y entra en la beta.">
+<meta property="og:image" content="assets/logo/og-388pueblos.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="388 pueblos de Extremadura">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="assets/logo/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/logo/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js" crossorigin>
+<link rel="preload" href="data/guarena.json" as="fetch" crossorigin>
+<link rel="preload" href="data/municipios.json" as="fetch" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Instrument+Serif:ital@1&family=Geist+Mono:wght@400;500&display=swap">
 <style>
 /* Concepto: una noche sobre Extremadura. El scroll es un vuelo de cámara desde la plaza de Guareña
    hasta las 388 luces; la interfaz es el HUD del gemelo digital (UTM, código INE, habitantes).
@@ -114,11 +133,11 @@ p { margin: 0; text-wrap: pretty; }
 .nav .btn { padding: 0.65rem 1rem; background: rgba(7, 10, 20, 0.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .nav .btn.primary { background: var(--sodio); }
 @media (max-width: 900px) { .nav ul { display: none; } }
-.brand img { display: block; height: 50px; width: auto; }
+.brand img { display: block; height: 36px; width: auto; }
 .brand .b-light { display: none; }
 .nav.light .brand .b-dark { display: none; }
 .nav.light .brand .b-light { display: block; }
-@media (max-width: 600px) { .brand img { height: 40px; } }
+@media (max-width: 600px) { .brand img { height: 30px; } }
 
 /* ---------- HUD de progreso ---------- */
 .hud { position: fixed; left: var(--gutter); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 40; display: flex; gap: 1.2rem; align-items: center; color: var(--niebla); pointer-events: none; }
@@ -383,6 +402,36 @@ section { position: relative; }
 .passport .stamp { position: absolute; right: 6%; top: 18%; width: 84px; height: 84px; opacity: 0.85; border-radius: 50%; border: 2px solid rgba(255, 169, 77, 0.65); color: rgba(255, 169, 77, 0.8); display: grid; place-items: center; text-align: center; font-family: var(--f-mono); font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; transform: rotate(-14deg); line-height: 1.3; }
 
 /* pie */
+/* abierto y gratis */
+.open { padding: 16vh var(--gutter) 14vh; background: var(--noche-2); }
+.open header { display: grid; gap: 1rem; max-width: 62rem; }
+.open header p { color: var(--niebla); max-width: 52ch; font-size: clamp(1rem, 0.6vw + 0.85rem, 1.2rem); }
+.opens { margin-top: 3rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.opens article { border: 1px solid var(--linea); border-radius: 20px; padding: 1.6rem; display: grid; gap: 0.9rem; align-content: start; background: rgba(255, 255, 255, 0.02); min-width: 0; }
+.opens article.feat { border-color: rgba(255, 169, 77, 0.45); background: linear-gradient(160deg, rgba(255, 169, 77, 0.1), rgba(255, 169, 77, 0) 60%); }
+.opens .mono { color: var(--sodio); font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.opens h3 { font-family: var(--f-display); font-variation-settings: "wdth" 115; font-weight: 750; font-size: clamp(1.4rem, 2vw, 1.9rem); line-height: 1; letter-spacing: -0.025em; }
+.opens p { color: var(--niebla); }
+.opens .btn { justify-self: start; }
+@media (max-width: 860px) { .opens { grid-template-columns: 1fr; } }
+.hero .beta { flex-basis: 100%; display: inline-flex; gap: 0.6rem; align-items: center; color: var(--niebla); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.hero .beta i { width: 7px; height: 7px; border-radius: 50%; background: var(--sodio); box-shadow: 0 0 10px var(--sodio); }
+/* en pantallas táctiles, botones de al menos 44 px de alto */
+@media (pointer: coarse) { .btn, .chip { min-height: 44px; } }
+/* preguntas */
+.faq { padding: 14vh var(--gutter); background: var(--noche); display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: 2rem 5rem; align-items: start; border-top: 1px solid var(--linea); }
+.faq .qs { display: grid; }
+.faq details { border-bottom: 1px solid var(--linea); }
+.faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 1rem; padding: 1.2rem 0; font-family: var(--f-display); font-variation-settings: "wdth" 108; font-weight: 650; font-size: clamp(1.1rem, 1.3vw, 1.35rem); letter-spacing: -0.015em; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--f-mono); color: var(--sodio); }
+.faq details[open] summary::after { content: "−"; }
+.faq summary:focus-visible { outline: 2px solid var(--sodio); outline-offset: 4px; border-radius: 4px; }
+.faq details p { margin: 0 0 1.3rem; color: var(--niebla); max-width: 60ch; }
+.faq details a, .join .check a { color: var(--sodio-2); }
+@media (max-width: 860px) { .faq { grid-template-columns: 1fr; } }
+.join .lead { margin-top: 1.2rem; color: var(--niebla); max-width: 46ch; font-size: clamp(1rem, 0.5vw + 0.85rem, 1.15rem); }
+.trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .foot { position: relative; z-index: 2; background: var(--noche); border-top: 1px solid var(--linea); padding: 12vh var(--gutter) calc(110px + env(safe-area-inset-bottom, 0px)); overflow: hidden; }
 .foot .word { font-size: clamp(3.6rem, 16.5vw, 19rem); color: var(--cal); white-space: nowrap; }
 .foot .word .serif { color: var(--sodio); font-size: 0.45em; vertical-align: 0.5em; }
@@ -425,7 +474,7 @@ section { position: relative; }
 <div class="grain" aria-hidden="true"></div>
 
 <header class="nav">
-  <a class="brand" href="#inicio" aria-label="388 Pueblos, inicio"><img class="b-dark" src="assets/logo/logo-388pueblos-nav-oscuro.svg" alt="388 Pueblos" width="130" height="50"><img class="b-light" src="assets/logo/logo-388pueblos-nav-claro.svg" alt="" width="130" height="50"></a>
+  <a class="brand" href="#inicio" aria-label="388 Pueblos, inicio"><img class="b-dark" src="assets/logo/logo-388.svg" alt="388 Pueblos" width="68" height="36"><img class="b-light" src="assets/logo/logo-388-noche.svg" alt="" width="68" height="36"></a>
   <nav aria-label="Secciones">
     <ul>
       <li><a href="#vuelo">El proyecto</a></li>
@@ -433,9 +482,10 @@ section { position: relative; }
       <li><a href="#mundo">El mundo</a></li>
       <li><a href="#los388">Los 388</a></li>
       <li><a href="#ayuntamientos">Ayuntamientos</a></li>
+      <li><a href="#unete">Lista de espera</a></li>
     </ul>
   </nav>
-  <a class="btn primary" href="#unete">Únete <span class="arr" aria-hidden="true">→</span></a>
+  <a class="btn primary" href="guarena.html?jugar">Jugar <span class="arr" aria-hidden="true">→</span></a>
 </header>
 
 <div class="hud mono" aria-hidden="true">
@@ -449,10 +499,11 @@ section { position: relative; }
     <div class="hero-tag mono"><span class="big num">001<small>/388</small></span><span>Primer pueblo en el mundo</span><span>Guareña · Badajoz</span></div>
     <h1 id="t-hero" class="display"><span class="line"><span>388</span></span><span class="line"><span>Pueblos<span class="serif"> de Extremadura</span></span></span></h1>
     <div class="sub">
-      <p>Un gemelo digital de cada municipio de Extremadura convertido en un mundo online para conocer, jugar y encontrarse. Empezamos por Guareña.</p>
+      <p>Un mundo online, abierto y gratuito, con los 388 municipios de Extremadura para conocerlos, jugar y encontrarse. Empezamos por Guareña.</p>
       <div class="ctas">
         <a class="btn primary" href="guarena.html?jugar">Jugar en Guareña <span class="arr" aria-hidden="true">→</span></a>
         <a class="btn" href="#los388">Ver los 388</a>
+        <span class="beta mono"><i></i>Beta en pruebas · lista de espera · código abierto</span>
       </div>
     </div>
   </section>
@@ -573,6 +624,20 @@ section { position: relative; }
     </div>
   </section>
 
+  <!-- ABIERTO Y GRATIS -->
+  <section id="abierto" class="open" aria-labelledby="t-abierto">
+    <header>
+      <span class="kicker">Abierto y gratis</span>
+      <h2 id="t-abierto" class="h2">Los 388 pueblos, <span class="serif">abiertos a todo el mundo.</span></h2>
+      <p>388 Pueblos es un proyecto de código abierto. Entrar es gratis, estar con otras personas es gratis y muchas de las actividades y juegos también lo son.</p>
+    </header>
+    <div class="opens">
+      <article><span class="mono">Gratis, siempre</span><h3>Entrar no cuesta nada</h3><p>El acceso a los 388 pueblos y la convivencia con otras personas dentro de ellos son y serán completamente gratuitos. Muchas actividades y juegos, también.</p></article>
+      <article><span class="mono">Freemium</span><h3>Dentro, cada pueblo suma</h3><p>En cada pueblo puede haber servicios y algunos juegos de pago, junto a otros muchos gratuitos. Así el mundo se sostiene sin cerrar la puerta a nadie.</p></article>
+      <article class="feat"><span class="mono">Código abierto · MIT y CC BY-SA</span><h3>Mejora tu propio pueblo</h3><p>El código y los pueblos son abiertos. Cualquiera puede proponer mejoras y editar su pueblo: sus calles, sus lugares, sus historias y sus fiestas.</p><a class="btn" href="https://github.com/nestorguerra/388-pueblos" target="_blank" rel="noopener">Ver el código en GitHub <span aria-hidden="true">↗</span></a></article>
+    </div>
+  </section>
+
   <!-- LOS 388 -->
   <section id="los388" class="mapsec night" aria-labelledby="t-388">
     <div class="stick">
@@ -648,7 +713,7 @@ section { position: relative; }
     </header>
     <div class="phases" id="phases">
       <span class="prog" id="ph-prog"></span>
-      <div class="phase now"><span class="n">0</span><span class="when mono">Oct – dic 2026 · ahora</span><h3>Semilla</h3><ul><li>Esta web, el mapa de los 388 y los votos</li><li>Los 388 levantados en automático desde el Catastro</li><li>Paseo con otras personas y pasaporte de sellos</li><li>Prueba cerrada con alumnado del IES Eugenio Frutos</li></ul></div>
+      <div class="phase now"><span class="n">0</span><span class="when mono">Oct – dic 2026 · ahora</span><h3>Semilla</h3><ul><li>Esta web, el mapa de los 388 y los votos</li><li>Los 388 levantados en automático desde el Catastro</li><li>Beta de Guareña con lista de espera y pasaporte de sellos</li><li>Proyecto de código abierto, desde el primer día</li><li>Prueba con alumnado del IES Eugenio Frutos</li></ul></div>
       <div class="phase"><span class="n">1</span><span class="when mono">Feb – abr 2027</span><h3>Guareña jugable</h3><ul><li>Beta pública en Carnaval</li><li>Plaza, Santa María y primeras misiones</li><li>Primer evento en directo</li><li>Objetivo: 1.000 jugadores</li></ul></div>
       <div class="phase"><span class="n">2</span><span class="when mono">May 2027 – 2028</span><h3>Las Vegas Altas</h3><ul><li>Presentación a ayuntamientos, Diputación y ADEVAG con datos de uso y votos</li><li>Primeros pueblos financiados tras el verano</li><li>Liga de pueblos, pasaporte y Día de Extremadura</li><li>Objetivo: 25–40 pueblos</li></ul></div>
       <div class="phase"><span class="n">3</span><span class="when mono">2029 en adelante</span><h3>Los 388</h3><ul><li>Badajoz y Cáceres completas</li><li>Laboratorio urbano para municipios</li><li>Extremadura entera, abierta al mundo</li></ul></div>
@@ -673,15 +738,28 @@ section { position: relative; }
       <article class="tier feat"><span class="mono">Nivel 2 · recomendado</span><h3>Pueblo vivo</h3><ul><li>Todo lo del nivel 1</li><li>Fachadas calle a calle e interiores de la iglesia</li><li>Misiones con historias del pueblo y habla local</li><li>Fiestas jugables en directo y multijugador</li></ul><span class="price">Orientativo: 15.000–35.000 €</span></article>
       <article class="tier"><span class="mono">Nivel 3</span><h3>Pueblo laboratorio</h3><ul><li>Todo lo del nivel 2</li><li>Vuelo con dron y capas de planeamiento</li><li>Simulación urbana y votaciones vecinales</li><li>Panel de visitas y datos para el ayuntamiento</li></ul><span class="price">Orientativo: 40.000–90.000 €</span></article>
     </div>
-    <p class="mono" style="margin-top:1.2rem;color:#2a3048;line-height:1.7">Importes sin IVA, más una licencia anual. Como referencia, la Diputación de Badajoz licitó en 2024 gemelos digitales turísticos para 20 municipios por 954.690 €, unos 47.700 € por pueblo. Automatizar la base con datos abiertos es lo que permite llegar a los pueblos pequeños.</p>
+    <p class="mono" style="margin-top:1.2rem;color:#2a3048;line-height:1.7">Importes sin IVA, más una licencia anual. Como referencia, la Diputación de Badajoz licitó en 2024 gemelos digitales turísticos para 20 municipios por 954.690 €, unos 47.700 € por pueblo. Automatizar la base con datos abiertos es lo que permite llegar a los pueblos pequeños. Y como el proyecto es de código abierto y el acceso es gratuito, lo que financia un ayuntamiento queda para todo el mundo.</p>
     <div class="cta"><a class="btn primary" href="#unete" data-role="Ayuntamiento">Solicitar una presentación <span class="arr" aria-hidden="true">→</span></a><span class="mono" style="color:#2a3048">También para diputaciones, grupos de acción local y centros educativos</span></div>
+  </section>
+
+  <!-- PREGUNTAS -->
+  <section id="preguntas" class="faq" aria-labelledby="t-faq">
+    <div><span class="kicker">Preguntas</span><h2 id="t-faq" class="h2" style="margin-top:.8rem">Lo que más nos <span class="serif">preguntan.</span></h2></div>
+    <div class="qs">
+      <details><summary>¿Cuánto cuesta?</summary><p>Entrar en los 388 pueblos y estar con otras personas es gratis, y lo seguirá siendo. Muchas actividades y juegos también; algunos juegos y servicios dentro de cada pueblo serán de pago.</p></details>
+      <details><summary>¿Puedo jugar ya?</summary><p>Sí. Estamos en pruebas con lista de espera: te apuntas con tu email y entras al momento en la beta de Guareña.</p></details>
+      <details><summary>¿Puedo editar mi pueblo?</summary><p>Sí. 388 Pueblos es de código abierto: el código tiene licencia MIT y los pueblos y sus contenidos, CC BY-SA 4.0. En el repositorio explicamos cómo proponer cambios en tu pueblo. El objetivo es que también se pueda hacer sin saber programar.</p></details>
+      <details><summary>Soy de un ayuntamiento, ¿qué hacemos?</summary><p>Tu pueblo ya está levantado en automático. Despertarlo al detalle (plaza, iglesia, calles, misiones y fiestas) se hace con el ayuntamiento: mira los niveles de aquí arriba o pídenos una presentación.</p></details>
+      <details><summary>¿Qué hacéis con mis datos?</summary><p>Solo guardamos tu email y, si quieres, tu alias y tu pueblo, para avisarte del proyecto. Lo explicamos en la <a href="privacidad.html">política de privacidad</a>.</p></details>
+    </div>
   </section>
 
   <!-- ÚNETE -->
   <section id="unete" class="join" aria-labelledby="t-unete">
     <div>
-      <span class="kicker">Lista de espera · beta de Guareña</span>
+      <span class="kicker">Lista de espera · beta en pruebas</span>
       <h2 id="t-unete" class="h2" style="margin-top:.8rem">Hazte <span class="serif">vecino</span> de los 388.</h2>
+      <p class="lead">Estamos en pruebas. Apúntate a la lista de espera y entra ya en la beta de Guareña; te avisaremos de las novedades y de cada pueblo que despierte. Entrar es y será gratis.</p>
       <form id="form" novalidate>
         <div class="two">
           <div class="field"><label for="f-alias">Tu nombre o alias</label><input id="f-alias" type="text" maxlength="40" autocomplete="nickname" placeholder="Cómo quieres que te llamen"></div>
@@ -697,8 +775,9 @@ section { position: relative; }
           </div>
         </div>
         <label class="check" for="f-age"><input id="f-age" type="checkbox"> Tengo 14 años o más. Si tengo menos, me apuntará mi madre, mi padre o mi tutor.</label>
-        <label class="check" for="f-ok"><input id="f-ok" type="checkbox"> Acepto que 388 Pueblos guarde estos datos solo para avisarme del proyecto.</label>
-        <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap"><button class="btn primary" type="submit">Apuntarme <span class="arr" aria-hidden="true">→</span></button><span class="formmsg" id="f-msg" role="status"></span></div>
+        <label class="check" for="f-ok"><input id="f-ok" type="checkbox"> He leído la <a href="privacidad.html">política de privacidad</a> y acepto que 388 Pueblos guarde estos datos solo para avisarme del proyecto.</label>
+        <input class="trap" id="f-web" type="text" name="web" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap"><button class="btn primary" type="submit">Apuntarme a la lista <span class="arr" aria-hidden="true">→</span></button><span class="formmsg" id="f-msg" role="status"></span></div>
       </form>
     </div>
     <div class="passport" id="passport" aria-label="Vista previa de tu pasaporte de vecino">
@@ -713,8 +792,8 @@ section { position: relative; }
 <footer class="foot">
   <div class="word display">388 <span class="serif">pueblos</span></div>
   <div class="cols">
-    <div><p>Un proyecto de Ana Pérez Toledo. Hecho en Guareña, Badajoz, pueblo a pueblo.</p><p><a href="guarena.html">Entrar en Guareña →</a></p></div>
-    <div><span class="mono" style="color:var(--niebla-2)">Explora</span><ul><li><a href="#vuelo">El proyecto</a></li><li><a href="#los388">Mapa de los 388</a></li><li><a href="#ayuntamientos">Ayuntamientos</a></li><li><a href="#unete">Lista de espera</a></li></ul></div>
+    <div><p>Un proyecto de Ana Pérez Toledo. Hecho en Guareña, Badajoz, pueblo a pueblo.</p><p>Código abierto: el código con licencia MIT y los pueblos y contenidos con CC BY-SA 4.0. Los datos de terceros mantienen sus licencias.</p><p><a href="guarena.html?jugar">Jugar en Guareña →</a></p><p><a href="https://github.com/nestorguerra/388-pueblos" target="_blank" rel="noopener">Código en GitHub ↗</a> · <a href="privacidad.html">Privacidad</a></p></div>
+    <div><span class="mono" style="color:var(--niebla-2)">Explora</span><ul><li><a href="#vuelo">El proyecto</a></li><li><a href="#los388">Mapa de los 388</a></li><li><a href="#ayuntamientos">Ayuntamientos</a></li><li><a href="#abierto">Abierto y gratis</a></li><li><a href="#preguntas">Preguntas</a></li><li><a href="#unete">Lista de espera</a></li></ul></div>
     <div><span class="mono" style="color:var(--niebla-2)">Datos abiertos</span><ul><li>Edificios: Dirección General del Catastro (INSPIRE)</li><li>Límites municipales: IGN, vía es-atlas</li><li>Población: INE, Padrón 2025, vía Wikidata</li><li>Ubicaciones: © colaboradores de OpenStreetMap</li></ul></div>
   </div>
 </footer>
@@ -722,5 +801,4 @@ section { position: relative; }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
-<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"}}</script>
 <script type="module" src="js/main.js"></script>

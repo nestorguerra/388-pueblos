@@ -1,7 +1,8 @@
 // 388 Pueblos — landing: scroll, interfaz y mapa de los 388.
 import { createLandingWorld } from './landing-world.js';
 import { readPassport } from './pasaporte.js';
-import { SERVER, deviceId, apiGet, apiPost } from './backend.js';
+import { SHARED, loadVotes, sendVote, wake } from './backend.js';
+import { gate, isListed, markListed, saveSignup } from './lista.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -73,16 +74,27 @@ function enterTown(href, name, idx) {
   addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { removeEventListener('keydown', esc); go(); } });
   if (!world.dive(idx, go)) go();
 }
+// ir a un pueblo: si el mundo está a la vista, con el descenso de cámara; si no, navegación normal
+function follow(href) {
+  const id = href.startsWith('guarena.html') ? '06060' : href.split('#')[1];
+  const idx = world ? world.munis.findIndex((m) => m.id === id) : -1;
+  if (!world || reduced || world.diving || idx < 0 || canvas.style.visibility === 'hidden') { location.href = href; return; }
+  enterTown(href, world.munis[idx].n, idx);
+}
+const townId = (t) => { const m = munis.find((x) => norm(x.n) === norm(t)); return m ? m.id : null; };
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="guarena.html"], a[href^="pueblo.html#"]');
-  if (!a || !world || reduced || e.metaKey || e.ctrlKey || e.shiftKey || world.diving) return;
-  if (canvas.style.visibility === 'hidden') return; // el mundo no está a la vista: navegación normal
+  if (!a || e.metaKey || e.ctrlKey || e.shiftKey || world?.diving) return;
   const href = a.getAttribute('href');
-  const id = href.startsWith('guarena.html') ? '06060' : href.split('#')[1];
-  const idx = world.munis.findIndex((m) => m.id === id);
-  if (idx < 0) return;
+  // jugar: primero la lista de espera (una sola vez), y después el descenso hasta Guareña y su juego
+  if (href.includes('?jugar') && !isListed()) {
+    e.preventDefault();
+    gate({ resolveTown: townId }).then((ok) => ok && follow(href));
+    return;
+  }
+  if (!world || reduced || canvas.style.visibility === 'hidden') return;
   e.preventDefault();
-  enterTown(href, world.munis[idx].n, idx);
+  follow(href);
 });
 // al volver atrás desde el pueblo, la página puede restaurarse tal cual: deshacer el descenso
 addEventListener('pageshow', (e) => {
@@ -522,14 +534,14 @@ async function castVote(id) {
       console.warn('voto no guardado en la base compartida', err?.code);
     }
   }
-  if (SERVER) {
+  if (SHARED) {
     try {
-      await apiPost('/votos', { device: deviceId(), pueblo: id });
-      votes = await apiGet('/votos');
+      await sendVote(id);
+      votes = (await loadVotes()) || votes;
       renderVotes();
       return;
     } catch (err) {
-      console.warn('voto no guardado en el servidor', err?.message);
+      console.warn('voto no guardado', err?.message);
     }
   }
   // respaldo local: solo cuenta en este navegador
@@ -543,10 +555,11 @@ async function initData() {
   if (myVote && !db) { votes[myVote] = 1; renderVotes(); }
   const c = window.claude;
   if (!c?.use) {
-    if (SERVER) {
-      const load = async () => { try { votes = await apiGet('/votos'); renderVotes(); } catch {} };
+    if (SHARED) {
+      wake();
+      const load = async () => { try { votes = (await loadVotes()) || votes; renderVotes(); } catch {} };
       load();
-      setInterval(load, 20000);
+      setInterval(() => { if (!document.hidden) load(); }, 30000);
     }
     return;
   }
@@ -661,33 +674,29 @@ function initForm() {
     if (!$('#f-age').checked) { msg.textContent = 'Marca la casilla de edad. Si tienes menos de 14 años, pide a un adulto que te apunte.'; msg.classList.add('err'); return; }
     if (!$('#f-ok').checked) { msg.textContent = 'Necesitamos tu permiso para guardar el email.'; msg.classList.add('err'); return; }
     const town = munis.find((x) => norm(x.n) === norm($('#f-town').value.trim()));
-    const entry = { alias: $('#f-alias').value.trim().slice(0, 40), email, pueblo: town ? town.id : null, perfil: role, t: Date.now() };
-    if (db && uid) {
-      try {
-        await db.doc(`lista/${uid}`).set(entry);
-        msg.textContent = `Apuntado. Te avisaremos cuando abra la beta${town ? ` y cuando ${town.n} despierte` : ''}.`;
-        msg.classList.add('ok');
-        $('#pp-no').textContent = 'Nº fundador';
-        return;
-      } catch (err) {
-        console.warn('registro no guardado', err?.code);
-      }
+    const entry = { alias: $('#f-alias').value.trim().slice(0, 40), email, pueblo: town ? town.id : null, pueblo_texto: town ? '' : $('#f-town').value.trim().slice(0, 60), perfil: role, origen: 'formulario', edad14: true, acepto: true, web: $('#f-web').value };
+    const btn = $('#form [type=submit]');
+    btn.disabled = true;
+    msg.textContent = 'Guardando…';
+    try {
+      await saveSignup(entry);
+      markListed();
+      msg.innerHTML = '';
+      msg.append(`Apuntado. Te avisaremos de cada novedad${town ? ` y de cuando ${town.n} despierte` : ''}. `);
+      const go = document.createElement('a');
+      go.href = 'guarena.html?jugar';
+      go.textContent = 'Entrar ya en Guareña →';
+      msg.append(go);
+      msg.classList.add('ok');
+      $('#pp-no').textContent = 'Nº fundador';
+    } catch (err) {
+      msg.textContent = err.status === 429 ? 'Demasiados intentos seguidos. Prueba de nuevo en un minuto.'
+        : SHARED || window.claude?.use ? 'No hemos podido guardar tu inscripción. Revisa la conexión y vuelve a intentarlo.'
+        : 'Esta vista previa no puede guardar inscripciones.';
+      msg.classList.add('err');
+    } finally {
+      btn.disabled = false;
     }
-    if (SERVER) {
-      try {
-        await apiPost('/lista', { ...entry, edad14: true, acepto: true });
-        msg.textContent = `Apuntado. Te avisaremos cuando abra la beta${town ? ` y cuando ${town.n} despierte` : ''}.`;
-        msg.classList.add('ok');
-        $('#pp-no').textContent = 'Nº fundador';
-        return;
-      } catch (err) {
-        msg.textContent = err.status === 429 ? 'Demasiados intentos seguidos. Prueba de nuevo en un minuto.' : 'No hemos podido guardar tu inscripción. Revisa el email y vuelve a intentarlo.';
-        msg.classList.add('err');
-        return;
-      }
-    }
-    msg.textContent = 'Esta vista previa todavía no puede guardar inscripciones. Tu pasaporte queda listo para cuando abramos la lista.';
-    msg.classList.add('err');
   });
 }
 

@@ -5,8 +5,9 @@ Solo usa la biblioteca estándar de Python 3.9+. Abierto a cualquiera, sin cuent
 - /api/online             personas conectadas ahora, en total y por pueblo.
 - /api/votos              GET recuento por pueblo · POST {device, pueblo} (un voto por dispositivo).
 - /api/pasaporte          GET ?device= · POST {device, pueblo} (un sello por pueblo visitado).
-- /api/lista              POST {email, alias, pueblo, perfil, edad14, acepto} (nunca se puede leer por la API).
-Todo lo demás sirve la carpeta web/. Los HTML reciben window.P388 para que las páginas usen este servidor.
+- /api/lista              POST {email, alias, pueblo, perfil, origen, edad14, acepto} (nunca se puede leer por la API).
+Todo lo demás sirve la carpeta web/ (con ETag y caché). Los HTML reciben window.P388 para que las páginas usen este
+servidor. La API acepta peticiones de otros orígenes (la web estática en su CDN).
 
 uso: python3 server/servidor.py [--port 8388] [--db 388pueblos.sqlite3]
 Exportar la lista de espera: python3 server/servidor.py --export-lista
@@ -25,16 +26,10 @@ import struct
 import time
 import urllib.parse
 
+from pagina import documento
+
 ROOT = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web"))
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-INJECT = b'<script>window.P388={api:"/api"};</script>'
-SKELETON = (
-    b"<!doctype html><html lang=\"es\"><head><meta charset=utf8>"
-    b"<meta name=viewport content=\"width=device-width,initial-scale=1,viewport-fit=cover\">"
-    b"<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);"
-    b"padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}"
-    b"img{max-width:100%}[hidden]{display:none!important}</style>" + INJECT + b"</head><body>"
-)
 INE_RE = re.compile(r"^\d{5}$")
 ROOM_RE = re.compile(r"^pueblo-\d{5}$")
 ALIAS_RE = re.compile(r"^[A-Za-zÁÉÍÓÚÑáéíóúñü]{2,12} \d{2}$")
@@ -58,10 +53,14 @@ db.executescript(
     CREATE TABLE IF NOT EXISTS lista (id INTEGER PRIMARY KEY, email TEXT NOT NULL UNIQUE, alias TEXT, pueblo TEXT, perfil TEXT, t INTEGER NOT NULL);
     """
 )
+try:
+    db.execute("ALTER TABLE lista ADD COLUMN origen TEXT")
+except sqlite3.OperationalError:
+    pass
 db.commit()
 
 if args.export_lista:
-    for row in db.execute("SELECT email, alias, pueblo, perfil, datetime(t/1000, 'unixepoch') FROM lista ORDER BY t"):
+    for row in db.execute("SELECT email, alias, pueblo, perfil, origen, datetime(t/1000, 'unixepoch') FROM lista ORDER BY t"):
         print(",".join("" if v is None else str(v) for v in row))
     raise SystemExit(0)
 
@@ -266,28 +265,35 @@ def api(method, path, query, body, ip):
         alias = str(d.get("alias", ""))[:40]
         pueblo = d.get("pueblo") if d.get("pueblo") in PUEBLOS else None
         perfil = d.get("perfil") if d.get("perfil") in ("Jugador", "Creador", "Desde fuera", "Ayuntamiento") else None
-        db.execute("INSERT OR IGNORE INTO lista(email, alias, pueblo, perfil, t) VALUES(?,?,?,?,?)", (email.strip().lower(), alias, pueblo, perfil, now))
+        if d.get("web"):  # (el campo trampa: solo lo rellenan los robots)
+            return 200, {"ok": True}
+        origen = d.get("origen") if d.get("origen") in ("jugar", "formulario") else None
+        if not pueblo and isinstance(d.get("pueblo_texto"), str) and d["pueblo_texto"].strip():
+            alias = (alias + " · " if alias else "") + d["pueblo_texto"].strip()[:60]
+        db.execute("INSERT OR IGNORE INTO lista(email, alias, pueblo, perfil, t, origen) VALUES(?,?,?,?,?,?)", (email.strip().lower(), alias, pueblo, perfil, now, origen))
         db.commit()
         return 200, {"ok": True}
     return 404, {"error": "no existe"}
 
 
 # ---------------- HTTP ----------------
+CACHE = {".html": "no-cache", ".js": "public, max-age=300, stale-while-revalidate=86400",
+         ".css": "public, max-age=300, stale-while-revalidate=86400", ".json": "public, max-age=3600, stale-while-revalidate=604800"}
+
+
 def static(path):
     rel = urllib.parse.unquote(path.split("?")[0]).lstrip("/") or "index.html"
     full = os.path.realpath(os.path.join(ROOT, rel))
     if not full.startswith(ROOT + os.sep) or not os.path.isfile(full):
-        return 404, b"No encontrado", "text/plain; charset=utf-8"
+        return 404, b"No encontrado", "text/plain; charset=utf-8", "no-store"
     with open(full, "rb") as f:
         body = f.read()
     ctype = mimetypes.guess_type(full)[0] or "application/octet-stream"
-    if rel == "index.html":
-        body = SKELETON + body + b"</body></html>"
-    elif full.endswith(".html"):
-        body = body.replace(b"</head>", INJECT + b"</head>", 1)
+    if full.endswith(".html"):
+        body = documento(body, "/api")
     if ctype.startswith("text/") or ctype in ("application/json", "application/javascript"):
         ctype += "; charset=utf-8"
-    return 200, body, ctype
+    return 200, body, ctype, CACHE.get(os.path.splitext(full)[1], "public, max-age=604800")
 
 
 async def handle(reader, writer):
@@ -317,16 +323,30 @@ async def handle(reader, writer):
         else:
             if n:
                 body = await reader.readexactly(n)
-            if url.path.startswith("/api/"):
+            if url.path.startswith("/api/") and method == "OPTIONS":
+                status, payload, ctype = 204, b"", "text/plain"
+            elif url.path.startswith("/api/"):
                 status, obj = api(method, url.path, query, body, ip)
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
             elif method in ("GET", "HEAD"):
-                status, payload, ctype = static(url.path)
+                status, payload, ctype, cache = static(url.path)
             else:
                 status, payload, ctype = 405, b"", "text/plain"
-        reason = {200: "OK", 400: "Bad Request", 404: "Not Found", 405: "Method Not Allowed", 413: "Payload Too Large", 429: "Too Many Requests"}.get(status, "OK")
-        hdr = (f"HTTP/1.1 {status} {reason}\r\nContent-Type: {ctype}\r\nContent-Length: {len(payload)}\r\n"
-               "Cache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n").encode()
+        extra = ""
+        if url.path.startswith("/api/"):
+            extra = ("Cache-Control: no-store\r\nAccess-Control-Allow-Origin: *\r\n"
+                     "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type\r\n"
+                     "Access-Control-Max-Age: 86400\r\n")
+        elif status == 200 and method in ("GET", "HEAD"):
+            etag = '"' + hashlib.sha1(payload).hexdigest()[:20] + '"'
+            if headers.get("if-none-match") == etag:
+                status, payload = 304, b""
+            extra = f"Cache-Control: {cache}\r\nETag: {etag}\r\n"
+        else:
+            extra = "Cache-Control: no-store\r\n"
+        reason = {200: "OK", 204: "No Content", 304: "Not Modified", 400: "Bad Request", 404: "Not Found", 405: "Method Not Allowed", 413: "Payload Too Large", 429: "Too Many Requests"}.get(status, "OK")
+        hdr = (f"HTTP/1.1 {status} {reason}\r\nContent-Type: {ctype}\r\nContent-Length: {len(payload)}\r\n{extra}"
+               "X-Content-Type-Options: nosniff\r\nReferrer-Policy: strict-origin-when-cross-origin\r\nConnection: close\r\n\r\n").encode()
         writer.write(hdr + (b"" if method == "HEAD" else payload))
         await writer.drain()
     except (asyncio.TimeoutError, asyncio.IncompleteReadError, ConnectionError, ValueError):

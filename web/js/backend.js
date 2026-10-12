@@ -1,6 +1,13 @@
-// Conexión con el servidor propio de 388 Pueblos (server/servidor.py), cuando la web se sirve desde él.
-// Dentro de un Artifact no existe window.P388 y las páginas usan las capacidades del Artifact.
+// Dónde viven los datos compartidos de la web (lista de espera y votos), por orden:
+//   1. dentro de un Artifact de claude.ai, su base de datos (lo resuelven main.js y pasaporte.js);
+//   2. una hoja de Google Sheets (SHEETS_URL en config.js, con tools/sheets/Codigo.gs);
+//   3. el servidor propio (server/servidor.py), cuando la web se sirve desde él (window.P388).
+// El pasaporte vive en el propio dispositivo (pasaporte.js).
+import { SHEETS_URL } from './config.js';
+
 export const SERVER = typeof window !== 'undefined' && window.P388 && window.P388.api ? window.P388.api : null;
+export const SHEETS = SHEETS_URL || null;
+export const SHARED = !!(SHEETS || SERVER);
 
 export function deviceId() {
   let id = null;
@@ -27,48 +34,46 @@ export async function apiPost(path, body) {
   return j;
 }
 
-// Sala de un pueblo por WebSocket con la misma forma que la sala del Artifact (presence / onPeers).
-export function wsRoom(name) {
-  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?room=${encodeURIComponent(name)}`;
-  let ws = null, me = null, open = false, retry = 0, timer = null;
-  let peers = new Map();
-  const mine = {};
-  const handlers = [], connHandlers = [];
-  const snapshot = () => [
-    { peer: me || 'yo', kind: 'viewer', isMe: true, sameTab: true, presence: { ...mine } },
-    ...[...peers].map(([id, p]) => ({ peer: id, kind: 'viewer', isMe: false, sameTab: false, presence: p || {} })),
-  ];
-  const emit = () => { const s = snapshot(); handlers.forEach((h) => h({ peers: s })); };
-  const flush = () => { if (open && ws && ws.readyState === 1) ws.send(JSON.stringify({ t: 'p', ...mine })); };
-  const connect = () => {
-    ws = new WebSocket(url);
-    ws.onopen = () => { open = true; retry = 0; connHandlers.forEach((h) => h(true)); flush(); };
-    ws.onmessage = (ev) => {
-      let m;
-      try { m = JSON.parse(ev.data); } catch { return; }
-      if (m.t === 'room') { me = m.me; peers = new Map((m.peers || []).map((p) => [p.id, p.p])); }
-      else if (m.t === 'join') peers.set(m.id, {});
-      else if (m.t === 'p') peers.set(m.id, m.p);
-      else if (m.t === 'bye') peers.delete(m.id);
-      emit();
-    };
-    ws.onclose = () => {
-      const was = open;
-      open = false;
-      peers.clear();
-      if (was) { connHandlers.forEach((h) => h(false)); emit(); }
-      setTimeout(connect, Math.min(15000, 1000 * 2 ** retry++));
-    };
-  };
-  connect();
-  return {
-    presence(patch) {
-      for (const k of Object.keys(patch)) { if (patch[k] === null) delete mine[k]; else mine[k] = patch[k]; }
-      if (!timer) timer = setTimeout(() => { timer = null; flush(); }, 50);
-      return Promise.resolve();
-    },
-    onPeers(h) { handlers.push(h); setTimeout(emit, 0); return () => {}; },
-    onConnection(h) { connHandlers.push(h); setTimeout(() => h(open), 0); return () => {}; },
-    connected: () => open,
-  };
+// ---- Google Sheets (Apps Script): POST con text/plain, sin preflight; GET para los recuentos ----
+async function sheets(body, timeout = 12000) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), timeout);
+  try {
+    const r = await fetch(SHEETS, { method: 'POST', body: JSON.stringify(body), signal: ctl.signal, redirect: 'follow' });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || j.ok === false) throw Object.assign(new Error(j.error || `hoja ${r.status}`), { status: j.status || r.status });
+    return j;
+  } finally { clearTimeout(t); }
+}
+
+// Recuento de votos por pueblo, {INE: n}
+export async function loadVotes() {
+  if (SHEETS) {
+    const r = await fetch(`${SHEETS}?accion=votos`, { cache: 'no-store', redirect: 'follow' });
+    const j = await r.json();
+    return j.votos || {};
+  }
+  if (SERVER) return apiGet('/votos');
+  return null;
+}
+
+// Un voto por dispositivo (cambiarlo mueve el voto)
+export async function sendVote(pueblo) {
+  if (SHEETS) return sheets({ accion: 'voto', device: deviceId(), pueblo });
+  if (SERVER) return apiPost('/votos', { device: deviceId(), pueblo });
+  throw new Error('sin almacén compartido');
+}
+
+// Inscripción en la lista de espera (el email nunca se puede volver a leer desde la web)
+export async function sendSignup(entry) {
+  const e = { ...entry, device: deviceId(), web: entry.web || '' };
+  if (SHEETS) return sheets({ accion: 'lista', ...e });
+  if (SERVER) return apiPost('/lista', e);
+  throw new Error('sin almacén compartido');
+}
+
+// Despierta el servidor propio si duerme (plan gratuito de Render): así, cuando alguien rellene el formulario,
+// ya está en pie
+export function wake() {
+  if (!SHEETS && SERVER) fetch(`${SERVER}/online`, { cache: 'no-store' }).catch(() => {});
 }

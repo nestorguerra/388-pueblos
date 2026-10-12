@@ -1,6 +1,7 @@
 // Cualquiera de los 388: pueblo.html#<código INE>. Guareña tiene su propia página.
 import { createTownPage, townError } from './town-page.js';
-import { SERVER, deviceId, apiGet, apiPost } from './backend.js';
+import { SHARED, loadVotes, sendVote, wake } from './backend.js';
+import { loadContenido } from './contenido.js';
 
 const $ = (s) => document.querySelector(s);
 const fmt = new Intl.NumberFormat('es-ES');
@@ -68,6 +69,15 @@ addEventListener('hashchange', () => location.reload());
     s: 'OpenStreetMap', x: c.x, y: c.y, h: c.main ? 16 : 10, d: 170,
   }));
 
+  // lo que la comunidad ha escrito de este pueblo (data/contenido/<INE>.json, ver CONTRIBUTING.md)
+  const extra = await loadContenido(ine, data);
+  if (extra) {
+    places.push(...extra.lugares);
+    facts.unshift(...extra.datos);
+    if (extra.descripcion) $('#p-desc').textContent = extra.descripcion;
+    if (extra.autoria.length) $('#p-desc').textContent += ` Con aportaciones de ${extra.autoria.join(', ')}.`;
+  }
+
   createTownPage({ data, ine, name: m.n, places, facts, radius: data.radius || 800 });
 
   // votos para despertar el pueblo (misma colección que el mapa de la landing)
@@ -82,8 +92,8 @@ addEventListener('hashchange', () => location.reload());
   };
   render(0);
   const c = window.claude;
-  const loadServer = async () => { try { const v = await apiGet('/votos'); render(v[ine] || 0); } catch {} };
-  if (!c?.use && SERVER) loadServer();
+  const loadShared = async () => { try { const v = await loadVotes(); if (v) render(v[ine] || 0); } catch {} };
+  if (!c?.use && SHARED) { wake(); loadShared(); }
   if (c?.use) {
     Promise.all([c.use('db'), c.use('user')]).then(async ([d, u]) => {
       if (!d) return;
@@ -106,8 +116,8 @@ addEventListener('hashchange', () => location.reload());
     if (db && uid) {
       try { await db.doc(`votos/${uid}`).set({ pueblo: ine, t: Date.now() }); return; } catch {}
     }
-    if (SERVER) {
-      try { await apiPost('/votos', { device: deviceId(), pueblo: ine }); await loadServer(); return; } catch {}
+    if (!c?.use && SHARED) {
+      try { await sendVote(ine); await loadShared(); return; } catch {}
     }
     render(1);
     $('#v-note').textContent = 'Voto guardado en este navegador. En esta vista no se puede compartir con el recuento general.';

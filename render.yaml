@@ -1,13 +1,59 @@
-# Despliegue del servidor propio de 388 Pueblos en Render (web + multijugador + base de datos).
-# Beta en plan gratuito: sin disco persistente, así que la base de datos SQLite es temporal
-# (se vacía en cada reinicio o despliegue) y el servicio se duerme tras unos minutos sin visitas.
-# Para conservar votos, pasaportes e inscripciones: plan starter + disco (ver README).
+# Despliegue de 388 Pueblos en Render.
+#
+# 1. pueblos388: la web, estática, en el CDN de Render. Gratis, sin esperas (no se duerme) y cerca de quien la
+#    visita. tools/build_web.py la empaqueta en dist/web con versiones en los JS y CSS para poder guardarlos un año.
+# 2. 388-pueblos: el servidor propio (API de votos y lista de espera, y la web también). En el plan gratuito se
+#    duerme tras unos minutos sin visitas y su base de datos SQLite es temporal: la lista de espera debe ir a
+#    Google Sheets (SHEETS_URL en web/js/config.js; ver README). Mientras tanto, la web estática usa esta API.
 services:
+  - type: web
+    name: pueblos388
+    runtime: static
+    buildCommand: python3 tools/build_web.py --api https://three88-pueblos.onrender.com/api --site https://pueblos388.onrender.com
+    staticPublishPath: ./dist/web
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), payment=()
+      - path: /
+        name: Cache-Control
+        value: no-cache
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
+      - path: /guarena.html
+        name: Cache-Control
+        value: no-cache
+      - path: /pueblo.html
+        name: Cache-Control
+        value: no-cache
+      - path: /privacidad.html
+        name: Cache-Control
+        value: no-cache
+      - path: /js/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /css/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /data/*
+        name: Cache-Control
+        value: public, max-age=86400, stale-while-revalidate=604800
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=604800
+
   - type: web
     name: 388-pueblos
     runtime: python
     plan: free
-    buildCommand: python3 -m py_compile server/servidor.py
+    buildCommand: python3 -m py_compile server/servidor.py server/pagina.py
     startCommand: python3 server/servidor.py --host 0.0.0.0 --port $PORT --db /tmp/388pueblos.sqlite3
     healthCheckPath: /api/online
     envVars:
