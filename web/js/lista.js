@@ -27,13 +27,32 @@ export async function saveSignup(entry) {
   await sendSignup(entry);
 }
 
-// Reintento de una inscripción que se quedó sin guardar (sin conexión, servidor dormido…)
-(async () => {
+// Inscripción que no pudo enviarse (sin conexión, servidor despertando…): se guarda en el dispositivo y se reintenta
+// sola cada poco mientras la página está abierta, al recuperar la conexión y en la siguiente visita.
+export function queueSignup(entry) {
+  try { localStorage.setItem(PEND, JSON.stringify(entry)); } catch { /* ignore */ }
+  flushPending();
+}
+let flushing = false, tries = 0;
+async function flushPending() {
+  if (flushing) return;
   let p = null;
   try { p = JSON.parse(localStorage.getItem(PEND) || 'null'); } catch { /* ignore */ }
   if (!p || !p.email) return;
-  try { await saveSignup(p); localStorage.removeItem(PEND); } catch { /* otra vez será */ }
-})();
+  flushing = true;
+  try {
+    await saveSignup(p);
+    localStorage.removeItem(PEND);
+    tries = 0;
+  } catch (err) {
+    if (err && err.status === 400) localStorage.removeItem(PEND); // (datos no válidos: no tiene sentido insistir)
+    else if (++tries < 8) setTimeout(flushPending, Math.min(120000, 15000 * tries));
+  } finally {
+    flushing = false;
+  }
+}
+addEventListener('online', flushPending);
+flushPending();
 
 const CSS = `
 .lgate { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 16px; background: rgba(4, 6, 14, 0.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; transition: opacity 0.35s ease; }
@@ -129,7 +148,7 @@ export function gate(opts = {}) {
       const entry = { email, alias: '', pueblo: ine, pueblo_texto: texto.slice(0, 60), perfil: 'Jugador', origen: 'jugar', edad14: true, acepto: true, web: f.web.value };
       markListed();
       // se entra ya; la inscripción se guarda por detrás y, si no puede, se reintenta en la próxima visita
-      saveSignup(entry).catch(() => { try { localStorage.setItem(PEND, JSON.stringify(entry)); } catch { /* ignore */ } });
+      saveSignup(entry).catch((err) => { if (!err || err.status !== 400) queueSignup(entry); });
       if (opts.onEnter) opts.onEnter();
       close(true);
     });

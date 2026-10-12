@@ -1,3 +1,5 @@
+import { getJSON } from './red.js';
+
 // Contenido escrito por la comunidad para cada pueblo: data/contenido/<INE>.json (formato en CONTRIBUTING.md).
 // data/contenido/index.json lista los pueblos que tienen contenido, para no pedir archivos que no existen.
 
@@ -22,9 +24,9 @@ let index = null;
 
 export async function loadContenido(ine, model) {
   try {
-    index = index || (await (await fetch('data/contenido/index.json')).json());
+    index = index || (await getJSON('data/contenido/index.json', { retries: 1 }));
     if (!Array.isArray(index) || !index.includes(ine)) return null;
-    const c = await (await fetch(`data/contenido/${ine}.json`)).json();
+    const c = await getJSON(`data/contenido/${ine}.json`, { retries: 1 });
     const zone = model.zone || 29, [cx, cy] = model.center || [0, 0];
     const lugares = (Array.isArray(c.lugares) ? c.lugares : [])
       .filter((l) => str(l.nombre, 80) && Number.isFinite(l.lat) && Number.isFinite(l.lon))

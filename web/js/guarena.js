@@ -1,6 +1,7 @@
 // Guareña, pueblo 001: datos dedicados (centrados en la Plaza de España) y contenido verificado.
 import { LANDMARKS, GUARENA_CHURCHES } from './world.js';
 import { createTownPage, townError } from './town-page.js';
+import { getJSON } from './red.js';
 
 const FIRST = {
   torre: { t: 'La torre de Santa María', p: 'La iglesia de Santa María se empezó en 1557 y se terminó hacia 1700. Su torre de cuatro cuerpos mide 32 metros y el templo es Bien de Interés Cultural desde 1990.', s: 'Ayuntamiento de Guareña · BOE' },
@@ -25,9 +26,9 @@ const PLACES = [
 (async () => {
   let data;
   try {
-    data = await (await fetch('data/guarena.json')).json();
+    data = await getJSON('data/guarena.json');
   } catch {
-    townError('No se pudo cargar el modelo de Guareña.');
+    townError('No se pudo cargar el modelo de Guareña. Revisa la conexión.', { retry: true });
     return;
   }
   createTownPage({ data, churches: GUARENA_CHURCHES, ine: '06060', name: 'Guareña', places: PLACES, facts: FACTS, firstFacts: FIRST, radius: 1400, playable: true });

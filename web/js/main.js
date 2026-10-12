@@ -2,7 +2,8 @@
 import { createLandingWorld } from './landing-world.js';
 import { readPassport } from './pasaporte.js';
 import { SHARED, loadVotes, sendVote, wake } from './backend.js';
-import { gate, isListed, markListed, saveSignup } from './lista.js';
+import { gate, isListed, markListed, saveSignup, queueSignup } from './lista.js';
+import { getJSON, prerender } from './red.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -56,6 +57,8 @@ document.addEventListener('click', (e) => {
 
 // ---------------- entrar en un pueblo: descenso de cámara continuo hasta su juego ----------------
 function enterTown(href, name, idx) {
+  // mientras dura el descenso, el navegador ya va levantando la página del pueblo (llega lista)
+  prerender(href, href.startsWith('pueblo.html#') ? `data/pueblos/${href.split('#')[1]}.json` : null);
   const ov = document.createElement('div');
   ov.className = 'dive-ov';
   ov.innerHTML = '<div><b></b><span class="mono"></span></div>';
@@ -309,7 +312,7 @@ async function drawPlano() {
   const cv = $('#plano');
   const g = cv.getContext('2d');
   let data;
-  try { data = await (await fetch('data/guarena.json')).json(); } catch { return; }
+  try { data = await getJSON('data/guarena.json'); } catch { return; }
   const css = getComputedStyle(document.documentElement);
   const anil = css.getPropertyValue('--anil').trim();
   const sodio = css.getPropertyValue('--sodio').trim();
@@ -690,8 +693,18 @@ function initForm() {
       msg.classList.add('ok');
       $('#pp-no').textContent = 'Nº fundador';
     } catch (err) {
+      if (!err.status && (SHARED || window.claude?.use)) {
+        // sin conexión o el servidor despertando: se guarda aquí y se envía sola en cuanto se pueda
+        queueSignup(entry);
+        markListed();
+        msg.textContent = 'Te hemos apuntado en este dispositivo y lo enviaremos en cuanto haya conexión.';
+        msg.classList.add('ok');
+        $('#pp-no').textContent = 'Nº fundador';
+        return;
+      }
       msg.textContent = err.status === 429 ? 'Demasiados intentos seguidos. Prueba de nuevo en un minuto.'
-        : SHARED || window.claude?.use ? 'No hemos podido guardar tu inscripción. Revisa la conexión y vuelve a intentarlo.'
+        : err.status === 400 ? 'Revisa el email: no parece válido.'
+        : SHARED || window.claude?.use ? 'No hemos podido guardar tu inscripción. Vuelve a intentarlo en un momento.'
         : 'Esta vista previa no puede guardar inscripciones.';
       msg.classList.add('err');
     } finally {
@@ -717,7 +730,7 @@ function initUI() {
     initLive();
   } else {
     // sin 3D: cargamos los datos para el resto de la página
-    fetch('data/municipios.json').then((r) => r.json()).then((d) => {
+    getJSON('data/municipios.json').then((d) => {
       munis = d.m.map((m, i) => Object.assign(m, { _i: i }));
       initMapUI();
       initNames();

@@ -278,8 +278,9 @@ def api(method, path, query, body, ip):
 
 
 # ---------------- HTTP ----------------
-CACHE = {".html": "no-cache", ".js": "public, max-age=300, stale-while-revalidate=86400",
-         ".css": "public, max-age=300, stale-while-revalidate=86400", ".json": "public, max-age=3600, stale-while-revalidate=604800"}
+# (los JS y CSS de aquí no llevan huella en la URL: se revalidan siempre con su ETag para no mezclar versiones;
+# la web estática del CDN sí la lleva y los guarda un año)
+CACHE = {".html": "no-cache", ".js": "no-cache", ".css": "no-cache", ".json": "public, max-age=3600, stale-while-revalidate=604800"}
 
 
 def static(path):

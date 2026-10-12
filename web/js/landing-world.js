@@ -1,8 +1,9 @@
 // Escena de la landing: de la plaza de Guareña a los 388 pueblos de Extremadura.
 import {
-  THREE, buildTown, buildGround, buildTrees, buildStorks, buildSky, buildLights, buildMap,
+  THREE, buildTownAsync, buildGroundAsync, nextTask, buildTrees, buildStorks, buildSky, buildLights, buildMap,
   applyTimeOfDay, makeRenderer, Rig, interpState, LANDMARKS, GUARENA_CHURCHES,
 } from './world.js';
+import { getJSON } from './red.js';
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
@@ -19,9 +20,7 @@ const INTRO = [
 
 export async function createLandingWorld({ canvas, labelLayer, base = '.', onProgress = () => {}, onHover = () => {}, onPick = () => {} }) {
   const fetchJSON = async (u, w) => {
-    const r = await fetch(`${base}/${u}`);
-    if (!r.ok) throw new Error(`No se pudo cargar ${u}`);
-    const j = await r.json();
+    const j = await getJSON(`${base}/${u}`);
     onProgress(w);
     return j;
   };
@@ -31,7 +30,7 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     fetchJSON('data/contexto.json', 0.1),
   ]);
 
-  const { renderer, mobile } = makeRenderer(canvas);
+  const { renderer, mobile, governor } = makeRenderer(canvas);
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0xf3b98a, 1000, 8000);
   const camera = new THREE.PerspectiveCamera(32, 1, 1, 10000);
@@ -40,17 +39,23 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
   const sky = buildSky();
   scene.add(sky.mesh);
   const lights = buildLights(scene);
-  const ground = buildGround(town);
+  // (la construcción se reparte en trozos: la portada no se congela mientras se levanta Guareña)
+  await nextTask();
+  const ground = await buildGroundAsync(town);
   scene.add(ground.mesh);
-  const T = buildTown(town, { churches: GUARENA_CHURCHES });
+  await nextTask();
+  const T = await buildTownAsync(town, { churches: GUARENA_CHURCHES });
   scene.add(T.group);
+  await nextTask();
   const trees = buildTrees(town, { count: mobile ? 2600 : 6000, isUrban: ground.isUrban });
   scene.add(trees);
   const tower = T.special.tower || { x: -140, y: 36, z: -100 };
   const storks = buildStorks({ x: tower.x, z: tower.z }, 7);
   scene.add(storks);
+  await nextTask();
   const map = buildMap(muni.m, ctxd);
   scene.add(map.group);
+  await nextTask();
   onProgress(0.1);
 
   const ctx = { sky, lights, renderer };
@@ -128,6 +133,7 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
   }
   resize();
   addEventListener('resize', resize);
+  governor.onChange = resize; // (el grosor de los puntos del mapa depende de la resolución)
 
   const UI_SEL = '.box, .sheet, .nav, .tip, .hud, a, button, input, label, .step';
   addEventListener('pointermove', (e) => {
@@ -186,9 +192,10 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
 
   const clock = new THREE.Clock();
   let t = 0;
-  function frame() {
+  function frame(now) {
     requestAnimationFrame(frame);
     if (!state.visible) return;
+    governor.frame(now);
     tick(Math.min(0.05, clock.getDelta()));
   }
   function tick(dt) {
@@ -290,7 +297,9 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     renderer.render(scene, camera);
     updateLabels(d);
   }
-  frame();
+  // los sombreadores se compilan en paralelo antes del primer fotograma
+  if (renderer.compileAsync) await renderer.compileAsync(scene, camera).catch(() => {});
+  requestAnimationFrame(frame);
 
   return {
     munis: muni.m,
@@ -341,6 +350,7 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     get diving() { return !!dive; },
     get hover() { return state.hover; },
     _step: (n = 60) => { for (let i = 0; i < n; i++) tick(1 / 60); },
+    _governor: governor,
     _dbg: () => ({ cur: { ...cur }, cam: camera.position.toArray(), near: camera.near, far: camera.far, fade: ground.uniforms.uFade.value, op: map.uniforms.uOpacity.value }),
   };
 }

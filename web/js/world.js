@@ -74,14 +74,6 @@ class GeoBuilder {
     this.tri(a, b, c, color, hint);
     this.tri(a, c, d, color, hint);
   }
-  build() {
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
-    g.computeBoundingSphere();
-    return g;
-  }
 }
 
 function polyArea(pts) {
@@ -110,7 +102,27 @@ function pointIn(x, y, pts) {
   return c;
 }
 
-export function buildTown(data, { seed = 388, churches = data.churches || [] } = {}) {
+// Ceder el hilo principal entre trozos de trabajo pesado (construir un pueblo son ~8.000 piezas): así la página
+// sigue respondiendo y el indicador de carga se mueve mientras tanto.
+export const nextTask = () => (globalThis.scheduler?.yield ? globalThis.scheduler.yield()
+  : new Promise((r) => { const ch = new MessageChannel(); ch.port1.onmessage = () => r(); ch.port2.postMessage(0); }));
+
+const runSync = (it) => { for (;;) { const r = it.next(); if (r.done) return r.value; } };
+// un generador de trabajo, repartido en trozos de unos pocos milisegundos
+async function runAsync(it, budget = 8) {
+  let t = performance.now();
+  for (;;) {
+    const r = it.next();
+    if (r.done) return r.value;
+    if (performance.now() - t > budget) { await nextTask(); t = performance.now(); }
+  }
+}
+export const buildTown = (data, opts) => runSync(townSteps(data, opts));
+export const buildTownAsync = (data, opts) => runAsync(townSteps(data, opts));
+export const buildGround = (townData, opts) => runSync(groundSteps(townData, opts));
+export const buildGroundAsync = (townData, opts) => runAsync(groundSteps(townData, opts));
+
+function* townSteps(data, { seed = 388, churches = data.churches || [] } = {}) {
   const R = rng(seed);
   const unit = data.unit;
   const geo = new GeoBuilder();
@@ -209,8 +221,10 @@ export function buildTown(data, { seed = 388, churches = data.churches || [] } =
     return { x: W[0] + ax * inset, y: W[1] + ay * inset, ax, ay, len: dmax };
   };
   let count = 0;
-  P.forEach((q, idx) => {
-    const { floors, use, pts, cx, cy, area } = q;
+  yield;
+  for (let idx = 0; idx < P.length; idx++) {
+    if ((idx & 127) === 127) yield;
+    const { floors, use, pts, cx, cy, area } = P[idx];
     count++;
     const ch = churchOf.get(idx);
     if (ch && ch.main) {
@@ -222,7 +236,7 @@ export function buildTown(data, { seed = 388, churches = data.churches || [] } =
       const w = westEnd(pts, s + 3);
       const h = 24 + 8 * Math.min(1, Math.max(0, (area - 300) / 1200));
       towers.push({ x: w.x, y: w.y, s, h, name: ch.name });
-      return;
+      continue;
     }
     if (ch) {
       // iglesia secundaria o ermita: cal, zócalo de granito y espadaña
@@ -230,7 +244,7 @@ export function buildTown(data, { seed = 388, churches = data.churches || [] } =
       flatCap(pts, 10, PAL.teja);
       const w = westEnd(pts, 2.5);
       towers.push({ x: w.x, y: w.y, s: 2.4, h: 17, espadana: true, name: ch.name });
-      return;
+      continue;
     }
     const industrial = use.includes('industrial') || use.includes('agriculture');
     const h = floors * 3.05 + 0.5 + R() * 0.5 + (industrial ? 1.6 : 0);
@@ -253,7 +267,7 @@ export function buildTown(data, { seed = 388, churches = data.churches || [] } =
     }
     // candidatos a nido: edificios altos
     if (floors >= 3 && area > 60) roofCand.push({ x: cx, y: h + 0.3, z: -cy, kind: 'tejado' });
-  });
+  }
 
   // torres y campanarios
   for (const t of towers) {
@@ -293,10 +307,16 @@ export function buildTown(data, { seed = 388, churches = data.churches || [] } =
   }
   nests.push(...picked);
 
-  const mesh = new THREE.Mesh(
-    geo.build(),
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 })
-  );
+  // (los tres atributos son ~1,6 millones de números cada uno: se convierten por separado)
+  yield;
+  const townGeo = new THREE.BufferGeometry();
+  townGeo.setAttribute('position', new THREE.Float32BufferAttribute(geo.p, 3));
+  yield;
+  townGeo.setAttribute('normal', new THREE.Float32BufferAttribute(geo.n, 3));
+  yield;
+  townGeo.setAttribute('color', new THREE.Float32BufferAttribute(geo.c, 3));
+  townGeo.computeBoundingSphere();
+  const mesh = new THREE.Mesh(townGeo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 }));
   mesh.castShadow = true;
   mesh.receiveShadow = true;
 
@@ -346,7 +366,7 @@ export function glowTexture() {
 }
 
 // ---------- suelo procedural: parcelas de la Vega y casco urbano ----------
-export function buildGround(townData, { size = 90000 } = {}) {
+function* groundSteps(townData, { size = 90000 } = {}) {
   // máscara del casco urbano (huellas dilatadas) -> calles
   const N = 1024, EXT = 3200; // 3,2 km
   const cv = document.createElement('canvas');
@@ -359,7 +379,9 @@ export function buildGround(townData, { size = 90000 } = {}) {
   g.lineJoin = 'round';
   g.lineWidth = (14 / EXT) * N;
   const u = townData.unit;
+  let k = 0;
   for (const [, , flat] of townData.parts) {
+    if ((++k & 511) === 0) yield;
     g.beginPath();
     for (let i = 0; i < flat.length; i += 2) {
       const x = ((flat[i] * u) / EXT + 0.5) * N;
@@ -999,12 +1021,61 @@ export function interpState(keys, p) {
 export function makeRenderer(canvas) {
   const mobile = matchMedia('(max-width: 760px)').matches || /Mobi|Android/i.test(navigator.userAgent);
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: !mobile, logarithmicDepthBuffer: true, powerPreference: 'high-performance', alpha: false });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, mobile ? 1.5 : 1.75));
+  const maxRatio = Math.min(window.devicePixelRatio, mobile ? 1.5 : 1.75);
+  renderer.setPixelRatio(maxRatio);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = !mobile;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  return { renderer, mobile };
+  // si el sistema se queda sin memoria gráfica (pasa en móviles con la pestaña en segundo plano), en vez de un
+  // lienzo negro: un aviso y, al recuperar el contexto, la página vuelve a cargarse sola
+  canvas.addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    if (document.getElementById('gl-lost')) return;
+    const d = document.createElement('div');
+    d.id = 'gl-lost';
+    d.setAttribute('role', 'status');
+    d.style.cssText = 'position:fixed;inset:auto 16px 16px;z-index:95;padding:12px 16px;border-radius:14px;background:rgba(7,10,20,.88);color:#eef0ec;font:14px/1.4 system-ui,sans-serif;text-align:center';
+    d.innerHTML = 'El 3D se ha detenido para ahorrar memoria. <button type="button" style="margin-left:8px;font:inherit;color:#0c1122;background:#ffa94d;border:0;border-radius:999px;padding:6px 12px;cursor:pointer">Recargar</button>';
+    d.querySelector('button').addEventListener('click', () => location.reload());
+    document.body.append(d);
+  });
+  canvas.addEventListener('webglcontextrestored', () => location.reload());
+  return { renderer, mobile, governor: createGovernor(renderer, { max: maxRatio, min: Math.max(0.6, maxRatio * 0.5) }) };
+}
+
+// Resolución adaptativa: mide el ritmo real de fotogramas y, si baja de unos 42 por segundo (móviles modestos,
+// pantallas enormes), reduce la resolución interna del 3D por pasos; si vuelve a ir sobrado (53 o más), la recupera
+// poco a poco. En pantallas de 120 Hz, 60 fotogramas por segundo ya cuentan como fluidos.
+export function createGovernor(renderer, { max, min, onChange = () => {} }) {
+  const SLOW = 24, FAST = 19; // ms por fotograma
+  let ratio = max, last = 0, ema = 0, settle = 60, calm = 0;
+  // si subir la resolución vuelve a ahogar, ese nivel queda como techo y se espera el doble para reintentar
+  let calmNeeded = 240, sinceUp = Infinity, ceiling = max;
+  function apply(r) {
+    if (r > ratio) sinceUp = 0;
+    else if (sinceUp < 400) { calmNeeded = Math.min(calmNeeded * 2, 7200); ceiling = Math.min(ceiling, ratio - 0.01); }
+    ratio = r;
+    renderer.setPixelRatio(r);
+    onChange(r);
+    settle = 45; calm = 0; ema = 0;
+  }
+  return {
+    // una vez por fotograma dibujado, con la marca de tiempo de requestAnimationFrame
+    frame(now) {
+      const dt = last ? now - last : 0;
+      last = now;
+      if (!dt || dt > 250) { settle = Math.max(settle, 20); return; } // (pestaña oculta, pausa o arranque)
+      sinceUp++;
+      if (settle > 0) { settle--; return; }
+      ema = ema ? ema + (dt - ema) * 0.08 : dt;
+      if (ema > SLOW && ratio > min) apply(Math.max(min, Math.round(ratio * 0.85 * 100) / 100));
+      else if (ema < FAST && ratio < ceiling) { if (++calm > calmNeeded) apply(Math.min(ceiling, Math.round(ratio * 1.1 * 100) / 100)); }
+      else calm = 0;
+    },
+    set onChange(f) { onChange = f; },
+    get ratio() { return ratio; },
+  };
 }
 
 export { THREE };

@@ -1,11 +1,12 @@
 // Página de un pueblo: gemelo explorable, minijuego de nidos, pasaporte y la entrada al juego de Guareña.
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import {
-  THREE, buildTown, buildGround, buildTrees, buildStorks, buildSky, buildLights,
+  THREE, buildTownAsync, buildGroundAsync, nextTask, buildTrees, buildStorks, buildSky, buildLights,
   applyTimeOfDay, makeRenderer, glowTexture,
 } from './world.js';
 import { stamp } from './pasaporte.js';
 import { createPlay, canEmbed } from './jugar.js';
+import { whenShown } from './red.js';
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
@@ -13,27 +14,33 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const fmt = new Intl.NumberFormat('es-ES');
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export function townError(msg) {
-  $('#loading').innerHTML = `<div class="err"><b style="font-size:2.4rem">388 Pueblos</b><p>${msg}</p><p><a class="btn" href="index.html#los388">Volver al mapa de los 388</a></p></div>`;
+export function townError(msg, { retry = false } = {}) {
+  const again = retry ? '<button class="btn primary" type="button" id="retry">Reintentar</button> ' : '';
+  $('#loading').innerHTML = `<div class="err" role="alert"><b style="font-size:2.4rem">388 Pueblos</b><p>${msg}</p><p>${again}<a class="btn" href="index.html#los388">Volver al mapa de los 388</a></p></div>`;
+  $('#retry')?.addEventListener('click', () => location.reload());
 }
 
-export function createTownPage({ data, churches, ine, name, places = [], facts = [], firstFacts = {}, radius = 1200, playable = false }) {
+export async function createTownPage({ data, churches, ine, name, places = [], facts = [], firstFacts = {}, radius = 1200, playable = false }) {
   if (!document.createElement('canvas').getContext('webgl2')) {
     townError('Tu navegador no puede mostrar el modelo 3D. Prueba con una versión reciente de Chrome, Safari, Edge o Firefox.');
     return;
   }
   const canvas = $('#c');
-  const { renderer, mobile } = makeRenderer(canvas);
+  const { renderer, mobile, governor } = makeRenderer(canvas);
   const scene = new THREE.Scene();
   scene.fog = new THREE.Fog(0xf3b98a, 900, 5200);
   const camera = new THREE.PerspectiveCamera(38, 1, 0.5, 20000);
   const sky = buildSky();
   scene.add(sky.mesh);
   const lights = buildLights(scene);
-  const ground = buildGround(data);
+  // (la construcción se reparte en trozos: la página no se congela mientras se levanta el pueblo)
+  await nextTask();
+  const ground = await buildGroundAsync(data);
   scene.add(ground.mesh);
-  const T = buildTown(data, churches ? { churches } : {});
+  await nextTask();
+  const T = await buildTownAsync(data, churches ? { churches } : {});
   scene.add(T.group);
+  await nextTask();
   scene.add(buildTrees(data, { count: mobile ? 2600 : 6000, isUrban: ground.isUrban, inner: 300 }));
   const tower = T.special.tower || { x: 0, y: 20, z: 0 };
   const storks = buildStorks({ x: tower.x, z: tower.z }, 8);
@@ -200,11 +207,12 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
   const clock = new THREE.Clock();
   let t = 0;
   const v3 = new THREE.Vector3();
-  function frame() {
+  function frame(now) {
     requestAnimationFrame(frame);
+    if (!(play && play.playing)) governor.frame(now); // (resolución adaptativa: solo cuenta lo que se dibuja)
     tick(Math.min(0.05, clock.getDelta()));
   }
-  if (/[?&]debug/.test(location.search)) window.__tp = { tick, camera, controls, play };
+  if (/[?&]debug/.test(location.search)) window.__tp = { tick, camera, controls, play, governor };
   function tick(dt) {
     t += dt;
     let mix = null;
@@ -258,23 +266,29 @@ export function createTownPage({ data, churches, ine, name, places = [], facts =
       L.el.style.transform = `translate3d(${((v3.x + 1) / 2) * w}px, ${((1 - v3.y) / 2) * h}px, 0)`;
     }
   }
-  frame();
+  // los sombreadores se compilan en paralelo antes del primer fotograma (sin el parón de la primera imagen)
+  await nextTask();
+  if (renderer.compileAsync) await renderer.compileAsync(scene, camera).catch(() => {});
+  requestAnimationFrame(frame);
   const ld = $('#loading');
   ld.style.opacity = 0;
   setTimeout(() => ld.remove(), 900);
 
-  // ?jugar (desde la portada o desde cualquier otro pueblo): la cámara sigue bajando sola hasta el juego
-  if (/[?&]jugar\b/.test(location.search)) {
-    try { history.replaceState(history.state, '', location.pathname + location.hash); } catch { /* ignore */ }
-    if (play) { play.warm(); setTimeout(() => play.start(), reduced ? 0 : 900); }
-  }
+  // (si la portada lanzó esta página por adelantado durante su descenso, lo que sigue espera a la llegada)
+  whenShown((prerendered) => {
+    // ?jugar (desde la portada o desde cualquier otro pueblo): la cámara sigue bajando sola hasta el juego
+    if (/[?&]jugar\b/.test(location.search)) {
+      try { history.replaceState(history.state, '', location.pathname + location.hash); } catch { /* ignore */ }
+      if (play) { play.warm(); setTimeout(() => play.start(), reduced ? 0 : prerendered ? 250 : 900); }
+    }
 
-  // ---- sello del pasaporte ----
-  stamp(ine).then((r) => {
-    const el = $('#pass');
-    if (!r) { if (el) el.innerHTML = '<span>Pasaporte</span><span>Disponible al abrir la beta</span>'; return; }
-    if (el) el.innerHTML = `<span>Tu pasaporte</span><span><b>${r.count}</b>/388 sellos</span>`;
-    if (r.isNew) setTimeout(() => say(`Sello de ${name} añadido · ${r.count}/388`), 1400);
+    // ---- sello del pasaporte ----
+    stamp(ine).then((r) => {
+      const el = $('#pass');
+      if (!r) { if (el) el.innerHTML = '<span>Pasaporte</span><span>Disponible al abrir la beta</span>'; return; }
+      if (el) el.innerHTML = `<span>Tu pasaporte</span><span><b>${r.count}</b>/388 sellos</span>`;
+      if (r.isNew) setTimeout(() => say(`Sello de ${name} añadido · ${r.count}/388`), 1400);
+    });
   });
 
   return { T, collect };

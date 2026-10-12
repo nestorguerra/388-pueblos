@@ -21,14 +21,17 @@ export function deviceId() {
   return id;
 }
 
+// (con tiempo límite: el servidor gratuito puede tardar en despertar y nadie debe quedarse esperando sin fin)
+const limit = (ms) => { const c = new AbortController(); setTimeout(() => c.abort(), ms); return c.signal; };
+
 export async function apiGet(path) {
-  const r = await fetch(`${SERVER}${path}`, { cache: 'no-store' });
+  const r = await fetch(`${SERVER}${path}`, { cache: 'no-store', signal: limit(20000) });
   if (!r.ok) throw new Error(`api ${r.status}`);
   return r.json();
 }
 
 export async function apiPost(path, body) {
-  const r = await fetch(`${SERVER}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const r = await fetch(`${SERVER}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: limit(20000) });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw Object.assign(new Error(j.error || `api ${r.status}`), { status: r.status });
   return j;
@@ -49,7 +52,7 @@ async function sheets(body, timeout = 12000) {
 // Recuento de votos por pueblo, {INE: n}
 export async function loadVotes() {
   if (SHEETS) {
-    const r = await fetch(`${SHEETS}?accion=votos`, { cache: 'no-store', redirect: 'follow' });
+    const r = await fetch(`${SHEETS}?accion=votos`, { cache: 'no-store', redirect: 'follow', signal: limit(15000) });
     const j = await r.json();
     return j.votos || {};
   }

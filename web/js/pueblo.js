@@ -2,6 +2,7 @@
 import { createTownPage, townError } from './town-page.js';
 import { SHARED, loadVotes, sendVote, wake } from './backend.js';
 import { loadContenido } from './contenido.js';
+import { getJSON } from './red.js';
 
 const $ = (s) => document.querySelector(s);
 const fmt = new Intl.NumberFormat('es-ES');
@@ -14,9 +15,9 @@ addEventListener('hashchange', () => location.reload());
 (async () => {
   let meta, data;
   try {
-    meta = (await (await fetch('data/municipios.json')).json()).m;
+    meta = (await getJSON('data/municipios.json')).m;
   } catch {
-    townError('No se pudo cargar la lista de municipios.');
+    townError('No se pudo cargar la lista de municipios. Revisa la conexión.', { retry: true });
     return;
   }
   $('#rnd').addEventListener('click', () => {
@@ -31,9 +32,11 @@ addEventListener('hashchange', () => location.reload());
   document.title = `${m.n} · 388 Pueblos`;
   $('#ld-name').textContent = m.n;
   try {
-    data = await (await fetch(`data/pueblos/${ine}.json`)).json();
-  } catch {
-    townError(`Todavía no hemos levantado ${m.n}.`);
+    data = await getJSON(`data/pueblos/${ine}.json`);
+  } catch (err) {
+    // (404: ese pueblo aún no tiene modelo; cualquier otra cosa es la red)
+    if (err.status === 404) townError(`Todavía no hemos levantado ${m.n}.`);
+    else townError(`No se pudo cargar ${m.n}. Revisa la conexión.`, { retry: true });
     return;
   }
 

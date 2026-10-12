@@ -37,6 +37,7 @@ export function coverFov(aspect) {
 }
 
 const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const lerp = (a, b, t) => a + (b - a) * t;
 
 function gameUrl() {
@@ -53,6 +54,31 @@ export const canEmbed = () => !window.claude;
 
 export function createPlay({ camera, controls, canvas, onStart = () => {}, onHandoff = () => {}, onExit = () => {} }) {
   const url = gameUrl();
+  // aviso discreto mientras el juego termina de cargar (solo si la espera se nota) y salida digna si no carga
+  let pill = null;
+  const status = (text) => {
+    if (!text) { if (pill) { pill.classList.remove('on'); const p = pill; pill = null; setTimeout(() => p.remove(), 400); } return; }
+    if (!pill) {
+      pill = document.createElement('div');
+      pill.className = 'game-status';
+      pill.setAttribute('role', 'status');
+      document.body.append(pill);
+      requestAnimationFrame(() => pill && pill.classList.add('on'));
+    }
+    pill.textContent = text;
+  };
+  function fail() {
+    const href = new URL(url, location.href).href;
+    exit();
+    const box = document.createElement('div');
+    box.className = 'game-status on fail';
+    box.setAttribute('role', 'alert');
+    box.innerHTML = '<span>No hemos podido abrir el juego ahora mismo.</span> <button type="button">Reintentar</button> <a target="_blank" rel="noopener">Abrir en otra pestaña</a>';
+    box.querySelector('a').href = href;
+    box.querySelector('button').addEventListener('click', () => { box.remove(); start(); });
+    document.body.append(box);
+    setTimeout(() => box.remove(), 15000);
+  }
   const origin = new URL(url, location.href).origin;
   let st = null; // {phase, t, ...}
   let iframe = null, ready = 0, goSent = 0, goWall = 0, loaded = 0;
@@ -97,7 +123,7 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
     // la curva: se separa y sube un poco, rodea y entra por detrás del dron, que ya mira a la calle de Annie
     const p1 = p0.clone().lerp(DRONE, 0.35).add(new THREE.Vector3(0, Math.max(60, p0.y * 0.25), 0));
     const p2 = DRONE.clone().addScaledVector(away, 120).add(new THREE.Vector3(0, 40, 0));
-    st = { phase: 'approach', t: 0, dur: 4.2, p0, p1, p2, l0, fov0: camera.fov, s: 1, at: performance.now() };
+    st = { phase: 'approach', t: 0, dur: reduced ? 1.2 : 4.2, p0, p1, p2, l0, fov0: camera.fov, s: 1, at: performance.now() };
     document.body.classList.add('jugando');
     onStart();
   }
@@ -142,9 +168,12 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
       camera.lookAt(TARGET);
       camera.fov = fovEnd;
       camera.updateProjectionMatrix();
+      if (st.t > 1.2 && !ready) status('Cargando el juego…');
       // (sin noticias del juego: 9 s después de que el iframe esté cargado y de haber pulsado, o 40 s en total)
       const timedOut = (loaded && performance.now() - Math.max(loaded, st.at) > 9000) || st.t > 40;
-      if (ready || timedOut) {
+      if (timedOut && !ready) { fail(); return null; } // (el juego no ha llegado a responder)
+      if (ready) {
+        status(null);
         st.phase = 'fade'; st.t = 0;
         iframe.classList.add('on');
       }
@@ -173,6 +202,7 @@ export function createPlay({ camera, controls, canvas, onStart = () => {}, onHan
 
   function exit() {
     if (!st) return;
+    status(null);
     const fov0 = st.fov0;
     st = null;
     ready = 0; goSent = 0; goWall = 0; loaded = 0;

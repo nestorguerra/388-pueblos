@@ -123,3 +123,11 @@ body.jugando #c { height: 100% !important; }
 
 /* en pantallas táctiles, botones de al menos 44 px de alto */
 @media (pointer: coarse) { .btn { min-height: 44px; } }
+
+/* jugar: aviso mientras carga el juego, y salida si no carga */
+.game-status { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 45; transform: translate(-50%, 8px); opacity: 0; transition: opacity 0.35s ease, transform 0.35s ease; padding: 0.7rem 1.1rem; border-radius: 999px; background: rgba(7, 10, 20, 0.78); border: 1px solid var(--linea); color: var(--cal); font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); max-width: calc(100vw - 32px); text-align: center; }
+.game-status.on { opacity: 1; transform: translate(-50%, 0); }
+.game-status.fail { border-radius: 16px; text-transform: none; letter-spacing: 0; font-family: var(--f-display); font-size: 0.92rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+.game-status.fail button, .game-status.fail a { font: inherit; color: var(--tinta); background: var(--sodio); border: 0; border-radius: 999px; padding: 0.4rem 0.8rem; cursor: pointer; text-decoration: none; }
+.game-status.fail a { background: transparent; color: var(--sodio-2); text-decoration: underline; }
+@media (prefers-reduced-motion: reduce) { .game-status { transition: none; } }
