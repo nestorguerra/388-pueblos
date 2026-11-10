@@ -204,17 +204,40 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
   resize();
   addEventListener('resize', resize);
 
-  // ---- jugar: la cámara baja hasta el dron del juego y el juego toma el relevo sin salir de la página ----
-  let todStart = 0, fovGoal = null;
+  // ---- jugar: la cámara vuela hasta la bruma de la calle Malfeitos y el juego toma el relevo sin salir de la página ----
+  let todStart = 0, fovGoal = null, sinContexto = false, sacarFoto = false, fotoBruma = null;
+  function quedarseEnLaBruma() {
+    const soltar = () => {
+      canvas.style.visibility = 'hidden';
+      if (mobile) { try { canvas.dataset.soltado = '1'; renderer.forceContextLoss(); sinContexto = true; } catch { /* ignore */ } }
+    };
+    let url = null;
+    try { url = canvas.toDataURL('image/jpeg', 0.82); } catch { /* sin foto: la bruma tapa igual */ }
+    if (!url || url.length < 2000) { soltar(); return; }
+    fotoBruma = new Image();
+    fotoBruma.className = 'foto-bruma';
+    fotoBruma.alt = '';
+    fotoBruma.src = url;
+    document.body.append(fotoBruma);
+    fotoBruma.decode().catch(() => {}).then(() => { soltar(); requestAnimationFrame(() => fotoBruma?.classList.add('va')); });
+  }
   const play = playable && canEmbed() ? createPlay({
-    camera, controls, canvas,
+    camera, controls, canvas, tower,
     onStart: () => {
       todStart = tod;
       fly = null;
       card.hidden = true;
       requestAnimationFrame(resize);
     },
-    onExit: ({ fov }) => { todGoal = todStart; fovGoal = fov; requestAnimationFrame(resize); },
+    // en la bruma la web ya no dibuja: su último fotograma se queda debajo de las nubes, acercándose despacio (CSS), y
+    // en un móvil suelta además su memoria gráfica, para que el juego tenga toda la suya
+    onNubes: () => { sacarFoto = true; },
+    onRelevo: () => { fotoBruma?.remove(); fotoBruma = null; },
+    onExit: ({ fov, reload }) => {
+      if (reload || sinContexto) { location.replace(location.pathname + location.hash.replace('#jugar', '')); return; }
+      canvas.style.visibility = '';
+      todGoal = todStart; fovGoal = fov; requestAnimationFrame(resize);
+    },
   }) : null;
   // jugar: la cámara baja al momento hasta el juego, sin formularios por medio (la lista de espera sigue en la
   // portada). En el visor de claude.ai no se puede incrustar el juego: el enlace lo abre en otra pestaña.
@@ -228,23 +251,25 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
       if (play) { e.preventDefault(); play.start(); }
     });
   }
-  const MORNING = new THREE.Vector3(0.62, 0.62, 0.48).normalize(); // (el juego arranca a las 10:36)
+  const MORNING = new THREE.Vector3(0.62, 0.62, 0.48).normalize(); // (la mañana del juego)
+  const BRUMA = new THREE.Color('#f1ebe2'); // (el color de la bruma de la entrada al juego: el fondo de .nubes)
 
   const clock = new THREE.Clock();
   let t = 0;
-  const v3 = new THREE.Vector3();
+  const v3 = new THREE.Vector3(), dirCam = new THREE.Vector3();
   function frame(now) {
     requestAnimationFrame(frame);
-    if (!(play && play.playing)) governor.frame(now); // (resolución adaptativa: solo cuenta lo que se dibuja)
+    if (!play || play.dibuja) governor.frame(now); // (resolución adaptativa: solo cuenta lo que se dibuja)
     tick(Math.min(0.05, clock.getDelta()));
   }
   if (/[?&]debug/.test(location.search)) window.__tp = { tick, camera, controls, play, governor };
   function tick(dt) {
     t += dt;
-    let mix = null;
+    let mix = null, niebla = 0;
     if (play && play.active) {
-      if (play.playing) return; // el juego ya está a la vista: la web deja de dibujar
-      mix = play.update(dt);
+      if (!play.dibuja) return; // en la bruma o ya en el juego: la web deja de dibujar
+      const r = play.update(dt);
+      if (r) { mix = r.mix; niebla = r.niebla; }
     } else {
       if (fly) {
         controls.target.lerp(fly.tgt, 0.06);
@@ -266,12 +291,26 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
     const sunDir = new THREE.Vector3(-0.82, sunY, 0.22).normalize();
     if (mix !== null) sunDir.lerp(MORNING, mix).normalize();
     sky.uniforms.uSunDir.value.copy(sunDir);
-    lights.sun.target.position.copy(mix !== null ? v3.set(110, 0, -200) : controls.target).setY(0);
+    // (en el vuelo, la caja de sombras va donde mira la cámara, en el suelo)
+    if (mix !== null) {
+      camera.getWorldDirection(dirCam);
+      v3.copy(camera.position).addScaledVector(dirCam, Math.min(400, camera.position.y / Math.max(0.15, -dirCam.y)));
+    }
+    lights.sun.target.position.copy(mix !== null ? v3 : controls.target).setY(0);
     lights.sun.position.copy(lights.sun.target.position).addScaledVector(sunDir, 2000);
-    const d = camera.position.distanceTo(controls.target);
+    const d = mix !== null ? Math.max(60, camera.position.y * 1.6) : camera.position.distanceTo(controls.target);
     scene.fog.color.copy(sky.uniforms.uHorizon.value);
-    scene.fog.near = mix !== null ? lerp(d * 1.4 + 200, 3000, mix) : d * 1.4 + 200;
-    scene.fog.far = mix !== null ? lerp(d * 7 + 1500, 14000, mix) : d * 7 + 1500;
+    scene.fog.near = mix !== null ? lerp(d * 1.4 + 200, 1400, mix) : d * 1.4 + 200;
+    scene.fog.far = mix !== null ? lerp(d * 7 + 1500, 6000, mix) : d * 7 + 1500;
+    if (niebla > 0) {
+      // entrando en la bruma: el pueblo se deshace en ella (la niebla se cierra y el cielo toma su color)
+      const b = niebla * niebla;
+      scene.fog.color.lerp(BRUMA, Math.min(1, niebla * 1.5));
+      scene.fog.near = lerp(scene.fog.near, 4, b);
+      scene.fog.far = lerp(scene.fog.far, 150, Math.pow(niebla, 0.6));
+      sky.uniforms.uHorizon.value.lerp(BRUMA, niebla);
+      sky.uniforms.uTop.value.lerp(BRUMA, b);
+    }
     ground.uniforms.uCam.value = d;
     sky.mesh.position.copy(camera.position);
     sky.mesh.scale.setScalar(camera.far * 0.5);
@@ -282,6 +321,7 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
       g.scale.setScalar(lerp(g.scale.x, s, 0.1));
     });
     renderer.render(scene, camera);
+    if (sacarFoto) { sacarFoto = false; quedarseEnLaBruma(); } // (justo después de dibujar: el lienzo aún tiene la imagen)
     const w = canvas.clientWidth, h = canvas.clientHeight;
     for (const L of labels) {
       v3.set(L.pl.x, L.pl.h + 6, -L.pl.y).project(camera);

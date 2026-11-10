@@ -420,6 +420,9 @@ section { position: relative; }
 /* descenso al pueblo */
 .diving .nav, .diving .hud, .diving .hud-r, .diving .mapsec .panel, .diving .mapsec .sheet, .diving .tip, .diving .hero > *, .diving .step, .diving .skip { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.5s ease; }
 .diving #wlabels { opacity: 0.6; }
+/* (los degradados oscuros de encima del mapa y de la portada se van durante la bajada: la foto que recibe la página del
+   pueblo es solo el 3D, y si seguían ahí, al cambiar de página desaparecían de golpe) */
+.diving .hero::before, .diving .mapsec::before, .diving .grain { opacity: 0 !important; transition: opacity 0.9s ease; }
 .dive-ov { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; background: transparent; cursor: pointer; transition: background 0.5s ease; }
 .dive-ov > div { display: grid; gap: 0.8rem; justify-items: center; opacity: 0; transition: opacity 0.5s ease; }
 .dive-ov b { font-family: var(--f-display); font-variation-settings: "wdth" 125; font-weight: 800; font-size: clamp(3rem, 12vw, 7rem); letter-spacing: -0.05em; line-height: 0.85; text-transform: uppercase; color: var(--cal); text-align: center; }

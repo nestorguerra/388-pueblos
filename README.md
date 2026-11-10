@@ -18,10 +18,13 @@ CC BY-SA 4.0 ([LICENCIAS.md](LICENCIAS.md)).
 
 - **Los 388 municipios en 3D**, levantados de forma automática con los edificios del Catastro (826.000 piezas
   edificadas), con su página (`pueblo.html#<código INE>`) y un mapa vivo para votar qué pueblo despierta después.
-- **Guareña, pueblo 001**, con contenido verificado y la entrada al juego, al momento: la cámara del gemelo baja hasta
-  la foto del dron del juego (Guareña HQ, en plastilina: https://nestorguerra.github.io/guarena-hq/), se funde con él y
-  sigue bajando hasta Annie, en su calle, sin salir de la página. En el juego, X abre los ajustes, con «Volver a la
-  página web».
+- **Guareña, pueblo 001**, con contenido verificado y la entrada al juego, al momento: el pueblo entero con la iglesia
+  de Santa María por fuera y por dentro (https://nestorguerra.github.io/calle-malfeitos/?escena=guarena), en un marco y
+  sin salir de la página. Mientras se descarga, la cámara del gemelo rodea la torre de Santa María con sus cigüeñas
+  (más despacio si aún falta) y entra en una bruma de mañana sobre la calle Malfeitos; dentro de la bruma (nubes
+  animadas por CSS) la web deja de dibujar y el juego construye el pueblo; la bruma se abre, la cámara del juego baja
+  por la calle y aterriza detrás de la chica. Arriba a la derecha, «← 388 Pueblos» vuelve a la web. Detalle y mensajes
+  en `web/js/jugar.js`; la parte del juego, en su proyecto («388 Foto», `src/desde388.js`).
 - **Un solo zoom, sin telones:** desde la portada, la cámara baja hasta Guareña y su página recoge el último fotograma
   (sessionStorage) y lo sigue acercando mientras levanta la maqueta; quien llega por un enlace ve el cartel de Guareña
   desde ese mismo encuadre (`web/assets/guarena-inicio.jpg`). Nunca una pantalla negra.
@@ -44,7 +47,7 @@ web/                      La web, sin paso de compilación
 ├── js/landing-world.js   Vuelo de cámara de la plaza a los 388
 ├── js/main.js            Portada: scroll, mapa interactivo, votos, lista de espera
 ├── js/town-page.js       Página de pueblo: nidos, lugares, luz, pasaporte y entrada al juego
-├── js/jugar.js           Descenso de la cámara hasta el juego de Guareña (iframe + mensajes)
+├── js/jugar.js           Vuelo de la cámara hasta el juego de Guareña: la torre, la bruma (iframe + mensajes)
 ├── js/lista.js           Lista de espera: «apúntate y entra»
 ├── js/backend.js         Dónde se guardan los datos (Google Sheets o servidor propio)
 ├── js/contenido.js       Contenido de la comunidad por pueblo (data/contenido/<INE>.json)

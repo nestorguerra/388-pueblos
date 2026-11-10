@@ -1032,7 +1032,7 @@ export function makeRenderer(canvas) {
   // lienzo negro: un aviso y, al recuperar el contexto, la página vuelve a cargarse sola
   canvas.addEventListener('webglcontextlost', (e) => {
     e.preventDefault();
-    if (document.getElementById('gl-lost')) return;
+    if (canvas.dataset.soltado || document.getElementById('gl-lost')) return; // (soltado a propósito: al entrar en el juego, js/town-page.js)
     const d = document.createElement('div');
     d.id = 'gl-lost';
     d.setAttribute('role', 'status');
