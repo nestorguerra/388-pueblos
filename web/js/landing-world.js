@@ -123,6 +123,11 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
   let cur = { ...INTRO[0] };
   let flight = null;
   let dive = null; // descenso de cámara hacia un pueblo antes de abrir su juego
+  // (el piloto: quien lleva la cámara al entrar a jugar sin salir de la portada, js/jugar.js; y la velocidad de la
+  // cámara y de lo que mira, para que el vuelo siga a la bajada sin saltos)
+  let pilot = null, pilotNight0 = 0, soltado = false;
+  const prevPos = new THREE.Vector3(), velCam = new THREE.Vector3(), lookNow = new THREE.Vector3(), prevLook = new THREE.Vector3(), velLook = new THREE.Vector3();
+  let velOk = false;
   let snap = null; // (un fotograma pedido: el último de la bajada, que la página del pueblo enseña al abrirse)
 
   function resize() {
@@ -202,6 +207,19 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
   function tick(dt) {
     t += dt;
 
+    let acabado = false;
+    if (pilot) {
+      // la cámara la lleva el vuelo hacia el juego: de ella se saca lo demás (dónde mira, a qué distancia, la luz)
+      const r = pilot(dt);
+      if (r) {
+        lookNow.copy(r.look);
+        cur.x = r.look.x; cur.y = -r.look.z;
+        cur.dist = Math.max(20, camera.position.distanceTo(r.look));
+        cur.night = lerp(pilotNight0, -0.85, r.mix);
+        cur.mix = r.mix;
+      }
+      camera.near = 0.5; camera.far = 12000; camera.updateProjectionMatrix();
+    } else {
     // objetivo de cámara
     let goal;
     if (state.mode === 'intro') {
@@ -221,17 +239,19 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
       // descenso continuo: primero se centra sobre el pueblo y la distancia cae en escala logarítmica
       dive.t += dt;
       const p = clamp01(dive.t / dive.dur);
-      const pp = 1 - Math.pow(1 - p, 3);
-      const pd = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      let pp = 1 - Math.pow(1 - p, 3);
+      let pd = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      // (para entrar a jugar no frena del todo al final: el vuelo sigue con esa velocidad)
+      if (dive.sigue) pp = pd = (-2 * p * p * p + 3 * p * p) + dive.sigue * (p * p * p - p * p);
       const s = dive.s, e = dive.e;
       cur.x = lerp(s.x, e.x, pp);
       cur.y = lerp(s.y, e.y, pp);
       cur.dist = Math.exp(lerp(Math.log(s.dist), Math.log(e.dist), pd));
       cur.tilt = lerp(s.tilt, e.tilt, pd);
       cur.az = lerp(s.az, e.az, pd);
-      cur.night = lerp(s.night ?? 1, e.night, pd);
+      cur.night = lerp(s.night ?? 1, e.night, dive.sigue ? 1 - Math.pow(1 - p, 3) : pd); // (para jugar, amanece pronto)
       camera.fov = lerp(32, e.fov || 32, clamp01((p - 0.6) / 0.4));
-      if (p >= 1 && !dive.done) { dive.done = true; dive.onDone?.(); }
+      if (p >= 1 && !dive.done) { dive.done = true; acabado = true; }
     } else {
       const k = state.mode === 'intro' ? 0.12 : 0.06;
       cur.x = lerp(cur.x, goal.x, k);
@@ -243,6 +263,12 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     }
     Object.assign(rig.s, cur);
     rig.apply();
+    lookNow.set(cur.x, 0, -cur.y);
+    }
+    // (la velocidad de la cámara y de lo que mira)
+    if (velOk && dt > 0) { velCam.copy(camera.position).sub(prevPos).divideScalar(dt); velLook.copy(lookNow).sub(prevLook).divideScalar(dt); }
+    prevPos.copy(camera.position); prevLook.copy(lookNow); velOk = true;
+    if (acabado) dive.onDone?.({ pos: camera.position.clone(), vel: velCam.clone(), look: lookNow.clone(), lookVel: velLook.clone() });
 
     const d = cur.dist;
     // capas según escala
@@ -270,6 +296,7 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     scene.fog.color.copy(sky.uniforms.uHorizon.value);
     scene.fog.near = d * 1.1;
     scene.fog.far = d < 20000 ? d * 5.5 : 1e9;
+    if (pilot && cur.mix != null) { scene.fog.near = lerp(scene.fog.near, 900, cur.mix); scene.fog.far = lerp(scene.fog.far, 5200, cur.mix); }
     sky.mesh.position.copy(camera.position);
     sky.mesh.scale.setScalar(camera.far * 0.5);
     sky.uniforms.uTime.value = t;
@@ -284,7 +311,7 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     if (storks.visible) storks.userData.update(t);
 
     // hover
-    if (state.mode === 'map' && state.pointer.inside && !dive) {
+    if (state.mode === 'map' && state.pointer.inside && !dive && !pilot) {
       const i = state.pointer.overUI ? -1 : pickAt(state.pointer.nx, state.pointer.ny);
       if (i !== state.hover) {
         state.hover = i;
@@ -332,11 +359,17 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     overview() { flight = null; },
     // Descenso de cámara hasta un pueblo. Guareña termina en el mismo encuadre con el que arranca su juego
     // (guarena.html: objetivo en la mitad de la torre, distancia ~946 m, fov 38, hora dorada).
-    dive(i, onDone) {
+    // Con { jugar: true } (entrar a jugar sin salir de la portada) baja más deprisa hasta encima del pueblo, al sureste,
+    // y no frena: al acabar, onDone recibe por dónde va la cámara y a qué velocidad, y js/jugar.js sigue desde ahí.
+    dive(i, onDone, { jugar = false } = {}) {
       const m = muni.m[i];
       if (!m) return false;
-      let e, dur;
-      if (m.id === '06060') {
+      let e, dur, sigue = 0;
+      if (m.id === '06060' && jugar) {
+        e = { x: 30, y: 30, dist: 640, tilt: 0.98, az: 0.62, night: 0.1, fov: 46 };
+        dur = cur.dist > 30000 ? 3.4 : 1.6;
+        sigue = 0.35;
+      } else if (m.id === '06060') {
         e = { x: tower.x * 0.5, y: -tower.z * 0.5, dist: 946, tilt: 0.94, az: 0.5586, night: 0, fov: 38 };
         dur = cur.dist > 30000 ? 6.2 : 2.4;
       } else {
@@ -347,9 +380,28 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
       flight = null;
       state.hover = -1;
       state.sel = i;
-      dive = { s: { ...cur }, e, t: 0, dur, onDone, done: false };
+      dive = { s: { ...cur }, e, t: 0, dur, onDone, done: false, sigue };
       return true;
     },
+    // el vuelo hacia el juego lleva la cámara (fn(dt) → {mix, look}); con null, la devuelve (la cámara vuelve sola a
+    // su sitio desde donde esté)
+    pilotar(fn) {
+      if (fn) { pilot = fn; pilotNight0 = cur.night ?? 0; dive = null; flight = null; state.hover = -1; }
+      else {
+        // (el estado de la cámara, sacado de donde está: así vuelve a su sitio desde ahí, sin saltos)
+        pilot = null; delete cur.mix;
+        const o = camera.position.clone().sub(new THREE.Vector3(cur.x, 0, -cur.y));
+        cur.dist = Math.max(20, o.length()); cur.tilt = Math.acos(Math.min(1, o.y / cur.dist)); cur.az = Math.atan2(o.x, o.z);
+      }
+    },
+    camera,
+    tower: { x: tower.x, z: tower.z },
+    mobile,
+    // dejar de dibujar (ya tapa la foto del juego) y, en un móvil, soltar la memoria gráfica
+    parar() { state.visible = false; },
+    seguir() { if (!soltado) { state.visible = true; clock.getDelta(); } },
+    soltarMemoria() { try { canvas.dataset.soltado = '1'; renderer.forceContextLoss(); soltado = true; } catch { /* ignore */ } },
+    get soltado() { return soltado; },
     cancelDive() {
       dive = null;
       camera.fov = 32;

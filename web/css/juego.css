@@ -1,0 +1,17 @@
+/* Entrar a jugar en Guareña sin salir de la página (js/jugar.js): el marco del juego, la foto del juego que se acerca
+   mientras se construye, el aviso discreto y el botón para volver. En la portada y en la página de Guareña. */
+.foto388 { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 80; pointer-events: none; opacity: 0; transform-origin: 50% 50%; will-change: transform, opacity; user-select: none; -webkit-user-drag: none; }
+.game-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 81; opacity: 0; pointer-events: none; transition: opacity 1.1s ease; background: transparent; color-scheme: normal; }
+.game-frame.on { opacity: 1; }
+.game-frame.live { pointer-events: auto; }
+.game-status { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 83; transform: translate(-50%, 8px); opacity: 0; transition: opacity 0.35s ease, transform 0.35s ease; padding: 0.7rem 1.1rem; border-radius: 999px; background: rgba(7, 10, 20, 0.78); border: 1px solid rgba(186, 198, 255, 0.16); color: #eef0ec; font-family: "Geist Mono", ui-monospace, Menlo, monospace; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); max-width: calc(100vw - 32px); text-align: center; }
+.game-status.on { opacity: 1; transform: translate(-50%, 0); }
+.game-status.fail { border-radius: 16px; text-transform: none; letter-spacing: 0; font-family: "Archivo", "Helvetica Neue", Arial, sans-serif; font-size: 0.92rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; justify-content: center; }
+.game-status.fail button, .game-status.fail a { font: inherit; color: #0c1122; background: #ffa94d; border: 0; border-radius: 999px; padding: 0.4rem 0.8rem; cursor: pointer; text-decoration: none; }
+.game-status.fail a { background: transparent; color: #ffcf91; text-decoration: underline; }
+.game-back { position: fixed; z-index: 84; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); display: inline-flex; gap: 0.45rem; align-items: center; padding: 0.5rem 0.85rem; border-radius: 999px; background: rgba(7, 10, 20, 0.62); border: 1px solid rgba(186, 198, 255, 0.16); color: #eef0ec; font-family: "Geist Mono", ui-monospace, Menlo, monospace; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; transition: opacity 1s ease; }
+.game-back.on { opacity: 1; }
+.game-back:hover { background: rgba(7, 10, 20, 0.85); }
+/* (en la portada, mientras se vuela hacia el juego: sin rótulos sobre el 3D) */
+.jugando388 #wlabels { opacity: 0 !important; transition: opacity 0.5s ease; }
+@media (prefers-reduced-motion: reduce) { .game-status, .game-back { transition: none; } }

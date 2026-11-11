@@ -119,9 +119,6 @@ details[open] summary::after { content: "−"; }
 .brand img { display: block; height: 26px; width: auto; }
 
 /* jugar: el juego se carga debajo y toma el relevo con un fundido */
-.game-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 40; opacity: 0; pointer-events: none; transition: opacity 1.1s ease; background: transparent; color-scheme: normal; }
-.game-frame.on { opacity: 1; }
-.game-frame.live { pointer-events: auto; }
 body.jugando .top, body.jugando .panel, body.jugando .card, body.jugando .dock, body.jugando #labels, body.jugando .toast { opacity: 0 !important; pointer-events: none !important; transition: opacity 0.6s ease; }
 body.jugando { overflow: hidden; }
 body.jugando #c { height: 100% !important; }
@@ -130,40 +127,7 @@ body.jugando #c { height: 100% !important; }
 @media (pointer: coarse) { .btn, .brand { min-height: 44px; } .brand { align-items: center; } }
 
 /* jugar: aviso mientras carga el juego, y salida si no carga */
-.game-status { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 45; transform: translate(-50%, 8px); opacity: 0; transition: opacity 0.35s ease, transform 0.35s ease; padding: 0.7rem 1.1rem; border-radius: 999px; background: rgba(7, 10, 20, 0.78); border: 1px solid var(--linea); color: var(--cal); font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); max-width: calc(100vw - 32px); text-align: center; }
-.game-status.on { opacity: 1; transform: translate(-50%, 0); }
-.game-status.fail { border-radius: 16px; text-transform: none; letter-spacing: 0; font-family: var(--f-display); font-size: 0.92rem; display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; justify-content: center; }
-.game-status.fail button, .game-status.fail a { font: inherit; color: var(--tinta); background: var(--sodio); border: 0; border-radius: 999px; padding: 0.4rem 0.8rem; cursor: pointer; text-decoration: none; }
-.game-status.fail a { background: transparent; color: var(--sodio-2); text-decoration: underline; }
-@media (prefers-reduced-motion: reduce) { .game-status { transition: none; } }
-/* la bruma de la entrada al juego (js/jugar.js): capas de nubes que crecen hacia la cámara, en bucle; solo transform y
-   opacity, que el navegador anima aparte, suaves aunque la página esté ocupada construyendo el pueblo */
-.game-frame.g388 { transition: none; }
-.nubes { position: fixed; inset: 0; z-index: 42; pointer-events: none; opacity: 0; overflow: hidden; contain: strict; }
-/* el velo de la bruma deja ver un poco el pueblo de debajo (el último fotograma de la web, que se sigue acercando); al
-   llegar el juego se cierra del todo un momento, y debajo ya está el juego */
-.nubes .velo { position: absolute; inset: 0; background: radial-gradient(130% 100% at 50% 42%, #fdfaf4 0%, #f0eae1 55%, #dfdcda 100%); opacity: 0.8; transition: opacity 0.7s ease; }
-.nubes.denso .velo { opacity: 1; }
-.foto-bruma { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: fill; z-index: 1; pointer-events: none; transform-origin: 50% 58%; transition: transform 30s cubic-bezier(0.25, 0.1, 0.5, 1); }
-.foto-bruma.va { transform: scale(1.6); }
-.nubes.abre { transition: opacity 2.6s cubic-bezier(0.45, 0, 0.35, 1); }
-.nubes i { position: absolute; left: 50%; top: 50%; width: 150vmax; height: 150vmax; margin: -75vmax 0 0 -75vmax; background-size: 100% 100%; opacity: 0; will-change: transform, opacity; animation: nube 7.5s linear infinite; }
-@keyframes nube {
-  0% { transform: rotate(var(--g)) scale(0.45); opacity: 0; }
-  30% { opacity: 0.95; }
-  75% { opacity: 0.7; }
-  100% { transform: rotate(calc(var(--g) + 14deg)) scale(2.3); opacity: 0; }
 }
-.nubes .rotulo { position: absolute; left: 50%; bottom: calc(15vh + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 10px); display: grid; justify-items: center; gap: 0.6rem; opacity: 0; transition: opacity 0.9s ease, transform 0.9s ease; text-align: center; width: max-content; max-width: calc(100vw - 32px); }
-.nubes .rotulo.on { opacity: 1; transform: translate(-50%, 0); }
-.nubes .rotulo b { font-family: var(--f-serif); font-style: italic; font-weight: 400; font-size: clamp(2.6rem, 8vw, 4.4rem); line-height: 1; color: #93694a; }
-.nubes .rotulo span { font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8a7f73; }
-.nubes .rotulo i { display: block; width: min(220px, 50vw); height: 1px; background: rgba(140, 118, 96, 0.22); overflow: hidden; }
-.nubes .rotulo u { display: block; height: 100%; background: #b97a48; transform-origin: 0 50%; transform: scaleX(0); transition: transform 0.6s ease; }
-.game-back { position: fixed; z-index: 46; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(12px + env(safe-area-inset-right, 0px)); display: inline-flex; gap: 0.45rem; align-items: center; padding: 0.5rem 0.85rem; border-radius: 999px; background: rgba(7, 10, 20, 0.62); border: 1px solid var(--linea); color: var(--cal); font-family: var(--f-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); opacity: 0; transition: opacity 1s ease; }
-.game-back.on { opacity: 1; }
-.game-back:hover { background: rgba(7, 10, 20, 0.85); }
-@media (prefers-reduced-motion: reduce) { .nubes i { animation: none; opacity: 0.6; transform: rotate(var(--g)) scale(1.2); } }
 
 /* la cola del pueblo: vecinos apuntados hacia los que lo despiertan */
 .queue { display: grid; gap: 0.45rem; margin-bottom: 0.2rem; }

@@ -7,6 +7,7 @@ import { t, addTexts, lang, page, locale } from './i18n.js';
 import { initRedes } from './redes.js';
 import { markListed, saveSignup, queueSignup } from './lista.js';
 import { getJSON, prerender } from './red.js';
+import { createPlay, canEmbed } from './jugar.js';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -150,16 +151,56 @@ function enterTown(href, name, idx) {
   addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { removeEventListener('keydown', esc); go(); } });
   if (!world.dive(idx, go)) go();
 }
+// ---------------- jugar en Guareña sin salir de la portada (js/jugar.js) ----------------
+// Una sola película: la cámara baja del mapa (o de donde esté) hasta encima de Guareña sin frenar, y el vuelo hacia el
+// juego sigue desde ahí con la misma velocidad hasta la foto del juego; el juego, que se descarga desde el clic (o
+// desde que se pasa el ratón por «Jugar»), toma el relevo sin que se note. Sin cambiar de página ni pantallas en blanco.
+let juego = null;
+const juegoListo = () => {
+  if (juego || !world || !canEmbed()) return juego;
+  juego = createPlay({
+    camera: world.camera, canvas, tower: world.tower,
+    // ya tapa la foto del juego: la portada deja de dibujar (y en un móvil suelta su memoria gráfica)
+    onFoto: () => { world.parar(); if (world.mobile) world.soltarMemoria(); },
+    // al volver (o si el juego no llega): la cámara vuelve sola al mapa desde donde esté
+    onExit: () => {
+      if (world.soltado) { location.reload(); return; }
+      world.pilotar(null);
+      world.cancelDive();
+      world.seguir();
+      document.documentElement.classList.remove('diving', 'jugando388');
+      lenis?.start();
+    },
+    onVolver: () => juego.exit(),
+  });
+  return juego;
+};
+function jugarAqui(idx) {
+  const j = juegoListo();
+  if (!j) return false;
+  document.documentElement.classList.add('diving', 'jugando388');
+  lenis?.stop();
+  tip.style.opacity = 0;
+  j.warm();
+  return world.dive(idx, (estado) => { world.pilotar((dt) => j.update(dt)); j.start(estado); }, { jugar: true });
+}
+// la intención de jugar (el ratón sobre un «Jugar») ya empieza a descargar el juego
+document.addEventListener('pointerover', (e) => {
+  if (e.pointerType !== 'mouse' || !e.target.closest?.('a[href^="guarena.html?jugar"]')) return;
+  juegoListo()?.warm();
+}, { passive: true });
+
 // ir a un pueblo: si el mundo está a la vista, con el descenso de cámara; si no, navegación normal
 function follow(href) {
   const id = href.startsWith('guarena.html') ? '06060' : href.split('#')[1];
   const idx = world ? world.munis.findIndex((m) => m.id === id) : -1;
   if (!world || reduced || world.diving || idx < 0 || canvas.style.visibility === 'hidden') { location.href = href; return; }
+  if (/^guarena\.html\?jugar/.test(href) && jugarAqui(idx)) return;
   enterTown(href, world.munis[idx].n, idx);
 }
 document.addEventListener('click', (e) => {
   const a = e.target.closest('a[href^="guarena.html"], a[href^="pueblo.html#"], a[href^="town.html#"]');
-  if (!a || e.metaKey || e.ctrlKey || e.shiftKey || world?.diving) return;
+  if (!a || e.metaKey || e.ctrlKey || e.shiftKey || world?.diving || juego?.active) return;
   const href = a.getAttribute('href');
   // (jugar: directamente, sin formulario por medio; la lista de espera tiene su sitio en la portada)
   if (!world || reduced || canvas.style.visibility === 'hidden') return;
@@ -199,7 +240,7 @@ async function boot() {
         onPick: (i) => selectMuni(i, { fly: true }),
       });
       names = world.munis.map((m) => m.n);
-      if (/[?&]debug/.test(location.search)) window.__w = world; // depuración local
+      if (/[?&]debug/.test(location.search)) { window.__w = world; window.__juego = () => juego; } // depuración local
       $('#n-parts').textContent = fmt.format(world.townCount);
     } catch (err) {
       console.error(err);

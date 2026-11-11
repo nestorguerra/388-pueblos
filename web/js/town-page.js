@@ -205,34 +205,20 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
   addEventListener('resize', resize);
 
   // ---- jugar: la cámara vuela hasta la bruma de la calle Malfeitos y el juego toma el relevo sin salir de la página ----
-  let todStart = 0, fovGoal = null, sinContexto = false, sacarFoto = false, fotoBruma = null;
-  function quedarseEnLaBruma() {
-    const soltar = () => {
-      canvas.style.visibility = 'hidden';
-      if (mobile) { try { canvas.dataset.soltado = '1'; renderer.forceContextLoss(); sinContexto = true; } catch { /* ignore */ } }
-    };
-    let url = null;
-    try { url = canvas.toDataURL('image/jpeg', 0.82); } catch { /* sin foto: la bruma tapa igual */ }
-    if (!url || url.length < 2000) { soltar(); return; }
-    fotoBruma = new Image();
-    fotoBruma.className = 'foto-bruma';
-    fotoBruma.alt = '';
-    fotoBruma.src = url;
-    document.body.append(fotoBruma);
-    fotoBruma.decode().catch(() => {}).then(() => { soltar(); requestAnimationFrame(() => fotoBruma?.classList.add('va')); });
-  }
+  let todStart = 0, fovGoal = null, sinContexto = false;
   const play = playable && canEmbed() ? createPlay({
-    camera, controls, canvas, tower,
+    camera, controls, canvas, tower: { x: tower.x, z: tower.z },
     onStart: () => {
       todStart = tod;
       fly = null;
       card.hidden = true;
       requestAnimationFrame(resize);
     },
-    // en la bruma la web ya no dibuja: su último fotograma se queda debajo de las nubes, acercándose despacio (CSS), y
-    // en un móvil suelta además su memoria gráfica, para que el juego tenga toda la suya
-    onNubes: () => { sacarFoto = true; },
-    onRelevo: () => { fotoBruma?.remove(); fotoBruma = null; },
+    // ya es la foto del juego: la web deja de dibujar y, en un móvil, suelta su memoria gráfica (que la tenga el juego)
+    onFoto: () => {
+      canvas.style.visibility = 'hidden';
+      if (mobile) { try { canvas.dataset.soltado = '1'; renderer.forceContextLoss(); sinContexto = true; } catch { /* ignore */ } }
+    },
     onExit: ({ fov, reload }) => {
       if (reload || sinContexto) { location.replace(location.pathname + location.hash.replace('#jugar', '')); return; }
       canvas.style.visibility = '';
@@ -252,7 +238,6 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
     });
   }
   const MORNING = new THREE.Vector3(0.62, 0.62, 0.48).normalize(); // (la mañana del juego)
-  const BRUMA = new THREE.Color('#f1ebe2'); // (el color de la bruma de la entrada al juego: el fondo de .nubes)
 
   const clock = new THREE.Clock();
   let t = 0;
@@ -265,11 +250,11 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
   if (/[?&]debug/.test(location.search)) window.__tp = { tick, camera, controls, play, governor };
   function tick(dt) {
     t += dt;
-    let mix = null, niebla = 0;
+    let mix = null;
     if (play && play.active) {
-      if (!play.dibuja) return; // en la bruma o ya en el juego: la web deja de dibujar
+      if (!play.dibuja) return; // ya es la foto del juego, o el juego: la web deja de dibujar
       const r = play.update(dt);
-      if (r) { mix = r.mix; niebla = r.niebla; }
+      if (r) mix = r.mix;
     } else {
       if (fly) {
         controls.target.lerp(fly.tgt, 0.06);
@@ -302,15 +287,6 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
     scene.fog.color.copy(sky.uniforms.uHorizon.value);
     scene.fog.near = mix !== null ? lerp(d * 1.4 + 200, 1400, mix) : d * 1.4 + 200;
     scene.fog.far = mix !== null ? lerp(d * 7 + 1500, 6000, mix) : d * 7 + 1500;
-    if (niebla > 0) {
-      // entrando en la bruma: el pueblo se deshace en ella (la niebla se cierra y el cielo toma su color)
-      const b = niebla * niebla;
-      scene.fog.color.lerp(BRUMA, Math.min(1, niebla * 1.5));
-      scene.fog.near = lerp(scene.fog.near, 4, b);
-      scene.fog.far = lerp(scene.fog.far, 150, Math.pow(niebla, 0.6));
-      sky.uniforms.uHorizon.value.lerp(BRUMA, niebla);
-      sky.uniforms.uTop.value.lerp(BRUMA, b);
-    }
     ground.uniforms.uCam.value = d;
     sky.mesh.position.copy(camera.position);
     sky.mesh.scale.setScalar(camera.far * 0.5);
@@ -321,7 +297,6 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
       g.scale.setScalar(lerp(g.scale.x, s, 0.1));
     });
     renderer.render(scene, camera);
-    if (sacarFoto) { sacarFoto = false; quedarseEnLaBruma(); } // (justo después de dibujar: el lienzo aún tiene la imagen)
     const w = canvas.clientWidth, h = canvas.clientHeight;
     for (const L of labels) {
       v3.set(L.pl.x, L.pl.h + 6, -L.pl.y).project(camera);
