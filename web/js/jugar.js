@@ -3,17 +3,18 @@
 //
 // El juego es el gemelo digital de Guareña con la iglesia de Santa María por fuera y por dentro (PlayCanvas, en
 // https://nestorguerra.github.io/calle-malfeitos/?escena=guarena; su parte, en el proyecto «388 Foto»,
-// src/desde388.js). Va en un marco, debajo, y se descarga desde que se pide jugar (o desde que se pasa el ratón por el
-// botón). Mientras, la cámara de la web vuela sin pararse: viene de donde estaba (en la portada, de la bajada desde el
+// src/desde388.js y src/precarga.js). Va en un marco, debajo e invisible, que se monta en cuanto la portada está quieta
+// (precargar): con ?precarga=1 el juego no arranca, solo baja por detrás todo lo que va a necesitar, y queda en la
+// caché del navegador. Al pulsar Jugar arranca en ese mismo marco y lo encuentra todo (sin pedir nada dos veces).
+// Mientras, la cámara de la web vuela sin pararse ni frenar: viene de donde estaba (en la portada, de la bajada desde el
 // mapa, sin frenar), mira la torre de Santa María al pasar, gira hacia la calle Malfeitos y baja hasta el punto de la
-// FOTO, a 26 m sobre la calle, mirando hacia la chica. Si el juego aún se descarga, el vuelo va más despacio (nunca se
-// para). Al llegar, la cámara deja de avanzar y empieza a acercarse con el objetivo (zoom), y la maqueta se funde con
+// FOTO, a 26 m sobre la calle, mirando hacia la chica, siempre al mismo ritmo y sin avisos ni porcentajes. Al llegar, la cámara deja de avanzar y empieza a acercarse con el objetivo (zoom), y la maqueta se funde con
 // la foto que el propio juego sacó desde ese punto (web/assets/juego/, tools/foto388.py en «388 Foto»), que sigue
 // acercándose por CSS (suave aunque el navegador esté ocupado: es cuando el juego construye el pueblo). Cuando el
 // juego está, se pone en el mismo punto con el mismo zoom que lleva la foto en ese instante, se funde con ella (son la
 // misma imagen) y su cámara baja por la calle hasta detrás de la chica. Se hablan con mensajes:
-//   juego → web  g388:hola · g388:progreso {p, descargado} · g388:obra {p} · g388:listo · g388:aterriza · g388:error {msg}
-//   web → juego  g388:construye (la foto ya tapa la web) · g388:entra {s, r, t, cruce} (el zoom de la foto: s en el
+//   juego → web  g388:hola · g388:precarga {p, critico} · g388:progreso {p, descargado} · g388:obra {p} · g388:listo · g388:aterriza · g388:error {msg}
+//   web → juego  g388:juega (arranca, si se montó para precargar) · g388:construye (la foto ya tapa la web) · g388:entra {s, r, t, cruce} (el zoom de la foto: s en el
 //                instante t de Date.now(), creciendo e^r por segundo; el fundido dura «cruce» segundos)
 // guarena.html, con ?jugar, monta el marco antes que nada (window.__j388) para que la descarga empiece cuanto antes.
 import { t, addTexts, page } from './i18n.js';
@@ -21,12 +22,12 @@ import { t, addTexts, page } from './i18n.js';
 addTexts({
   es: {
     'j.fallo': 'No hemos podido abrir el juego ahora mismo.', 'j.reintentar': 'Reintentar', 'j.pestana': 'Abrir en otra pestaña',
-    'j.titulo': 'Guareña, el juego', 'j.bajando': ({ p }) => `Bajando el pueblo · ${p} %`, 'j.obra': 'Levantando el pueblo',
+    'j.titulo': 'Guareña, el juego',
     'j.volver': '388 Pueblos', 'j.volverLargo': 'Volver a 388 Pueblos',
   },
   en: {
     'j.fallo': 'We could not open the game right now.', 'j.reintentar': 'Try again', 'j.pestana': 'Open in a new tab',
-    'j.titulo': 'Guareña, the game', 'j.bajando': ({ p }) => `Downloading the town · ${p} %`, 'j.obra': 'Building the town',
+    'j.titulo': 'Guareña, the game',
     'j.volver': '388 Pueblos', 'j.volverLargo': 'Back to 388 Pueblos',
   },
 });
@@ -154,16 +155,17 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
   addEventListener('message', (e) => {
     if (!iframe || e.source !== iframe.contentWindow || e.origin !== origin || !e.data || typeof e.data.type !== 'string') return;
     const d = e.data;
-    if (d.type === 'g388:hola') J.hola = true;
+    if (d.type === 'g388:hola') { J.hola = true; if (d.precarga) { J.prehola = true; if (st) post('g388:juega'); } }
+    if (d.type === 'g388:precarga') { J.pre = +d.p || 0; if (d.critico) J.critico = true; }
     if (d.type === 'g388:progreso') { J.p = Math.max(J.p, +d.p || 0); if (d.descargado) J.descargado = true; hist.push([performance.now(), J.p]); if (hist.length > 60) hist.shift(); }
     if (d.type === 'g388:obra') J.obra = Math.max(J.obra, +d.p || 0);
-    if (d.type === 'g388:listo') J.listo = true;
+    if (d.type === 'g388:listo') { J.listo = true; J.tiempos = d.tiempos; J.deRed = d.recursos; }
     if (d.type === 'g388:aterriza') { J.aterriza = true; landed(); }
   });
 
   let foto = null, video = null;
   const aspecto = () => canvas.clientWidth / Math.max(1, canvas.clientHeight);
-  function mountIframe() {
+  function mountIframe(precarga = false) {
     // el vídeo, lo primero (se necesita antes que el juego), con la foto como cartel
     if (!video && !reduced) {
       video = document.createElement('video');
@@ -183,7 +185,8 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
       iframe.allow = 'fullscreen; gamepad; autoplay; pointer-lock';
       iframe.tabIndex = -1;
       iframe.setAttribute('aria-hidden', 'true');
-      iframe.src = url;
+      iframe.src = precarga ? url + '&precarga=1' : url;   // (con precarga, el juego solo baja: arranca con g388:juega)
+      J.precarga = precarga;
       iframe.addEventListener('load', () => { J.cargado = performance.now(); }, { once: true });
       document.body.append(iframe);
       J.iframe = iframe; J.montado = performance.now();
@@ -197,8 +200,10 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
       foto.src = urlFoto(aspecto());
     }
   }
-  // la intención de jugar (pasar el ratón por el botón) ya empieza a descargar el juego
-  const warm = () => mountIframe();
+  // la precarga: el marco, invisible, solo baja (la portada lo pide en cuanto está quieta); la intención de jugar (pasar el
+  // ratón por el botón), igual si aún no se había pedido
+  const precargar = () => mountIframe(true);
+  const warm = () => mountIframe(true);
 
   let st = null, back = null;
   const v = new THREE.Vector3(), look = new THREE.Vector3();
@@ -207,6 +212,7 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
   function start(desde = {}) {
     if (st) return;
     mountIframe();
+    if (J.precarga && J.prehola) post('g388:juega');   // (si aún no ha saludado, se le dice al saludar)
     if (controls) { controls.enabled = false; controls.autoRotate = false; }
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
@@ -280,13 +286,11 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
     st.t += dt;
     const fs = fovFoto(aspecto());
     if (st.phase === 'vuelo') {
-      // el ritmo: más despacio en medio del vuelo si al juego aún le falta mucho por descargar
+      // el ritmo: siempre el mismo (más deprisa solo si se pide con un toque)
       const { path } = st;
-      // (lo que le falta al juego por descargar: el vuelo dura hasta entonces. La obra se hace siempre con la foto ya
-      // puesta: aunque el marco vaya en otro proceso, construir compite por la tarjeta gráfica y la web daba tirones)
-      const falta = faltaDescarga();
-      const enLento = st.tau > path.lento[0] && st.tau < path.lento[1];
-      const goal = st.prisa ? 1.8 : enLento ? Math.min(1, Math.max(0.4, (path.end - st.tau) / Math.max(0.1, falta - 1))) : 1;
+      // (la obra se hace siempre con la foto o el vídeo ya puestos: aunque el marco vaya en otro proceso, construir compite
+      // por la tarjeta gráfica y la web daba tirones)
+      const goal = st.prisa ? 1.8 : 1;   // (sin frenar aunque el juego aún baje: el vídeo cubre la espera; antes frenaba y se notaba atascado)
       st.k += (goal - st.k) * Math.min(1, dt * 0.8);
       st.tau = Math.min(path.end, st.tau + dt * st.k);
       path.pos(st.tau, v);
@@ -297,8 +301,6 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
       const fovVuelo = lerp(Math.min(60, Math.max(42, st.fov0)), fs, smooth(path.end * 0.55, path.end, st.tau));
       camera.fov = lente(lerp(st.fov0, fovVuelo, smooth(0, 1.6, st.tau)), st.z);
       camera.updateProjectionMatrix();
-      if (st.tau > 4 && st.k < 0.8 && !J.descargado) status(t('j.bajando', { p: Math.round(J.p * 100) }));
-      else status(null);
       if (st.tau >= path.end) {
         status(null);
         removeEventListener('pointerdown', hurry);
@@ -360,7 +362,13 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
     if (st.phase === 'foto') {
       if (!J.hola && J.cargado && now - J.cargado > 20000) { fail(); return; }
       if (st.wait > 180) { fail(); return; }
-      if (st.wait > 9 && !J.listo) status(J.descargado ? t('j.obra') : t('j.bajando', { p: Math.round(J.p * 100) }));
+      // el vídeo, elástico: si el juego va a tardar más de lo que le queda, se ralentiza poco a poco (hasta 0,4×) en su tramo
+      // final, que ya va frenando: la cámara llega más despacio pero no se para (el juego sigue luego a esa misma velocidad)
+      if (st.modo === 'video' && !st.zoomPlan && !J.listo && video.currentTime > 3) {
+        const queda = Math.max(0, VIDEO.dur - video.currentTime), objetivo = Math.min(1, Math.max(0.4, queda / Math.max(0.1, faltaJuego() + 1)));
+        const r = video.playbackRate + (objetivo - video.playbackRate) * Math.min(1, dt * 0.6);
+        if (Math.abs(r - video.playbackRate) > 0.004) video.playbackRate = r;
+      }
       if (st.modo === 'video' && !st.zoomPlan && (video.ended || video.currentTime >= VIDEO.dur - 0.08)) {
         // (el vídeo se ha acabado y el juego aún no está: su último fotograma sigue acercándose)
         st.finVideo = Math.min(VIDEO.dur, video.currentTime || VIDEO.dur);
@@ -384,7 +392,7 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
       // el juego se pone donde va el vídeo (o la foto) en este instante y sigue igual mientras se funden
       const enMarcha = st.modo === 'video' && !st.zoomPlan && !video.paused && !video.ended;
       const tv = st.modo === 'video' ? (st.zoomPlan ? st.finVideo ?? VIDEO.dur : video.currentTime) : 0;
-      post('g388:entra', { tv, vel: enMarcha ? 1 : 0, s: st.zoomPlan ? z : 1, r: st.zoomPlan ? (r || R_ZOOM * 0.3) : 0, t: Date.now(), cruce: 0.9 });
+      post('g388:entra', { tv, vel: enMarcha ? video.playbackRate : 0, s: st.zoomPlan ? z : 1, r: st.zoomPlan ? (r || R_ZOOM * 0.3) : 0, t: Date.now(), cruce: 0.9 });   // (vel: a lo que va el vídeo)
       iframe.style.transition = 'opacity 0.9s ease';
       iframe.classList.add('on');
     } else if (st.phase === 'cruza' && st.wait > 0.95) {
@@ -441,12 +449,12 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && st && st.phase === 'vuelo') hurry(); });
 
   return {
-    start, warm, update, exit,
+    start, warm, precargar, update, exit,
     get active() { return !!st; },
     get dibuja() { return !st || st.phase === 'vuelo' || st.phase === 'funde'; },
     get playing() { return !!st && st.phase === 'juego'; },
     get phase() { return st ? st.phase : null; },
-    get dbg() { return st && { tau: +st.tau.toFixed(2), k: +st.k.toFixed(2), falta: +faltaDescarga().toFixed(1), p: J.p, d: J.descargado }; },
+    get dbg() { return { tau: st ? +st.tau.toFixed(2) : null, falta: +faltaDescarga().toFixed(1), p: J.p, d: J.descargado, pre: J.pre, critico: !!J.critico, listo: J.listo, tiempos: J.tiempos, deRed: J.deRed }; },
     url,
   };
 }

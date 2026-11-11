@@ -184,6 +184,11 @@ function jugarAqui(idx) {
   j.warm();
   return world.dive(idx, (estado) => { world.pilotar((dt) => j.update(dt)); j.start(estado); }, { jugar: true });
 }
+// la precarga del juego: en cuanto la portada está quieta, el juego se monta invisible y baja por detrás todo lo que va a
+// necesitar (js/jugar.js, precargar), para que al pulsar Jugar llegue sin esperas. No con «ahorro de datos» ni en una
+// conexión lenta (2G o 3G), donde se baja al pedir jugar
+const conexionLenta = () => { const c = navigator.connection; return !!c && (!!c.saveData || /^(slow-2g|2g|3g)$/.test(c.effectiveType || '')); };
+function precargarJuego() { if (!conexionLenta() && !/[?&]precarga=0\b/.test(location.search)) juegoListo()?.precargar(); }   // (?precarga=0: sin ella, para comparar)
 // la intención de jugar (el ratón sobre un «Jugar») ya empieza a descargar el juego
 document.addEventListener('pointerover', (e) => {
   if (e.pointerType !== 'mouse' || !e.target.closest?.('a[href^="guarena.html?jugar"]')) return;
@@ -250,6 +255,8 @@ async function boot() {
   loadP = 1;
   const wait = Math.max(0, 1900 - (performance.now() - t0));
   setTimeout(revealPage, wait);
+  // (la precarga del juego, en cuanto se ve la portada: cuanto antes empiece, más baja antes de que se pulse Jugar)
+  if (world) setTimeout(precargarJuego, wait + 400);
   initUI();
 }
 
