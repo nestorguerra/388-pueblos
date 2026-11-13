@@ -185,9 +185,11 @@ function jugarAqui(idx) {
   return world.dive(idx, (estado) => { world.pilotar((dt) => j.update(dt)); j.start(estado); }, { jugar: true });
 }
 // la precarga del juego: en cuanto la portada está quieta, el juego se monta invisible y baja por detrás todo lo que va a
-// necesitar (js/jugar.js, precargar), para que al pulsar Jugar llegue sin esperas. No con «ahorro de datos» ni en una
-// conexión lenta (2G o 3G), donde se baja al pedir jugar
-const conexionLenta = () => { const c = navigator.connection; return !!c && (!!c.saveData || /^(slow-2g|2g|3g)$/.test(c.effectiveType || '')); };
+// necesitar (js/jugar.js, precargar), para que al pulsar Jugar llegue sin esperas. No con «ahorro de datos» ni en 2G,
+// donde se baja al pedir jugar. Con «3g» sí: Chrome lo dice de muchas conexiones buenas al abrir la página (lo estima
+// por lo que tardan las primeras peticiones; en un Chrome recién abierto, con fibra, daba «3g»), y sin precarga la
+// entrada tardaba casi un minuto
+const conexionLenta = () => { const c = navigator.connection; return !!c && (!!c.saveData || /^(slow-2g|2g)$/.test(c.effectiveType || '')); };
 function precargarJuego() { if (!conexionLenta() && !/[?&]precarga=0\b/.test(location.search)) juegoListo()?.precargar(); }   // (?precarga=0: sin ella, para comparar)
 // la intención de jugar (el ratón sobre un «Jugar») ya empieza a descargar el juego
 document.addEventListener('pointerover', (e) => {
