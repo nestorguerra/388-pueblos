@@ -2,7 +2,7 @@
 :root {
   --noche: #070a14; --noche-2: #0d1326; --tinta: #0c1122; --texto: #2a3048; --papel: #f6f4ec; --papel-2: #ebe8dc;
   --cal: #eef0ec; --niebla: #9ba4c8; --anil: #34489c; --sodio: #ffa94d; --sodio-osc: #b8650f; --linea: rgba(12, 17, 34, 0.16);
-  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif; --f-serif: "Instrument Serif", Georgia, serif; --f-mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --f-display: "Archivo Variable", "Archivo", "Helvetica Neue", Arial, sans-serif; --f-serif: "Instrument Serif", Georgia, serif; --f-mono: "Geist Mono", ui-monospace, Menlo, monospace;
 }
 @page { size: A4; margin: 0; }
 * { box-sizing: border-box; }

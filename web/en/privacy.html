@@ -10,12 +10,14 @@
 <link rel="apple-touch-icon" href="../assets/logo/apple-touch-icon.png">
 <link rel="alternate" hreflang="es" href="../privacidad.html">
 <link rel="alternate" hreflang="en" href="privacy.html">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..800&family=Instrument+Serif:ital@1&family=Geist+Mono:wght@400;500&display=swap">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/archivo@5.2.8/wdth.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5.2.8/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/geist-mono@5.2.8/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.2.8/400-italic.css">
 <style>
 :root { color-scheme: dark; --noche: #070a14; --noche-2: #0d1326; --linea: rgba(186, 198, 255, 0.16); --cal: #eef0ec; --niebla: #9ba4c8; --sodio: #ffa94d; --sodio-2: #ffcf91;
-  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif; --f-serif: "Instrument Serif", Georgia, serif; --f-mono: "Geist Mono", ui-monospace, Menlo, monospace; }
+  --f-display: "Archivo Variable", "Archivo", "Helvetica Neue", Arial, sans-serif; --f-serif: "Instrument Serif", Georgia, serif; --f-mono: "Geist Mono", ui-monospace, Menlo, monospace; }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--noche); color: var(--cal); font: 400 1.02rem/1.6 var(--f-display); }
@@ -63,7 +65,7 @@ a { color: var(--sodio-2); }
 
   <h2>Where it is stored</h2>
   <p>The waiting list and the votes are stored in a private Google spreadsheet (Google Workspace) or on our server, hosted on Render. Google and Render act as data processors and may process data outside the European Economic Area under the safeguards of the EU-US Data Privacy Framework.</p>
-  <p>Fonts are loaded from Google Fonts and the Guareña game is served from GitHub Pages; those services receive your IP address when they are downloaded, as with any website.</p>
+  <p>Fonts and some libraries are loaded from jsDelivr and cdnjs, and the Guareña game is served from GitHub Pages; those services receive your IP address when they are downloaded, as with any website.</p>
 
   <h2>How long we keep it</h2>
   <p>Until you ask us to delete it or the project ceases to exist. If you unsubscribe, we delete your email from the list.</p>
@@ -71,7 +73,7 @@ a { color: var(--sodio-2); }
   <h2>Your rights</h2>
   <p>You can request access to, rectification or erasure of your data, restriction of or objection to its processing, and its portability, by writing to the contact above. If you believe we have not dealt with them properly, you can lodge a complaint with the Spanish Data Protection Agency (AEPD) (<a href="https://www.aepd.es" rel="noopener">aepd.es</a>).</p>
 
-  <p class="muted" style="margin-top:3rem">Last updated: October 2026.</p>
+  <p class="muted" style="margin-top:3rem">Last updated: November 2026.</p>
 </main>
 <script type="module">
 import { CONTACTO } from '../js/config.js';

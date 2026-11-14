@@ -11,7 +11,7 @@
   --sodio: #ffa94d;
   --sodio-2: #ffcf91;
   --anil: #34489c;
-  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --f-display: "Archivo Variable", "Archivo", "Helvetica Neue", Arial, sans-serif;
   --f-serif: "Instrument Serif", Georgia, serif;
   --f-mono: "Geist Mono", ui-monospace, Menlo, monospace;
   --gutter: clamp(14px, 2.4vw, 32px);

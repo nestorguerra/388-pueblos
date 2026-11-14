@@ -4,7 +4,7 @@
   --noche: #070a14; --noche-2: #0d1326; --linea: rgba(186, 198, 255, 0.16);
   --cal: #eef0ec; --cal-2: #e2e5df; --tinta: #0c1122; --niebla: #9ba4c8; --niebla-2: #6c7598;
   --sodio: #ffa94d; --sodio-2: #ffcf91; --anil: #34489c; --anil-claro: #8fa2ff;
-  --f-display: "Archivo", "Helvetica Neue", Arial, sans-serif; --f-serif: "Instrument Serif", Georgia, serif; --f-mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  --f-display: "Archivo Variable", "Archivo", "Helvetica Neue", Arial, sans-serif; --f-serif: "Instrument Serif", Georgia, serif; --f-mono: "Geist Mono", ui-monospace, Menlo, monospace;
   --gutter: clamp(16px, 4vw, 56px); --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 * { box-sizing: border-box; }

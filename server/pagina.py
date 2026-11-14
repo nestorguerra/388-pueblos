@@ -33,5 +33,7 @@ def documento(fragment, api=None):
     return (
         b'<!doctype html><html lang="es"><head><meta charset="utf-8">'
         b'<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">'
-        + b"\n".join(head) + RESET + inject + b"</head><body>" + fragment[pos:] + b"</body></html>"
+        # (el reinicio, antes que las hojas de la página: después, su «body{font:… system-ui}» y su «color-scheme:light»
+        # pisaban los de la página, y la portada publicada salía con la letra del sistema; 14-11-2026)
+        + RESET + b"\n".join(head) + inject + b"</head><body>" + fragment[pos:] + b"</body></html>"
     )
