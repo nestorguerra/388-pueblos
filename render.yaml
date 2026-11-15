@@ -62,3 +62,11 @@ services:
         value: 3.11.9
       - key: SITE_URL
         value: https://pueblos388.onrender.com
+      # (los vecinos del juego de Guareña con GPT, /api/vecinos: la clave de OpenAI se pone en el panel de Render, nunca
+      # aquí; sync: false hace que Render la pida y no la guarde en este archivo)
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODELO
+        value: gpt-5.6-luna
+      - key: OPENAI_ESFUERZO
+        value: high

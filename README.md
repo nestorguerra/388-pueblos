@@ -106,6 +106,7 @@ puede escribir y leer el recuento de votos: los emails nunca salen de la hoja.
 | `/api/lista` | POST alta en la lista de espera (exige edad ≥ 14 y consentimiento). No se puede leer por la API |
 | `/api/pasaporte` | Sellos por dispositivo (la web ya los guarda en el propio dispositivo) |
 | `/api/online` | Estado del servicio |
+| `/api/vecinos` | POST lo que dice un vecino del juego de Guareña, con GPT-5.6 Luna. La clave de OpenAI va en la variable `OPENAI_API_KEY` del servicio, en el panel de Render (nunca en el código); sin ella responde 503 y el juego usa su IA del navegador. Topes: 12 charlas por minuto y 150 al día por IP, 4.000 al día en total |
 
 Exportar la lista: `python3 server/servidor.py --export-lista --db <ruta>`.
 

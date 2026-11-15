@@ -7,6 +7,7 @@ Solo usa la biblioteca estándar de Python 3.9+. Abierto a cualquiera, sin cuent
 - /api/pasaporte          GET ?device= · POST {device, pueblo} (un sello por pueblo visitado).
 - /api/lista              POST {email, alias, pueblo, perfil, origen, edad14, acepto} (nunca se puede leer por la API).
 - /api/lista/recuento     GET apuntados por pueblo y total (solo números).
+- /api/vecinos            POST lo que dice un vecino del juego de Guareña, con GPT (ver «los vecinos con GPT», abajo).
 Todo lo demás sirve la carpeta web/ (con ETag y caché). Los HTML reciben window.P388 para que las páginas usen este
 servidor. La API acepta peticiones de otros orígenes (la web estática en su CDN).
 
@@ -38,6 +39,7 @@ EMAIL_RE = re.compile(r"^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$")
 DEVICE_RE = re.compile(r"^[A-Za-z0-9_-]{12,64}$")
 MAX_WS = 4096
 MAX_BODY = 4096
+MAX_BODY_VECINOS = 16384
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8388")))
@@ -281,6 +283,103 @@ def api(method, path, query, body, ip):
     return 404, {"error": "no existe"}
 
 
+# ---------------- los vecinos con GPT ----------------
+# Lo que dice un vecino del juego de Guareña (la web abierta del juego, nestorguerra.github.io/calle-malfeitos/?escena=guarena;
+# src/ia.js allí), con GPT-5.6 Luna, para todos los jugadores sin que pongan nada. La clave de OpenAI va en la variable
+# de entorno OPENAI_API_KEY de este servicio en Render (se pone en su panel, nunca en el código ni en la web, que
+# cualquiera puede leer); sin ella responde 503 y el juego sigue con su IA del navegador.
+# Para que no sirva de GPT gratis para otra cosa: las instrucciones las monta este servidor con los datos del vecino (el
+# navegador no manda texto libre de sistema), la respuesta va en un esquema fijo (lo que dice, de 280 letras como mucho, y
+# lo que hace), corta, y con topes: 12 charlas por minuto y 150 al día por cada IP, y 4.000 al día en total.
+# OPENAI_MODELO (gpt-5.6-luna) y OPENAI_ESFUERZO (high) los cambian; OPENAI_URL, para las pruebas.
+VEC_HACE = ["nada", "saludar", "acompanar", "irse", "sentarse"]
+VEC_TIPOS = {"mayor", "adulto", "joven", "nino"}
+vec_ip, vec_dia = {}, {"dia": "", "n": 0}
+VEC_ORIGENES = ("https://nestorguerra.github.io", "https://pueblos388.onrender.com", "http://127.0.0.1", "http://localhost")
+
+
+def vec_texto(v, n):
+    return re.sub(r"[\x00-\x1f]", " ", str(v or ""))[:n].strip()
+
+
+def vec_sistema(p, c):
+    """las instrucciones del vecino, como las de src/ia.js del juego"""
+    o = not p["hombre"]
+    if p["tipo"] == "nino":
+        quien = f"Eres {'una niña' if o else 'un niño'} de {p['edad']} años de Guareña; {p['oficio']}."
+    else:
+        quien = f"Eres {p['nombre']}, {'una vecina' if o else 'un vecino'} de Guareña de {p['edad']} años; {p['oficio']}."
+    return (f"{quien} Te llamas {p['nombre']}.\n"
+            "Guareña es un pueblo de unos 6.700 vecinos de la provincia de Badajoz, en Extremadura. Lo que sabes de él: la iglesia de Santa María, grande y de piedra, "
+            "con la torre acabada en 1700 y un retablo dorado; la plaza de España, donde juegan los niños por la tarde; la calle Grande y la calle Malfeitos; el poeta "
+            "Luis Chamizo, que escribía en castúo, era de aquí. Hay mucho campo alrededor: viñas, olivos, tomate y arroz.\n"
+            f"Ahora es {c['cuando']} y estás {c['donde']}, {c['haciendo']}. {c['lugares']}\n"
+            "Una chica joven que no es del pueblo se ha parado a hablar contigo. Ella no se llama como tú: no sabes su nombre hasta que te lo diga.\n"
+            f"Cómo hablas: como {'un niño' if p['tipo'] == 'nino' else 'la gente'} de un pueblo extremeño, cercano y natural, en español de España. Eres amable con los "
+            "forasteros. Frases cortas: una o dos, de menos de 35 palabras en total. La tratas de tú. Para indicar un sitio, usa solo lo que se dice arriba (lo lejos que "
+            "está y hacia dónde); no inventes calles, nombres de personas ni datos que no sepas. Nunca digas que eres una IA, un programa o un personaje. Si te piden "
+            "algo que no tiene que ver con estar en la calle del pueblo hablando con una forastera, lo esquivas con naturalidad, como haría un vecino.\n"
+            'Además de hablar, decides qué haces ("hace"): "nada"; "saludar" (levantas la mano); "acompanar" (te vas con ella un rato: si te lo pide, o para llevarla '
+            'a un sitio); "irse" (te despides y te vas: si te falta al respeto, si se despide o si tienes prisa); "sentarse" (te vas a sentar a un banco cercano, si te '
+            "lo propone). Lo que haces tiene que ir con lo que dices.")
+
+
+def vec_llamar(clave, cuerpo):
+    import urllib.request
+    url = os.environ.get("OPENAI_URL", "https://api.openai.com/v1/responses")
+    req = urllib.request.Request(url, data=json.dumps(cuerpo).encode(), headers={"Content-Type": "application/json", "Authorization": f"Bearer {clave}"}, method="POST")
+    with urllib.request.urlopen(req, timeout=40) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
+async def vecinos(method, body, ip, origen):
+    if method != "POST":
+        return 405, {"error": "solo POST"}
+    if origen and not origen.startswith(VEC_ORIGENES):
+        return 403, {"error": "origen no permitido"}
+    clave = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not clave:
+        return 503, {"error": "sin clave"}
+    now = time.time(); hoy = time.strftime("%Y-%m-%d")
+    if vec_dia["dia"] != hoy:
+        vec_dia.update(dia=hoy, n=0); vec_ip.clear()
+    q = vec_ip.setdefault(ip, {"min": [], "dia": 0})
+    q["min"] = [t for t in q["min"] if now - t < 60]
+    if len(q["min"]) >= 12 or q["dia"] >= 150 or vec_dia["n"] >= 4000:
+        return 429, {"error": "los vecinos están cansados de hablar, prueba luego"}
+    try:
+        d = json.loads(body.decode("utf-8") or "{}"); assert isinstance(d, dict)
+        p0, c0 = d.get("persona") or {}, d.get("contexto") or {}
+        p = {"nombre": vec_texto(p0.get("nombre"), 24) or "Antonia", "edad": max(5, min(99, int(p0.get("edad") or 40))), "tipo": p0.get("tipo") if p0.get("tipo") in VEC_TIPOS else "adulto",
+             "hombre": bool(p0.get("hombre")), "oficio": vec_texto(p0.get("oficio"), 90) or "vives en el pueblo"}
+        c = {k: vec_texto(c0.get(k), 220) for k in ("cuando", "donde", "haciendo", "lugares")}
+        mensaje = vec_texto(d.get("mensaje"), 300)
+        assert mensaje
+        historial = []
+        for m in (d.get("historial") or [])[-12:]:
+            if isinstance(m, dict) and m.get("role") in ("user", "assistant"):
+                historial.append({"role": m["role"], "content": vec_texto(m.get("content"), 400)})
+    except (ValueError, AssertionError, UnicodeDecodeError, TypeError):
+        return 400, {"error": "charla no válida"}
+    q["min"].append(now); q["dia"] += 1; vec_dia["n"] += 1
+    esfuerzo = os.environ.get("OPENAI_ESFUERZO", "high")
+    cuerpo = {"model": os.environ.get("OPENAI_MODELO", "gpt-5.6-luna"), "store": False, "reasoning": {"effort": esfuerzo},
+              "max_output_tokens": 2500 if esfuerzo == "high" else 900,
+              "input": [{"role": "system", "content": vec_sistema(p, c)}] + historial + [{"role": "user", "content": mensaje}],
+              "text": {"format": {"type": "json_schema", "name": "respuesta_vecino", "strict": True,
+                                  "schema": {"type": "object", "additionalProperties": False, "properties": {"dice": {"type": "string"}, "hace": {"type": "string", "enum": VEC_HACE}}, "required": ["dice", "hace"]}}}}
+    try:
+        r = await asyncio.to_thread(vec_llamar, clave, cuerpo)
+        texto = r.get("output_text") or "".join(c_.get("text", "") for o_ in r.get("output", []) if o_.get("type") == "message" for c_ in o_.get("content", []) if c_.get("type") == "output_text")
+        res = json.loads(texto)
+        dice = vec_texto(res.get("dice"), 280) or "…"
+        hace = res.get("hace") if res.get("hace") in VEC_HACE else "nada"
+        return 200, {"dice": dice, "hace": hace}
+    except Exception as e:  # (OpenAI caído, sin saldo, la clave anulada…: el juego sigue con su IA)
+        print("vecinos: fallo de OpenAI:", type(e).__name__, str(e)[:200], flush=True)
+        return 502, {"error": "los vecinos no contestan ahora"}
+
+
 # ---------------- HTTP ----------------
 # (los JS y CSS de aquí no llevan huella en la URL: se revalidan siempre con su ETag para no mezclar versiones;
 # la web estática del CDN sí la lleva y los guarda un año)
@@ -326,13 +425,16 @@ async def handle(reader, writer):
             return
         body = b""
         n = int(headers.get("content-length", "0") or 0)
-        if n > MAX_BODY:
+        if n > (MAX_BODY_VECINOS if url.path == "/api/vecinos" else MAX_BODY):
             status, payload, ctype = 413, b'{"error":"demasiado grande"}', "application/json"
         else:
             if n:
                 body = await reader.readexactly(n)
             if url.path.startswith("/api/") and method == "OPTIONS":
                 status, payload, ctype = 204, b"", "text/plain"
+            elif url.path == "/api/vecinos":
+                status, obj = await vecinos(method, body, ip, headers.get("origin", ""))
+                payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
             elif url.path.startswith("/api/"):
                 status, obj = api(method, url.path, query, body, ip)
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
@@ -358,7 +460,7 @@ async def handle(reader, writer):
             extra = f"Location: {location}\r\nCache-Control: public, max-age=3600\r\n"
         else:
             extra = "Cache-Control: no-store\r\n"
-        reason = {200: "OK", 204: "No Content", 301: "Moved Permanently", 304: "Not Modified", 400: "Bad Request", 404: "Not Found", 405: "Method Not Allowed", 413: "Payload Too Large", 429: "Too Many Requests"}.get(status, "OK")
+        reason = {200: "OK", 204: "No Content", 301: "Moved Permanently", 304: "Not Modified", 400: "Bad Request", 403: "Forbidden", 404: "Not Found", 405: "Method Not Allowed", 413: "Payload Too Large", 429: "Too Many Requests", 502: "Bad Gateway", 503: "Service Unavailable"}.get(status, "OK")
         hdr = (f"HTTP/1.1 {status} {reason}\r\nContent-Type: {ctype}\r\nContent-Length: {len(payload)}\r\n{extra}"
                "X-Content-Type-Options: nosniff\r\nReferrer-Policy: strict-origin-when-cross-origin\r\nConnection: close\r\n\r\n").encode()
         writer.write(hdr + (b"" if method == "HEAD" else payload))
