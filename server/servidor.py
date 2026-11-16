@@ -227,7 +227,9 @@ async def handle_ws(reader, writer, headers, query):
         await broadcast(room, {"t": "join", "id": c.id}, skip=c)
     try:
         while True:
-            op, data = await asyncio.wait_for(read_frame(reader), timeout=90)
+            # (en el juego, cada uno manda algo al menos cada 2 s: 20 s callado es que se ha ido —al cerrar la página, el aviso
+            # de cierre no siempre pasa por el proxy de Render y se quedaba en el pueblo, quieto, hasta el minuto y medio—)
+            op, data = await asyncio.wait_for(read_frame(reader), timeout=20 if juego else 90)
             if op == 0x8:
                 break
             if op == 0x9:
@@ -246,6 +248,8 @@ async def handle_ws(reader, writer, headers, query):
             if not juego and t == "p":
                 c.presence.update(clean_presence(msg))
                 await broadcast(room, {"t": "p", "id": c.id, "p": c.presence}, skip=c)
+            elif juego and t == "adios":
+                break
             elif juego and t == "j":
                 cambio = clean_juego(msg)
                 c.presence.update(cambio)
