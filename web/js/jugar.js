@@ -33,10 +33,11 @@ addTexts({
   },
 });
 import { THREE } from './world.js';
+import { montarAhora } from './ahora.js';
 
 const GAME = 'https://nestorguerra.github.io/calle-malfeitos/?escena=guarena';
 // la dirección del juego, con ?desde=388 (su entrada desde aquí). En local se puede probar con el juego servido en local:
-// ?juego=http://127.0.0.1:8934/calle-malfeitos/ ; ?sonido=0 pasa al juego
+// ?juego=http://127.0.0.1:8934/calle-malfeitos/ ; ?sonido=0 pasa al juego (y ?multi=ws://127.0.0.1:<puerto>, con el juego en local)
 export function gameUrl() {
   let base = GAME;
   const q = new URLSearchParams(location.search);
@@ -46,6 +47,8 @@ export function gameUrl() {
   if (!u.searchParams.get('escena')) u.searchParams.set('escena', 'guarena');
   u.searchParams.set('desde', '388');
   if (q.get('sonido') === '0') u.searchParams.set('sonido', '0');
+  // (en local, para las pruebas: el servidor del multijugador del juego, también en local)
+  if (base === local && /^ws:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/?$/.test(q.get('multi') || '')) u.searchParams.set('multi', q.get('multi'));
   return u.href;
 }
 // el juego solo, en otra pestaña (sin la entrada desde aquí)
@@ -229,6 +232,8 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
     pill.textContent = text;
   };
 
+  // «Guareña, ahora»: quién está jugando, en un recuadro mientras se da la vuelta a la torre (js/ahora.js)
+  const ahora = montarAhora('06060');
   // el estado del juego (guarena.html lo empieza a apuntar antes de que llegue este código)
   const J = window.__j388 || (window.__j388 = { p: 0, descargado: false, obra: 0, listo: false, hola: false, aterriza: false });
   let iframe = J.iframe || null;
@@ -327,6 +332,7 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
       lookVel: desde.lookVel ? desde.lookVel.clone() : new THREE.Vector3(),
     };
     st = { phase: 'vuelo', tau: 0, k: 1, prisa: false, path: recorrido(s0, tw), fov0: camera.fov, z: 1, t: 0, wait: 0 };
+    ahora.empezar();
     if (reduced) st.tau = st.path.end - 1.2;
     document.body.classList.add('jugando');
     addEventListener('pointerdown', hurry);
@@ -402,7 +408,7 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
       if (!path.decidido && tau >= path.t1) {
         path.decidido = true;
         const falta = faltaCritico();
-        if (!reduced && (VUELTA_PRUEBA != null || falta == null || falta > path.end - path.t1 + 0.85 + VUELTA.enVideo + 3)) path.darVuelta();
+        if (!reduced && (VUELTA_PRUEBA != null || falta == null || falta > path.end - path.t1 + 0.85 + VUELTA.enVideo + 3)) { path.darVuelta(); ahora.mostrar(true); }
       }
       if (path.vuelta && path.vuelta.tX == null) {
         const falta = faltaCritico(), mudo = !J.hola && J.cargado && performance.now() - J.cargado > 20000;   // (el juego no contesta: a la foto, donde se avisa)
@@ -417,8 +423,10 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
       const fovVuelo = lerp(Math.min(60, Math.max(42, st.fov0)), fs, path.foto(st.tau));
       camera.fov = lente(lerp(st.fov0, fovVuelo, smooth(0, 1.6, st.tau)), st.z);
       camera.updateProjectionMatrix();
+      // (el recuadro, hasta que se sale de la vuelta hacia la calle)
+      if (path.vuelta?.tX != null && st.tau > path.vuelta.tX + 1.5) ahora.mostrar(false);
       if (st.tau >= path.end) {
-        status(null);
+        status(null); ahora.parar();
         removeEventListener('pointerdown', hurry);
         st.phase = 'funde'; st.ft = 0;
         // con el vídeo, si ya puede reproducirse (si no, la foto, que se acerca con un zoom)
@@ -547,7 +555,7 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
   // salir sin haber llegado al juego (si no carga) o al volver: la web vuelve a verse, desde donde estaba la cámara
   function exit(failed = false) {
     if (!st) return;
-    status(null);
+    status(null); ahora.parar();
     const fov0 = st.fov0, dibujaba = st.phase === 'vuelo' || st.phase === 'funde';
     st = null;
     removeEventListener('pointerdown', hurry);
@@ -574,6 +582,7 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
     get dibuja() { return !st || st.phase === 'vuelo' || st.phase === 'funde'; },
     get playing() { return !!st && st.phase === 'juego'; },
     get phase() { return st ? st.phase : null; },
+    get ahora() { return ahora.datos; },
     get dbg() { const fc = faltaCritico(), V = st?.path?.vuelta; return { tau: st ? +st.tau.toFixed(2) : null, falta: faltaDescarga(), faltaC: fc == null ? null : +fc.toFixed(1), mbc: J.mbc, totalc: J.totalc, vuelta: V ? { tE: +V.tE.toFixed(2), tX: V.tX == null ? null : +V.tX.toFixed(2), fin: +st.path.end.toFixed(2) } : null, p: J.p, d: J.descargado, pre: J.pre, critico: !!J.critico, listo: J.listo, tiempos: J.tiempos, deRed: J.deRed }; },
     url,
   };

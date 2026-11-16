@@ -4,7 +4,7 @@ Solo usa la biblioteca estándar de Python 3.9+. Abierto a cualquiera, sin cuent
 - /ws?room=pueblo-<INE>   presencia en tiempo real por pueblo (posición, frases y emojis predefinidos).
 - /ws?room=juego-<INE>    el multijugador del juego de ese pueblo (Guareña, juego-06060): cada uno manda su estado y el
                           servidor lo reenvía a los demás (ver «el juego», abajo; docs/multijugador.md en «388 Foto»).
-- /api/juego?pueblo=<INE> quién hay en el juego ahora: nombre, calle, sitio y qué hace.
+- /api/juego?pueblo=<INE> quién hay en el juego ahora: nombre, calle, sitio y qué hace, y cuántos vecinos hay en la calle.
 - /api/online             personas conectadas ahora, en total y por pueblo.
 - /api/votos              GET recuento por pueblo · POST {device, pueblo} (un voto por dispositivo).
 - /api/pasaporte          GET ?device= · POST {device, pueblo} (un sello por pueblo visitado).
@@ -81,14 +81,21 @@ except OSError:
 # ---------------- salas ----------------
 rooms = {}  # room -> {peer_id: Client}
 room_t0 = {}  # room de juego -> cuándo entró el primero (ms): de ahí sacan todos la hora del juego
+room_orden = {}  # room de juego -> cuántos han entrado desde que se abrió (el orden de llegada decide quién mueve a los vecinos)
+room_coches = {}  # room de juego -> {coche: [x, y, z, rumbo]}: los coches que alguien ha dejado en otro sitio
+callados = {}  # aparato (o ip) -> hasta cuándo (time.time()) no se reenvía lo que dice: le han denunciado
 
 
 class Client:
-    def __init__(self, writer, room):
+    def __init__(self, writer, room, ip="?"):
         self.writer = writer
         self.room = room
+        self.ip = ip
         self.id = secrets.token_hex(6)
         self.presence = {}
+        self.pj = None  # (en el juego: su personaje del editor, o nada si lleva la chica de serie)
+        self.orden = 0
+        self.denuncias = set()  # (quién le ha denunciado)
         self.tokens = 40.0
         self.last = time.monotonic()
         self.dicho = 0.0
@@ -140,6 +147,57 @@ def clean_juego(d):
             out[k] = d[k]
     if isinstance(d.get("n"), str) and ALIAS_RE.match(d["n"]):
         out["n"] = d["n"]
+    # (fase 2: el coche que conduce o en el que va, con quién va, a quién sigue para los vecinos, dónde está en palabras
+    # y cuántos vecinos hay en la calle)
+    if isinstance(d.get("co"), str) and (d["co"] == "" or NODO_RE.match(d["co"])):
+        out["co"] = d["co"]
+    for k in ("cp", "h"):
+        if isinstance(d.get(k), str) and (d[k] == "" or ID_RE.match(d[k])):
+            out[k] = d[k]
+    if isinstance(d.get("w"), str):
+        out["w"] = clean_dicho(d["w"])[:80]
+    if isinstance(d.get("nv"), int) and not isinstance(d.get("nv"), bool) and 0 <= d["nv"] <= 20000:
+        out["nv"] = d["nv"]
+    return out
+
+
+NODO_RE = re.compile(r"^[A-Za-z0-9_.\-]{1,48}$")
+ID_RE = re.compile(r"^[0-9a-f]{12}$")
+CLAVE_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
+
+
+def clean_pj(d):
+    """El personaje del editor de alguien (src/personaje.js en «388 Foto»): solo números acotados y nombres de prendas."""
+    if not isinstance(d, dict):
+        return None
+    num = lambda v, lo, hi: isinstance(v, (int, float)) and not isinstance(v, bool) and lo <= v <= hi
+    out = {}
+    for k, tope in (("fenotipo", 24), ("deslizadores", 96)):
+        v = d.get(k)
+        if isinstance(v, dict):
+            out[k] = {a: round(float(b), 3) for a, b in list(v.items())[:tope] if isinstance(a, str) and CLAVE_RE.match(a) and num(b, -3, 3)}
+    for k in ("tono", "vello"):
+        v = d.get(k)
+        if isinstance(v, list) and len(v) == 3 and all(num(x, 0, 1) for x in v):
+            out[k] = [round(float(x), 3) for x in v]
+    if isinstance(d.get("ojos"), str) and CLAVE_RE.match(d["ojos"]):
+        out["ojos"] = d["ojos"]
+    if isinstance(d.get("ropa"), dict):
+        out["ropa"] = {t: d["ropa"][t] for t in ("conjunto", "calzado", "pelo")
+                       if t in d["ropa"] and (d["ropa"][t] is None or (isinstance(d["ropa"][t], str) and CLAVE_RE.match(d["ropa"][t])))}
+    return out or None
+
+
+def clean_gv(g):
+    """Los vecinos que mueve el juego de alguien, para los de su alrededor: [id, cuerpo, x, y, z (cm), rumbo (centésimas de
+    radián), clip, señales] por vecino, como mucho 64."""
+    if not isinstance(g, list):
+        return None
+    TOPES = ((0, 10 ** 9), (0, 999), (-600000, 600000), (-600000, 600000), (-600000, 600000), (-700, 700), (0, 63), (0, 255))
+    out = []
+    for v in g[:64]:
+        if isinstance(v, list) and len(v) == 8 and all(isinstance(x, int) and not isinstance(x, bool) and lo <= x <= hi for x, (lo, hi) in zip(v, TOPES)):
+            out.append(v)
     return out
 
 
@@ -198,7 +256,7 @@ async def read_frame(reader):
     return op, bytes(data)
 
 
-async def handle_ws(reader, writer, headers, query):
+async def handle_ws(reader, writer, headers, query, ip="?"):
     room = (query.get("room") or [""])[0]
     key = headers.get("sec-websocket-key")
     juego = room.startswith("juego-")
@@ -214,14 +272,21 @@ async def handle_ws(reader, writer, headers, query):
     writer.write(("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
                   f"Sec-WebSocket-Accept: {accept}\r\n\r\n").encode())
     await writer.drain()
-    c = Client(writer, room)
+    # (a quién se calla si le denuncian: su aparato, si lo dice —lo que guarda el juego en el navegador—, o si no su IP)
+    dev = (query.get("d") or [""])[0]
+    c = Client(writer, room, ("d:" + dev) if DEVICE_RE.match(dev) else ip)
     if juego and not rooms.get(room):
         room_t0[room] = int(time.time() * 1000)
+        room_orden[room] = 0
+        room_coches[room] = {}
     rooms.setdefault(room, {})[c.id] = c
     if juego:
-        await send(c, {"t": "sala", "yo": c.id, "otros": [{"id": o.id, "p": o.presence} for o in rooms[room].values() if o is not c],
-                       "t0": room_t0.get(room), "ahora": int(time.time() * 1000)})
-        await broadcast(room, {"t": "entra", "id": c.id}, skip=c)
+        room_orden[room] = room_orden.get(room, 0) + 1
+        c.orden = room_orden[room]
+        await send(c, {"t": "sala", "yo": c.id, "o": c.orden,
+                       "otros": [{"id": o.id, "p": o.presence, "o": o.orden, **({"pj": o.pj} if o.pj else {})} for o in rooms[room].values() if o is not c],
+                       "coches": room_coches.get(room, {}), "t0": room_t0.get(room), "ahora": int(time.time() * 1000)})
+        await broadcast(room, {"t": "entra", "id": c.id, "o": c.orden}, skip=c)
     else:
         await send(c, {"t": "room", "me": c.id, "peers": [{"id": o.id, "p": o.presence} for o in rooms[room].values() if o is not c]})
         await broadcast(room, {"t": "join", "id": c.id}, skip=c)
@@ -259,18 +324,63 @@ async def handle_ws(reader, writer, headers, query):
             elif juego and t == "di":
                 ahora = time.monotonic()
                 x = clean_dicho(msg.get("x"))
-                if x and ahora - c.dicho >= 1.5:
+                hasta = callados.get(c.ip, 0)
+                if x and hasta > time.time():
+                    await send(c, {"t": "callado", "s": int(hasta - time.time())})
+                elif x and ahora - c.dicho >= 1.5:
                     c.dicho = ahora
-                    a = msg.get("a") if isinstance(msg.get("a"), str) and re.fullmatch(r"[0-9a-f]{12}", msg.get("a") or "") else None
+                    a = msg.get("a") if isinstance(msg.get("a"), str) and ID_RE.match(msg.get("a") or "") else None
                     await broadcast(room, {"t": "di", "id": c.id, "x": x, **({"a": a} if a else {})})
+            elif juego and t == "pj":
+                c.pj = clean_pj(msg.get("f"))
+                await broadcast(room, {"t": "pj", "id": c.id, "f": c.pj}, skip=c)
+            elif juego and t == "cd":
+                # (un coche que alguien deja en otro sitio: quien entre después lo verá ahí)
+                o, xyz = msg.get("o"), [msg.get(k) for k in ("x", "y", "z", "r")]
+                if isinstance(o, str) and NODO_RE.match(o) and all(isinstance(v, (int, float)) and not isinstance(v, bool) and -6000 <= v <= 6000 for v in xyz):
+                    cs = room_coches.setdefault(room, {})
+                    if o in cs or len(cs) < 300:
+                        cs[o] = [round(float(v), 2) for v in xyz]
+                        await broadcast(room, {"t": "cd", "id": c.id, "o": o, "x": cs[o][0], "y": cs[o][1], "z": cs[o][2], "r": cs[o][3]}, skip=c)
+            elif juego and t == "gv":
+                g = clean_gv(msg.get("g"))
+                if g is not None:
+                    await broadcast(room, {"t": "gv", "id": c.id, "g": g}, skip=c)
+            elif juego and t == "go":
+                # (lo que quiere hacer alguien con un vecino que mueve el juego de otro —hablarle, que le acompañe…—: solo a ese)
+                o = rooms.get(room, {}).get(msg.get("a")) if isinstance(msg.get("a"), str) else None
+                num = lambda v, lo, hi: isinstance(v, (int, float)) and not isinstance(v, bool) and lo <= v <= hi
+                if o and o is not c and num(msg.get("i"), 0, 10 ** 9) and num(msg.get("o"), 0, 15) and num(msg.get("x"), -6000, 6000) and num(msg.get("z"), -6000, 6000):
+                    await send(o, {"t": "go", "id": c.id, "i": int(msg["i"]), "o": int(msg["o"]), "x": round(float(msg["x"]), 2), "z": round(float(msg["z"]), 2)})
+            elif juego and t == "den":
+                # (una denuncia: con la de otro más —o con una sola si solo están los dos—, se le deja sin hablar 15 minutos)
+                o = rooms.get(room, {}).get(msg.get("a")) if isinstance(msg.get("a"), str) else None
+                if o and o is not c and c.id not in o.denuncias:
+                    o.denuncias.add(c.id)
+                    await send(c, {"t": "denunciado", "a": o.id})
+                    falta = 1 if len(rooms.get(room, {})) <= 2 else 2
+                    if len(o.denuncias) >= falta and callados.get(o.ip, 0) <= time.time():
+                        callados[o.ip] = time.time() + 900
+                        print(f"denuncia en {room}: {o.presence.get('n', o.id)} sin hablar 15 min ({len(o.denuncias)} denuncias)", flush=True)
+                        await send(o, {"t": "callado", "s": 900})
     except (asyncio.IncompleteReadError, asyncio.TimeoutError, ConnectionError):
         pass
     finally:
         rooms.get(room, {}).pop(c.id, None)
+        p = c.presence
+        if juego and p.get("m") == 7 and p.get("co") and all(k in p for k in ("x", "y", "z", "r")):
+            # (se ha ido conduciendo: el coche se queda donde estaba, con el suelo y el rumbo del coche aparcado)
+            cd = [p["x"], round(p["y"] - 0.42, 2), p["z"], round(p["r"] - 90, 1)]
+            room_coches.setdefault(room, {})[p["co"]] = cd
+            await broadcast(room, {"t": "cd", "id": c.id, "o": p["co"], "x": cd[0], "y": cd[1], "z": cd[2], "r": cd[3]})
         if not rooms.get(room):
             rooms.pop(room, None)
             room_t0.pop(room, None)
+            room_orden.pop(room, None)
+            room_coches.pop(room, None)
         await broadcast(room, {"t": "sale" if juego else "bye", "id": c.id})
+        for k in [k for k, v in callados.items() if v < time.time()]:
+            callados.pop(k, None)
 
 
 # ---------------- API ----------------
@@ -298,8 +408,9 @@ def api(method, path, query, body, ip):
         if not INE_RE.match(pueblo):
             return 400, {"error": "pueblo no válido"}
         sala = rooms.get("juego-" + pueblo, {})
-        gente = [{k: c.presence[k] for k in ("n", "k", "l", "m") if k in c.presence} for c in sala.values()]
-        return 200, {"humanos": len(sala), "gente": gente, "t0": room_t0.get("juego-" + pueblo)}
+        gente = [{k: c.presence[k] for k in ("n", "k", "l", "m", "w") if k in c.presence} for c in sala.values()]
+        nv = [c.presence["nv"] for c in sala.values() if "nv" in c.presence]
+        return 200, {"humanos": len(sala), "gente": gente, "vecinos": max(nv) if nv else None, "t0": room_t0.get("juego-" + pueblo)}
     if path == "/api/lista/recuento" and method == "GET":
         pueblos = {p: n for p, n in db.execute("SELECT pueblo, COUNT(*) FROM lista WHERE pueblo IS NOT NULL GROUP BY pueblo")}
         return 200, {"pueblos": pueblos, "total": db.execute("SELECT COUNT(*) FROM lista").fetchone()[0]}
@@ -493,7 +604,7 @@ async def handle(reader, writer):
         url = urllib.parse.urlsplit(target)
         query = urllib.parse.parse_qs(url.query)
         if url.path == "/ws" and headers.get("upgrade", "").lower() == "websocket":
-            await handle_ws(reader, writer, headers, query)
+            await handle_ws(reader, writer, headers, query, ip)
             return
         body = b""
         n = int(headers.get("content-length", "0") or 0)
