@@ -10,12 +10,12 @@ import { t, addTexts, lang, locale } from './i18n.js';
 
 addTexts({
   es: {
-    'ah.tit': 'Guareña, ahora', 'ah.uno': 'persona jugando', 'ah.varias': 'personas jugando', 'ah.vecinos': 'vecinos por la calle',
+    'ah.tit': '{pueblo}, ahora', 'ah.uno': 'persona jugando', 'ah.varias': 'personas jugando', 'ah.vecinos': 'vecinos por la calle',
     'ah.nadie': 'Ahora no hay nadie más jugando. Quien entre después te verá en el pueblo, con tu nombre encima.',
     'ah.mas': 'y {n} más', 'ah.buscando': 'Mirando quién hay en el pueblo…', 'ah.lejos': 'por el pueblo',
   },
   en: {
-    'ah.tit': 'Guareña, now', 'ah.uno': 'person playing', 'ah.varias': 'people playing', 'ah.vecinos': 'neighbours out in the streets',
+    'ah.tit': '{pueblo}, now', 'ah.uno': 'person playing', 'ah.varias': 'people playing', 'ah.vecinos': 'neighbours out in the streets',
     'ah.nadie': 'Nobody else is playing right now. Whoever comes in next will see you in the village, with your name above you.',
     'ah.mas': 'and {n} more', 'ah.buscando': 'Checking who is in the village…', 'ah.lejos': 'around the village',
   },
@@ -26,7 +26,7 @@ const HACE = {
   en: ['standing', 'strolling', 'running', 'sitting', 'dancing', 'praying', 'talking', 'driving', 'lighting a candle', 'jumping', 'in a passenger seat'],
 };
 // (la parte de los vecinos que está en la calle a cada hora: la de src/gente.js del juego)
-const VECINOS = 6665;
+const VECINOS = 6665; // (de serie, los de Guareña: cada pueblo con juego trae los suyos, js/jugar.js JUEGOS)
 const CURVA = [[0, 0.004], [2, 0.0015], [5, 0.001], [6.5, 0.004], [7.5, 0.014], [8.5, 0.024], [9.5, 0.026], [10.5, 0.034], [11.5, 0.042], [12.5, 0.046],
   [13.5, 0.048], [14.5, 0.026], [15.5, 0.012], [16.5, 0.018], [17.5, 0.034], [18.5, 0.046], [19.5, 0.052], [20.5, 0.044], [21.5, 0.026], [22.5, 0.014], [23.5, 0.007], [24, 0.004]];
 function enLaCalle(h, dia, mes) {
@@ -38,16 +38,17 @@ function enLaCalle(h, dia, mes) {
   if (mes >= 6 && mes <= 8) f *= h > 14 && h < 18.5 ? 0.35 : h > 21 || h < 1 ? 2 : 1;
   return f;
 }
-function vecinosAhora() {
+function vecinosAhora(habitantes = VECINOS) {
   try {
     const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Madrid', hour: 'numeric', minute: 'numeric', weekday: 'short', month: 'numeric', hourCycle: 'h23' })
       .formatToParts(new Date()).map((x) => [x.type, x.value]));
     const dia = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(p.weekday);
-    return Math.round(VECINOS * enLaCalle(+p.hour + +p.minute / 60, dia, +p.month));
+    return Math.round(habitantes * enLaCalle(+p.hour + +p.minute / 60, dia, +p.month));
   } catch { return null; }
 }
 
-export function montarAhora(pueblo = '06060') {
+export function montarAhora(pueblo = '06060', juego = {}) {
+  const tit = () => t('ah.tit', { pueblo: juego?.nombre || 'Guareña' });
   let box = null, datos = null, reloj = null, visible = false, pidiendo = false;
   async function pedir() {
     if (!SERVER || pidiendo) return;
@@ -64,9 +65,9 @@ export function montarAhora(pueblo = '06060') {
     if (!box) return;
     const fmt = new Intl.NumberFormat(locale), hace = HACE[lang];
     box.textContent = '';
-    box.append(el('span', 'tit', t('ah.tit')));
+    box.append(el('span', 'tit', tit()));
     if (!datos) { box.append(el('p', 'nota', t('ah.buscando'))); return; }
-    const n = datos.humanos || 0, v = datos.vecinos ?? vecinosAhora();
+    const n = datos.humanos || 0, v = datos.vecinos ?? vecinosAhora(juego?.habitantes);
     const cifras = el('div', 'cifras');
     const c1 = el('div'); c1.append(el('b', null, fmt.format(n)), el('span', null, n === 1 ? t('ah.uno') : t('ah.varias')));
     cifras.append(c1);
@@ -88,7 +89,7 @@ export function montarAhora(pueblo = '06060') {
       if (si === visible) return;
       visible = si;
       if (si) {
-        box = el('section', 'ahora388'); box.setAttribute('aria-live', 'polite'); box.setAttribute('aria-label', t('ah.tit'));
+        box = el('section', 'ahora388'); box.setAttribute('aria-live', 'polite'); box.setAttribute('aria-label', tit());
         document.body.append(box); pintar(); requestAnimationFrame(() => box?.classList.add('on'));
       } else if (box) { const b = box; box = null; b.classList.remove('on'); setTimeout(() => b.remove(), 600); }
     },

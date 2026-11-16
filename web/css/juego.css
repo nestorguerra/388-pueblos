@@ -30,3 +30,6 @@
 .ahora388 li .sitio { display: block; color: #9ba4c8; font-size: 0.8rem; }
 .ahora388 .nota { margin: 0; color: #9ba4c8; font-size: 0.84rem; line-height: 1.4; }
 @media (max-width: 560px) { .ahora388 { padding: 11px 13px 10px; } .ahora388 .cifras b { font-size: 1.3rem; } .ahora388 li { font-size: 0.8rem; } }
+/* quién juega ahora en el pueblo, dentro de los botones de jugar (js/town-page.js) */
+.jugando-ahora { font-weight: 400; opacity: 0.85; white-space: nowrap; }
+.jugando-ahora[hidden] { display: none; }

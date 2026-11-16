@@ -6,6 +6,7 @@ import {
 } from './world.js';
 import { stamp } from './pasaporte.js';
 import { createPlay, canEmbed } from './jugar.js';
+import { SERVER } from './backend.js';
 import { whenShown } from './red.js';
 import { t as tr, addTexts, page, locale } from './i18n.js';
 
@@ -13,7 +14,7 @@ addTexts({
   es: {
     'tp.reintentar': 'Reintentar', 'tp.volver': 'Volver al mapa de los 388',
     'tp.sin3d': 'Tu navegador no puede mostrar el modelo 3D. Prueba con una versión reciente de Chrome, Safari, Edge o Firefox.',
-    'tp.fuente': ({ s }) => `Fuente: ${s}`, 'tp.lugar': 'Lugar',
+    'tp.fuente': ({ s }) => `Fuente: ${s}`, 'tp.lugar': 'Lugar', 't.jugando1': '1 persona jugando ahora', 't.jugando': '{n} personas jugando ahora',
     'tp.nido': ({ i, n }) => `Nido ${i} de ${n}`, 'tp.nidoSin': ({ i }) => `Nido ${i} sin encontrar`, 'tp.nidoOk': ({ i }) => `Nido ${i} encontrado`,
     'tp.todos': '¡Todos los nidos! Eres vecino de honor', 'tp.todosDe': ({ name }) => `Has encontrado todos los nidos de ${name}.`,
     'tp.acercate': 'Acércate más: los nidos son pequeños. Empieza por lo alto de la torre de la iglesia.',
@@ -23,7 +24,7 @@ addTexts({
   en: {
     'tp.reintentar': 'Try again', 'tp.volver': 'Back to the map of the 388',
     'tp.sin3d': 'Your browser cannot show the 3D model. Try a recent version of Chrome, Safari, Edge or Firefox.',
-    'tp.fuente': ({ s }) => `Source: ${s}`, 'tp.lugar': 'Place',
+    'tp.fuente': ({ s }) => `Source: ${s}`, 'tp.lugar': 'Place', 't.jugando1': '1 person playing now', 't.jugando': '{n} people playing now',
     'tp.nido': ({ i, n }) => `Nest ${i} of ${n}`, 'tp.nidoSin': ({ i }) => `Nest ${i} not found yet`, 'tp.nidoOk': ({ i }) => `Nest ${i} found`,
     'tp.todos': 'Every nest! You are an honorary local', 'tp.todosDe': ({ name }) => `You have found every nest in ${name}.`,
     'tp.acercate': 'Get closer: the nests are small. Start at the top of the church tower.',
@@ -207,7 +208,7 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
   // ---- jugar: la cámara vuela hasta la bruma de la calle Malfeitos y el juego toma el relevo sin salir de la página ----
   let todStart = 0, fovGoal = null, sinContexto = false;
   const play = playable && canEmbed() ? createPlay({
-    camera, controls, canvas, tower: { x: tower.x, z: tower.z },
+    camera, controls, canvas, tower: { x: tower.x, z: tower.z }, pueblo: ine,
     onStart: () => {
       todStart = tod;
       fly = null;
@@ -236,6 +237,19 @@ export async function createTownPage({ data, churches, ine, name, places = [], f
       if (e.metaKey || e.ctrlKey || e.shiftKey) return;
       if (play) { e.preventDefault(); play.start(); }
     });
+  }
+  // (quién está jugando ahora en el pueblo —el multijugador del juego—: dentro de los botones de jugar, si hay alguien; se
+  // mira al abrir la página y cada 30 s, y así el servidor, si dormía, va despertando)
+  if (playable && SERVER) {
+    const marcas = $$('[data-jugar]').map((b) => { const m = document.createElement('span'); m.className = 'jugando-ahora'; m.hidden = true; const fl = b.querySelector('[aria-hidden]'); if (fl) b.insertBefore(m, fl); else b.append(m); return m; });
+    const mirar = async () => {
+      try {
+        const r = await fetch(`${SERVER}/juego?pueblo=${ine}`, { cache: 'no-store' }); if (!r.ok) return;
+        const n = (await r.json()).humanos || 0;
+        for (const m of marcas) { m.hidden = !n; m.textContent = n ? ' · ' + (n === 1 ? tr('t.jugando1') : tr('t.jugando', { n: new Intl.NumberFormat(locale).format(n) })) : ''; }
+      } catch { /* dormido: a la próxima */ }
+    };
+    mirar(); setInterval(() => { if (!document.hidden) mirar(); }, 30000);
   }
   const MORNING = new THREE.Vector3(0.62, 0.62, 0.48).normalize(); // (la mañana del juego)
 

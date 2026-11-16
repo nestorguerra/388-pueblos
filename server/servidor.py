@@ -4,7 +4,8 @@ Solo usa la biblioteca estándar de Python 3.9+. Abierto a cualquiera, sin cuent
 - /ws?room=pueblo-<INE>   presencia en tiempo real por pueblo (posición, frases y emojis predefinidos).
 - /ws?room=juego-<INE>    el multijugador del juego de ese pueblo (Guareña, juego-06060): cada uno manda su estado y el
                           servidor lo reenvía a los demás (ver «el juego», abajo; docs/multijugador.md en «388 Foto»).
-- /api/juego?pueblo=<INE> quién hay en el juego ahora: nombre, calle, sitio y qué hace, y cuántos vecinos hay en la calle.
+- /api/juego?pueblo=<INE> quién hay en el juego ahora: nombre, calle, sitio y qué hace, y cuántos vecinos hay en la calle;
+                          con &con=<código>, dónde está quien tiene ese código para quedar (el enlace «a mi lado»).
 - /api/online             personas conectadas ahora, en total y por pueblo.
 - /api/votos              GET recuento por pueblo · POST {device, pueblo} (un voto por dispositivo).
 - /api/pasaporte          GET ?device= · POST {device, pueblo} (un sello por pueblo visitado).
@@ -96,6 +97,7 @@ class Client:
         self.pj = None  # (en el juego: su personaje del editor, o nada si lleva la chica de serie)
         self.orden = 0
         self.denuncias = set()  # (quién le ha denunciado)
+        self.cita = None  # (su código para quedar: quien abre su enlace aparece a su lado; no se manda a nadie)
         self.tokens = 40.0
         self.last = time.monotonic()
         self.dicho = 0.0
@@ -162,6 +164,7 @@ def clean_juego(d):
 
 
 NODO_RE = re.compile(r"^[A-Za-z0-9_.\-]{1,48}$")
+CITA_RE = re.compile(r"^[a-z0-9]{8,16}$")
 ID_RE = re.compile(r"^[0-9a-f]{12}$")
 CLAVE_RE = re.compile(r"^[a-z][a-z0-9_]{0,31}$")
 
@@ -352,6 +355,17 @@ async def handle_ws(reader, writer, headers, query, ip="?"):
                 num = lambda v, lo, hi: isinstance(v, (int, float)) and not isinstance(v, bool) and lo <= v <= hi
                 if o and o is not c and num(msg.get("i"), 0, 10 ** 9) and num(msg.get("o"), 0, 15) and num(msg.get("x"), -6000, 6000) and num(msg.get("z"), -6000, 6000):
                     await send(o, {"t": "go", "id": c.id, "i": int(msg["i"]), "o": int(msg["o"]), "x": round(float(msg["x"]), 2), "z": round(float(msg["z"]), 2)})
+            elif juego and t == "cita":
+                # (mi código para quedar: se guarda aquí y no se reenvía)
+                c.cita = msg.get("c") if isinstance(msg.get("c"), str) and CITA_RE.match(msg.get("c")) else None
+            elif juego and t in ("busco", "llego"):
+                # (quien ha abierto el enlace de alguien: «busco», ¿está?; «llego», ya estoy a su lado: se le avisa)
+                cod = msg.get("c") if isinstance(msg.get("c"), str) and CITA_RE.match(msg.get("c")) else None
+                o = next((x for x in rooms.get(room, {}).values() if cod and x.cita == cod and x is not c), None)
+                if o and t == "busco":
+                    await send(c, {"t": "cita", "c": cod, "id": o.id})
+                elif o and t == "llego":
+                    await send(o, {"t": "llega", "id": c.id})
             elif juego and t == "den":
                 # (una denuncia: con la de otro más —o con una sola si solo están los dos—, se le deja sin hablar 15 minutos)
                 o = rooms.get(room, {}).get(msg.get("a")) if isinstance(msg.get("a"), str) else None
@@ -408,6 +422,12 @@ def api(method, path, query, body, ip):
         if not INE_RE.match(pueblo):
             return 400, {"error": "pueblo no válido"}
         sala = rooms.get("juego-" + pueblo, {})
+        con = (query.get("con") or [""])[0]
+        if con:
+            # (el enlace para quedar: dónde está quien tiene ese código, para salir a su lado; sin él, nada)
+            o = next((c for c in sala.values() if CITA_RE.match(con) and c.cita == con), None)
+            p = o.presence if o else {}
+            return 200, {"con": {k: p[k] for k in ("n", "x", "y", "z", "r", "m") if k in p} if o and "x" in p else None}
         gente = [{k: c.presence[k] for k in ("n", "k", "l", "m", "w") if k in c.presence} for c in sala.values()]
         nv = [c.presence["nv"] for c in sala.values() if "nv" in c.presence]
         return 200, {"humanos": len(sala), "gente": gente, "vecinos": max(nv) if nv else None, "t0": room_t0.get("juego-" + pueblo)}

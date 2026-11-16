@@ -38,13 +38,18 @@ import { montarAhora } from './ahora.js';
 const GAME = 'https://nestorguerra.github.io/calle-malfeitos/?escena=guarena';
 // la dirección del juego, con ?desde=388 (su entrada desde aquí). En local se puede probar con el juego servido en local:
 // ?juego=http://127.0.0.1:8934/calle-malfeitos/ ; ?sonido=0 pasa al juego (y ?multi=ws://127.0.0.1:<puerto>, con el juego en local)
-export function gameUrl() {
+// los pueblos con juego (el multijugador, fase 3: una sala por pueblo, por su código del INE): su escena en el juego, su
+// nombre y sus vecinos
+export const JUEGOS = { '06060': { escena: 'guarena', nombre: 'Guareña', habitantes: 6665 } };
+export function gameUrl(pueblo = '06060') {
   let base = GAME;
   const q = new URLSearchParams(location.search);
   const local = q.get('juego');
   if (local && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(local)) base = local;
   const u = new URL(base, location.href);
-  if (!u.searchParams.get('escena')) u.searchParams.set('escena', 'guarena');
+  if (!u.searchParams.get('escena')) u.searchParams.set('escena', JUEGOS[pueblo]?.escena || 'guarena');
+  // (el enlace para quedar con alguien, ?con=<código>, pasa al juego: al llegar, se va a su lado)
+  if (/^[a-z0-9]{8,16}$/.test(q.get('con') || '')) u.searchParams.set('con', q.get('con'));
   u.searchParams.set('desde', '388');
   if (q.get('sonido') === '0') u.searchParams.set('sonido', '0');
   // (en local, para las pruebas: el servidor del multijugador del juego, también en local)
@@ -214,8 +219,8 @@ function recorrido(st, tower) {
   return plan;
 }
 
-export function createPlay({ camera, canvas, tower, controls = null, onStart = () => {}, onFoto = () => {}, onExit = () => {}, onVolver = null }) {
-  const url = gameUrl();
+export function createPlay({ camera, canvas, tower, controls = null, onStart = () => {}, onFoto = () => {}, onExit = () => {}, onVolver = null, pueblo = '06060' }) {
+  const url = gameUrl(pueblo);
   const origin = new URL(url).origin;
   const tw = { x: tower?.x ?? -126.1, z: tower?.z ?? -97.0 };
   // aviso discreto (solo si la espera se alarga) y salida digna si el juego no llega
@@ -233,7 +238,7 @@ export function createPlay({ camera, canvas, tower, controls = null, onStart = (
   };
 
   // «Guareña, ahora»: quién está jugando, en un recuadro mientras se da la vuelta a la torre (js/ahora.js)
-  const ahora = montarAhora('06060');
+  const ahora = montarAhora(pueblo, JUEGOS[pueblo]);
   // el estado del juego (guarena.html lo empieza a apuntar antes de que llegue este código)
   const J = window.__j388 || (window.__j388 = { p: 0, descargado: false, obra: 0, listo: false, hola: false, aterriza: false });
   let iframe = J.iframe || null;
