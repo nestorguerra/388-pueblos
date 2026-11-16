@@ -2,6 +2,9 @@
 
 Solo usa la biblioteca estándar de Python 3.9+. Abierto a cualquiera, sin cuentas:
 - /ws?room=pueblo-<INE>   presencia en tiempo real por pueblo (posición, frases y emojis predefinidos).
+- /ws?room=juego-<INE>    el multijugador del juego de ese pueblo (Guareña, juego-06060): cada uno manda su estado y el
+                          servidor lo reenvía a los demás (ver «el juego», abajo; docs/multijugador.md en «388 Foto»).
+- /api/juego?pueblo=<INE> quién hay en el juego ahora: nombre, calle, sitio y qué hace.
 - /api/online             personas conectadas ahora, en total y por pueblo.
 - /api/votos              GET recuento por pueblo · POST {device, pueblo} (un voto por dispositivo).
 - /api/pasaporte          GET ?device= · POST {device, pueblo} (un sello por pueblo visitado).
@@ -33,7 +36,7 @@ from pagina import documento
 ROOT = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web"))
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 INE_RE = re.compile(r"^\d{5}$")
-ROOM_RE = re.compile(r"^pueblo-\d{5}$")
+ROOM_RE = re.compile(r"^(pueblo|juego)-\d{5}$")
 ALIAS_RE = re.compile(r"^[A-Za-zÁÉÍÓÚÑáéíóúñü]{2,12} \d{2}$")
 EMAIL_RE = re.compile(r"^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$")
 DEVICE_RE = re.compile(r"^[A-Za-z0-9_-]{12,64}$")
@@ -77,6 +80,7 @@ except OSError:
 
 # ---------------- salas ----------------
 rooms = {}  # room -> {peer_id: Client}
+room_t0 = {}  # room de juego -> cuándo entró el primero (ms): de ahí sacan todos la hora del juego
 
 
 class Client:
@@ -87,6 +91,7 @@ class Client:
         self.presence = {}
         self.tokens = 40.0
         self.last = time.monotonic()
+        self.dicho = 0.0
 
     def allow(self):
         now = time.monotonic()
@@ -117,6 +122,35 @@ def clean_presence(d):
         if num(d.get(k), 0, 1e14):
             out[k] = int(d[k])
     return out
+
+
+def clean_juego(d):
+    """El estado de alguien en el juego: solo campos conocidos y acotados (docs/multijugador.md en «388 Foto»)."""
+    out = {}
+    num = lambda v, lo, hi: isinstance(v, (int, float)) and not isinstance(v, bool) and lo <= v <= hi
+    for k in ("x", "y", "z"):
+        if num(d.get(k), -6000, 6000):
+            out[k] = round(float(d[k]), 2)
+    if num(d.get("r"), -720, 720):
+        out["r"] = round(float(d["r"]), 1)
+    if num(d.get("s"), 0, 4):
+        out["s"] = round(float(d["s"]), 2)
+    for k, lo, hi in (("a", 0, 31), ("m", 0, 15), ("k", -1, 999), ("l", -1, 99), ("c", 0, 7)):
+        if isinstance(d.get(k), int) and not isinstance(d.get(k), bool) and lo <= d[k] <= hi:
+            out[k] = d[k]
+    if isinstance(d.get("n"), str) and ALIAS_RE.match(d["n"]):
+        out["n"] = d["n"]
+    return out
+
+
+CTRL_RE = re.compile(r"[\x00-\x1f\x7f-\x9f\u200b-\u200f\u202a-\u202e\u2066-\u2069]")
+
+
+def clean_dicho(x):
+    """Lo que alguien dice en el juego: texto corto, sin caracteres de control (se pinta como texto, nunca como HTML)."""
+    if not isinstance(x, str):
+        return ""
+    return " ".join(CTRL_RE.sub(" ", x).split())[:140]
 
 
 def frame(text):
@@ -167,7 +201,8 @@ async def read_frame(reader):
 async def handle_ws(reader, writer, headers, query):
     room = (query.get("room") or [""])[0]
     key = headers.get("sec-websocket-key")
-    if not key or not ROOM_RE.match(room) or room[7:] not in PUEBLOS:
+    juego = room.startswith("juego-")
+    if not key or not ROOM_RE.match(room) or room.split("-", 1)[1] not in PUEBLOS:
         writer.write(b"HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\n\r\n")
         await writer.drain()
         return
@@ -180,9 +215,16 @@ async def handle_ws(reader, writer, headers, query):
                   f"Sec-WebSocket-Accept: {accept}\r\n\r\n").encode())
     await writer.drain()
     c = Client(writer, room)
+    if juego and not rooms.get(room):
+        room_t0[room] = int(time.time() * 1000)
     rooms.setdefault(room, {})[c.id] = c
-    await send(c, {"t": "room", "me": c.id, "peers": [{"id": o.id, "p": o.presence} for o in rooms[room].values() if o is not c]})
-    await broadcast(room, {"t": "join", "id": c.id}, skip=c)
+    if juego:
+        await send(c, {"t": "sala", "yo": c.id, "otros": [{"id": o.id, "p": o.presence} for o in rooms[room].values() if o is not c],
+                       "t0": room_t0.get(room), "ahora": int(time.time() * 1000)})
+        await broadcast(room, {"t": "entra", "id": c.id}, skip=c)
+    else:
+        await send(c, {"t": "room", "me": c.id, "peers": [{"id": o.id, "p": o.presence} for o in rooms[room].values() if o is not c]})
+        await broadcast(room, {"t": "join", "id": c.id}, skip=c)
     try:
         while True:
             op, data = await asyncio.wait_for(read_frame(reader), timeout=90)
@@ -198,16 +240,33 @@ async def handle_ws(reader, writer, headers, query):
                 msg = json.loads(data.decode("utf-8"))
             except (ValueError, UnicodeDecodeError):
                 continue
-            if isinstance(msg, dict) and msg.get("t") == "p":
+            if not isinstance(msg, dict):
+                continue
+            t = msg.get("t")
+            if not juego and t == "p":
                 c.presence.update(clean_presence(msg))
                 await broadcast(room, {"t": "p", "id": c.id, "p": c.presence}, skip=c)
+            elif juego and t == "j":
+                cambio = clean_juego(msg)
+                c.presence.update(cambio)
+                await broadcast(room, {"t": "j", "id": c.id, "p": cambio}, skip=c)
+            elif juego and t == "g" and isinstance(msg.get("k"), int) and not isinstance(msg.get("k"), bool) and 0 <= msg["k"] <= 15:
+                await broadcast(room, {"t": "g", "id": c.id, "k": msg["k"]}, skip=c)
+            elif juego and t == "di":
+                ahora = time.monotonic()
+                x = clean_dicho(msg.get("x"))
+                if x and ahora - c.dicho >= 1.5:
+                    c.dicho = ahora
+                    a = msg.get("a") if isinstance(msg.get("a"), str) and re.fullmatch(r"[0-9a-f]{12}", msg.get("a") or "") else None
+                    await broadcast(room, {"t": "di", "id": c.id, "x": x, **({"a": a} if a else {})})
     except (asyncio.IncompleteReadError, asyncio.TimeoutError, ConnectionError):
         pass
     finally:
         rooms.get(room, {}).pop(c.id, None)
         if not rooms.get(room):
             rooms.pop(room, None)
-        await broadcast(room, {"t": "bye", "id": c.id})
+            room_t0.pop(room, None)
+        await broadcast(room, {"t": "sale" if juego else "bye", "id": c.id})
 
 
 # ---------------- API ----------------
@@ -227,7 +286,16 @@ def rate_ok(ip, limit=30, window=60):
 
 def api(method, path, query, body, ip):
     if path == "/api/online":
-        return 200, {"total": sum(len(r) for r in rooms.values()), "pueblos": {k[7:]: len(v) for k, v in rooms.items()}}
+        return 200, {"total": sum(len(r) for k, r in rooms.items() if k.startswith("pueblo-")),
+                     "pueblos": {k[7:]: len(v) for k, v in rooms.items() if k.startswith("pueblo-")},
+                     "juego": {k[6:]: len(v) for k, v in rooms.items() if k.startswith("juego-")}}
+    if path == "/api/juego" and method == "GET":
+        pueblo = (query.get("pueblo") or [""])[0]
+        if not INE_RE.match(pueblo):
+            return 400, {"error": "pueblo no válido"}
+        sala = rooms.get("juego-" + pueblo, {})
+        gente = [{k: c.presence[k] for k in ("n", "k", "l", "m") if k in c.presence} for c in sala.values()]
+        return 200, {"humanos": len(sala), "gente": gente, "t0": room_t0.get("juego-" + pueblo)}
     if path == "/api/lista/recuento" and method == "GET":
         pueblos = {p: n for p, n in db.execute("SELECT pueblo, COUNT(*) FROM lista WHERE pueblo IS NOT NULL GROUP BY pueblo")}
         return 200, {"pueblos": pueblos, "total": db.execute("SELECT COUNT(*) FROM lista").fetchone()[0]}
