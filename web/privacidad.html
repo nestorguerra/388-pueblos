@@ -60,12 +60,25 @@ a { color: var(--sodio-2); }
   </ul>
   <p>La base legal es tu consentimiento, que das al marcar la casilla del formulario y que puedes retirar cuando quieras.</p>
 
+  <h2>En el juego</h2>
+  <p>Para jugar no hace falta cuenta ni email. Esto es lo que pasa con tus datos mientras juegas:</p>
+  <ul>
+    <li><b>Jugar con los demás:</b> tu juego manda a nuestro servidor tu nombre de jugador (uno al azar o el que elijas, con dos cifras), dónde estás dentro del pueblo del juego, qué haces y, si lo usas, cómo es tu personaje del editor. El servidor se lo pasa a quienes juegan en ese momento y lo olvida cuando sales: no lo guarda. En la web se ve cuántas personas juegan y en qué calle del juego está cada una.</li>
+    <li><b>Lo que escribes a otros jugadores</b> les sale en un bocadillo en ese momento y no lo guardamos. No escribas datos personales tuyos ni de nadie: cualquiera que esté jugando puede leerlo.</li>
+    <li><b>Silenciar y denunciar:</b> tu juego crea un número al azar para tu aparato; si te denuncian, ese número se queda 15 minutos sin poder hablar. No está ligado a tu nombre ni a tu email. El servidor apunta en su registro técnico cada denuncia, con el nombre de jugador, para poder revisarla.</li>
+    <li><b>Quedar con alguien:</b> el enlace lleva un código al azar. Nuestro servidor lo usa mientras juegas para poner a tu lado a quien lo abra, y no se lo pasa a nadie.</li>
+    <li><b>Hablar con los vecinos del juego:</b> lo que les escribes va a nuestro servidor y, de ahí, a OpenAI (en EE. UU.), que contesta como el vecino. Le pedimos que no lo guarde. Si nuestro servidor no puede contestar, en el ordenador puede contestar una IA que funciona dentro de tu navegador: la primera vez se baja de Hugging Face (que recibe tu IP) y, desde entonces, lo que escribes no sale de tu aparato. Si pones tu propia clave de OpenAI, lo que escribes va directamente a OpenAI con tu clave.</li>
+    <li><b>El tiempo que hace:</b> el juego pide a Open-Meteo el tiempo del pueblo. Solo se manda la posición del pueblo; Open-Meteo recibe tu IP, como cualquier web.</li>
+    <li><b>En tu navegador</b> (almacenamiento local, no viaja a ningún servidor): tu nombre de jugador, el sitio donde lo dejaste (para volver allí), tu personaje del editor, a quién has silenciado, tu código para quedar, el número de tu aparato y, si la pones, tu clave de OpenAI. Se borra al borrar los datos de este sitio en tu navegador.</li>
+  </ul>
+  <p>Lo del juego no se basa en tu consentimiento, sino en que es lo necesario para darte el juego que usas y, en lo de denunciar y silenciar, en nuestro interés legítimo en que se pueda jugar con respeto.</p>
+
   <h2>Menores</h2>
-  <p>Si tienes menos de 14 años, necesitas que te apunte tu madre, tu padre o tu tutor legal (artículo 7 de la Ley Orgánica 3/2018).</p>
+  <p>Si tienes menos de 14 años, necesitas que te apunte tu madre, tu padre o tu tutor legal (artículo 7 de la Ley Orgánica 3/2018). En el juego se habla con otras personas que no conoces: si tienes menos de 14 años, juega con su permiso.</p>
 
   <h2>Dónde se guardan</h2>
-  <p>La lista de espera y los votos se guardan en una hoja de cálculo privada de Google (Google Workspace) o en nuestro servidor, alojado en Render. Google y Render actúan como encargados del tratamiento y pueden tratar datos fuera del Espacio Económico Europeo con las garantías del Marco de Privacidad de Datos UE-EE. UU.</p>
-  <p>Las tipografías y algunas librerías se cargan desde jsDelivr y cdnjs, y el juego de Guareña se sirve desde GitHub Pages; esos servicios reciben tu dirección IP al descargarlos, como cualquier web.</p>
+  <p>La lista de espera y los votos se guardan en nuestro servidor, alojado en Render, y el juego habla con ese mismo servidor. Render (con la red de Cloudflare delante) y OpenAI, para lo que se escribe a los vecinos del juego, actúan como encargados del tratamiento y pueden tratar datos fuera del Espacio Económico Europeo con las garantías del Marco de Privacidad de Datos UE-EE. UU.</p>
+  <p>Las tipografías y algunas librerías se cargan desde jsDelivr y cdnjs, y el juego de Guareña se sirve desde GitHub Pages; esos servicios reciben tu dirección IP al descargarlos, como cualquier web. No usamos ningún servicio de Google.</p>
 
   <h2>Cuánto tiempo</h2>
   <p>Hasta que nos pidas borrarlos o el proyecto deje de existir. Si te das de baja, borramos tu email de la lista.</p>
@@ -73,7 +86,9 @@ a { color: var(--sodio-2); }
   <h2>Tus derechos</h2>
   <p>Puedes pedir el acceso, la rectificación o la supresión de tus datos, la limitación u oposición al tratamiento y su portabilidad, escribiendo al contacto de arriba. Si crees que no los hemos atendido bien, puedes reclamar ante la Agencia Española de Protección de Datos (<a href="https://www.aepd.es" rel="noopener">aepd.es</a>).</p>
 
-  <p class="muted" style="margin-top:3rem">Última actualización: noviembre de 2026.</p>
+  <p>Las normas para jugar con los demás y quién está detrás de 388 Pueblos, en el <a href="legal.html">aviso legal</a>.</p>
+
+  <p class="muted" style="margin-top:3rem">Última actualización: 17 de noviembre de 2026.</p>
 </main>
 <script type="module">
 import { CONTACTO } from './js/config.js';

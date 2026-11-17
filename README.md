@@ -50,14 +50,13 @@ web/                      La web, sin paso de compilación
 ├── js/town-page.js       Página de pueblo: nidos, lugares, luz, pasaporte y entrada al juego
 ├── js/jugar.js           Vuelo de la cámara hasta el juego de Guareña: la torre, el vídeo (iframe + mensajes)
 ├── js/lista.js           Lista de espera: «apúntate y entra»
-├── js/backend.js         Dónde se guardan los datos (Google Sheets o servidor propio)
+├── js/backend.js         Dónde se guardan los datos (el servidor propio)
 ├── js/contenido.js       Contenido de la comunidad por pueblo (data/contenido/<INE>.json)
-├── js/config.js          Ajustes de despliegue (URL de la hoja, contacto)
+├── js/config.js          Ajustes de despliegue (contacto, proveedor, redes)
 └── data/                 municipios.json, guarena.json, contexto.json, pueblos/<INE>.json, contenido/
 server/servidor.py        Servidor propio (solo biblioteca estándar): web + API + SQLite
 server/pagina.py          Convierte las páginas en documentos completos (servidor y web estática)
 tools/build_web.py        Empaqueta la web estática para el CDN (dist/web)
-tools/sheets/Codigo.gs    Lista de espera y votos en Google Sheets
 tools/logo.py             Logo «388», favicon, iconos e imagen para redes
 tools/*.py                Generación de los datos de los 388 pueblos
 render.yaml               Despliegue en Render
@@ -87,16 +86,13 @@ acepta en localhost).
 2. **`388-pueblos`, el servidor propio**, con la API de votos y lista de espera. En el plan gratuito se duerme tras
    unos minutos sin visitas (la web lo despierta al cargar) y su base de datos es temporal.
 
-### Lista de espera y votos en Google Sheets
+### Lista de espera y votos
 
-Para que la lista de espera no se pierda, se guarda en una hoja de cálculo:
-
-1. Crea una hoja nueva en Google Drive. Extensiones → Apps Script, pega `tools/sheets/Codigo.gs` y guarda.
-2. Implementar → Nueva implementación → Aplicación web. Ejecutar como: yo. Acceso: cualquier usuario. Autoriza.
-3. Copia la URL que termina en `/exec` en `SHEETS_URL`, en `web/js/config.js`, y despliega.
-
-La hoja crea sola las pestañas «Lista» (una fila por email) y «Votos» (una por dispositivo). Desde la web solo se
-puede escribir y leer el recuento de votos: los emails nunca salen de la hoja.
+Se guardan en la base de datos del servidor propio (SQLite). En el plan gratuito de Render el disco es temporal: se
+borra al publicar, al reiniciar y cada vez que el servidor se duerme, y la lista se pierde. Para que no se pierda hace
+falta un plan de pago con disco persistente: en `render.yaml`, `plan: starter`, un `disk` (por ejemplo, `mountPath:
+/var/data`, 1 GB) y `--db /var/data/388pueblos.sqlite3` en `startCommand`. Exportarla: `python3 server/servidor.py --db
+<ruta> --export-lista` en la consola del servicio. (Sin Google: nada del producto pasa por servicios de Google.)
 
 ### API del servidor propio
 
@@ -106,7 +102,8 @@ puede escribir y leer el recuento de votos: los emails nunca salen de la hoja.
 | `/api/lista` | POST alta en la lista de espera (exige edad ≥ 14 y consentimiento). No se puede leer por la API |
 | `/api/pasaporte` | Sellos por dispositivo (la web ya los guarda en el propio dispositivo) |
 | `/api/online` | Estado del servicio |
-| `/api/vecinos` | POST lo que dice un vecino del juego de Guareña, con GPT-5.6 Luna. La clave de OpenAI va en la variable `OPENAI_API_KEY` del servicio, en el panel de Render (nunca en el código); sin ella responde 503 y el juego usa su IA del navegador. Topes: 12 charlas por minuto y 150 al día por IP, 4.000 al día en total |
+| `/api/yo` | La IP que el servidor ve para quien pregunta y de qué cabecera la saca (para comprobar que no se puede falsificar) |
+| `/api/vecinos` | POST lo que dice un vecino del juego de Guareña, con GPT-5.6 Luna. La clave de OpenAI va en la variable `OPENAI_API_KEY` del servicio, en el panel de Render (nunca en el código); sin ella responde 503 y el juego usa su IA del navegador. Solo desde las páginas del juego (cabecera `Origin`). Topes: 12 charlas por minuto y 150 al día por IP (la que da Cloudflare, que no se puede falsificar), 4.000 al día en total (`OPENAI_TOPE_DIA`) |
 
 Exportar la lista: `python3 server/servidor.py --export-lista --db <ruta>`.
 

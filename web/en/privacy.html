@@ -60,12 +60,25 @@ a { color: var(--sodio-2); }
   </ul>
   <p>The legal basis is your consent, which you give by ticking the box on the form and which you can withdraw at any time.</p>
 
+  <h2>In the game</h2>
+  <p>You do not need an account or an email to play. This is what happens to your data while you play:</p>
+  <ul>
+    <li><b>Playing with others:</b> your game sends our server your player name (a random one or one you choose, with two digits), where you are inside the game town, what you are doing and, if you use one, what your character from the editor looks like. The server passes this on to whoever is playing at that moment and forgets it when you leave: it does not store it. The website shows how many people are playing and which street of the game each one is in.</li>
+    <li><b>What you write to other players</b> appears in a speech bubble at that moment and we do not store it. Do not write personal data about yourself or anyone else: anyone who is playing can read it.</li>
+    <li><b>Muting and reporting:</b> your game creates a random number for your device; if you are reported, that number cannot speak for 15 minutes. It is not linked to your name or your email. The server writes each report, with the player name, in its technical log so it can be reviewed.</li>
+    <li><b>Meeting someone:</b> the link carries a random code. Our server uses it while you play to place whoever opens it next to you, and does not pass it on to anyone.</li>
+    <li><b>Talking to the townspeople in the game:</b> what you write to them goes to our server and, from there, to OpenAI (in the US), which answers as the townsperson. We ask it not to store it. If our server cannot answer, on a computer an AI that runs inside your browser may answer instead: the first time it is downloaded from Hugging Face (which receives your IP) and, from then on, what you write does not leave your device. If you enter your own OpenAI key, what you write goes straight to OpenAI with your key.</li>
+    <li><b>The weather:</b> the game asks Open-Meteo for the weather in the town. Only the town's position is sent; Open-Meteo receives your IP, as any website does.</li>
+    <li><b>In your browser</b> (local storage, never sent to any server): your player name, the place where you left off (to go back there), your character from the editor, who you have muted, your code for meeting someone, your device number and, if you enter it, your OpenAI key. It is deleted when you clear this site's data in your browser.</li>
+  </ul>
+  <p>The game's data is not based on your consent but on it being necessary to give you the game you are using and, for reporting and muting, on our legitimate interest in people being able to play respectfully.</p>
+
   <h2>Minors</h2>
-  <p>If you are under 14, your mother, father or legal guardian must sign you up (article 7 of Spanish Organic Law 3/2018 on data protection, LOPDGDD).</p>
+  <p>If you are under 14, your mother, father or legal guardian must sign you up (article 7 of Spanish Organic Law 3/2018 on data protection, LOPDGDD). In the game you talk to people you do not know: if you are under 14, play with their permission.</p>
 
   <h2>Where it is stored</h2>
-  <p>The waiting list and the votes are stored in a private Google spreadsheet (Google Workspace) or on our server, hosted on Render. Google and Render act as data processors and may process data outside the European Economic Area under the safeguards of the EU-US Data Privacy Framework.</p>
-  <p>Fonts and some libraries are loaded from jsDelivr and cdnjs, and the Guareña game is served from GitHub Pages; those services receive your IP address when they are downloaded, as with any website.</p>
+  <p>The waiting list and the votes are stored on our server, hosted on Render, and the game talks to that same server. Render (with the Cloudflare network in front of it) and OpenAI, for what is written to the townspeople in the game, act as data processors and may process data outside the European Economic Area under the safeguards of the EU-US Data Privacy Framework.</p>
+  <p>Fonts and some libraries are loaded from jsDelivr and cdnjs, and the Guareña game is served from GitHub Pages; those services receive your IP address when they are downloaded, as with any website. We do not use any Google service.</p>
 
   <h2>How long we keep it</h2>
   <p>Until you ask us to delete it or the project ceases to exist. If you unsubscribe, we delete your email from the list.</p>
@@ -73,7 +86,9 @@ a { color: var(--sodio-2); }
   <h2>Your rights</h2>
   <p>You can request access to, rectification or erasure of your data, restriction of or objection to its processing, and its portability, by writing to the contact above. If you believe we have not dealt with them properly, you can lodge a complaint with the Spanish Data Protection Agency (AEPD) (<a href="https://www.aepd.es" rel="noopener">aepd.es</a>).</p>
 
-  <p class="muted" style="margin-top:3rem">Last updated: November 2026.</p>
+  <p>The rules for playing with others and who is behind 388 Pueblos are in the <a href="legal.html">legal notice</a>.</p>
+
+  <p class="muted" style="margin-top:3rem">Last updated: 17 November 2026.</p>
 </main>
 <script type="module">
 import { CONTACTO } from '../js/config.js';

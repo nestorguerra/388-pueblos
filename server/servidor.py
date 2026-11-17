@@ -7,6 +7,8 @@ Solo usa la biblioteca estándar de Python 3.9+. Abierto a cualquiera, sin cuent
 - /api/juego?pueblo=<INE> quién hay en el juego ahora: nombre, calle, sitio y qué hace, y cuántos vecinos hay en la calle;
                           con &con=<código>, dónde está quien tiene ese código para quedar (el enlace «a mi lado»).
 - /api/online             personas conectadas ahora, en total y por pueblo.
+- /api/yo                 la IP que este servidor ve para quien pregunta y de qué cabecera la saca (para comprobar,
+                          tras publicar, que no se puede falsificar: ver ip_cliente).
 - /api/votos              GET recuento por pueblo · POST {device, pueblo} (un voto por dispositivo).
 - /api/pasaporte          GET ?device= · POST {device, pueblo} (un sello por pueblo visitado).
 - /api/lista              POST {email, alias, pueblo, perfil, origen, edad14, acepto} (nunca se puede leer por la API).
@@ -44,6 +46,24 @@ DEVICE_RE = re.compile(r"^[A-Za-z0-9_-]{12,64}$")
 MAX_WS = 4096
 MAX_BODY = 4096
 MAX_BODY_VECINOS = 16384
+MAX_WS_IP = 20  # conexiones a la vez desde una misma IP (una clase entera en la wifi del colegio cabe; una inundación, no)
+LENTO = 512 * 1024  # bytes pendientes de mandar a alguien: con más, es que no lee, y se le cierra para que no frene a nadie
+IP_RE = re.compile(r"^[0-9A-Fa-f:.]{3,45}$")
+
+
+def ip_cliente(headers, peer):
+    """La IP de quien llama, y de dónde se ha sacado. En Render hay delante Cloudflare, que pone CF-Connecting-IP y
+    True-Client-IP con la IP que ve (quien llama no puede cambiarlas: Cloudflare las escribe encima). X-Forwarded-For, en
+    cambio, la puede empezar el propio que llama (el proxy de Render añade, no reemplaza): con ella cualquiera se saltaba
+    los topes por IP. Solo se usa si no hay las otras (en local no hay ninguna: la de la conexión)."""
+    for k in ("cf-connecting-ip", "true-client-ip"):
+        v = headers.get(k, "").strip()
+        if IP_RE.match(v):
+            return v, k
+    v = headers.get("x-forwarded-for", "").split(",")[0].strip()
+    if IP_RE.match(v):
+        return v, "x-forwarded-for"
+    return peer, "conexion"
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--port", type=int, default=int(os.environ.get("PORT", "8388")))
@@ -85,13 +105,14 @@ room_t0 = {}  # room de juego -> cuándo entró el primero (ms): de ahí sacan t
 room_orden = {}  # room de juego -> cuántos han entrado desde que se abrió (el orden de llegada decide quién mueve a los vecinos)
 room_coches = {}  # room de juego -> {coche: [x, y, z, rumbo]}: los coches que alguien ha dejado en otro sitio
 callados = {}  # aparato (o ip) -> hasta cuándo (time.time()) no se reenvía lo que dice: le han denunciado
+conex_ip = {}  # ip -> cuántas conexiones tiene abiertas ahora (MAX_WS_IP)
 
 
 class Client:
     def __init__(self, writer, room, ip="?"):
         self.writer = writer
         self.room = room
-        self.ip = ip
+        self.ip = ip  # (a quién se calla si le denuncian: su aparato o, si no lo dice, su IP)
         self.id = secrets.token_hex(6)
         self.presence = {}
         self.pj = None  # (en el juego: su personaje del editor, o nada si lleva la chica de serie)
@@ -226,18 +247,29 @@ def frame(text):
     return head + data
 
 
-async def send(c, obj):
+def escribir(c, data):
+    """Manda sin esperar a que llegue: antes se esperaba a cada uno por turno y alguien con mala conexión (o que no lee)
+    frenaba a toda su sala. Si se le acumula demasiado sin mandar, se le cierra (su bucle lo saca de la sala)."""
     try:
-        c.writer.write(frame(json.dumps(obj, separators=(",", ":"), ensure_ascii=False)))
-        await c.writer.drain()
-    except (ConnectionError, RuntimeError):
+        if c.writer.is_closing():
+            return
+        c.writer.write(data)
+        if c.writer.transport.get_write_buffer_size() > LENTO:
+            print(f"cerrada una conexión lenta en {c.room} ({c.presence.get('n', c.id)})", flush=True)
+            c.writer.close()
+    except (ConnectionError, RuntimeError, AttributeError):
         pass
 
 
+async def send(c, obj):
+    escribir(c, frame(json.dumps(obj, separators=(",", ":"), ensure_ascii=False)))
+
+
 async def broadcast(room, obj, skip=None):
+    data = frame(json.dumps(obj, separators=(",", ":"), ensure_ascii=False))  # (una vez para todos, no una por cada uno)
     for c in list(rooms.get(room, {}).values()):
         if c is not skip:
-            await send(c, obj)
+            escribir(c, data)
 
 
 async def read_frame(reader):
@@ -271,6 +303,10 @@ async def handle_ws(reader, writer, headers, query, ip="?"):
         writer.write(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n")
         await writer.drain()
         return
+    if conex_ip.get(ip, 0) >= MAX_WS_IP:
+        writer.write(b"HTTP/1.1 429 Too Many Requests\r\nContent-Length: 0\r\n\r\n")
+        await writer.drain()
+        return
     accept = base64.b64encode(hashlib.sha1((key + GUID).encode()).digest()).decode()
     writer.write(("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n"
                   f"Sec-WebSocket-Accept: {accept}\r\n\r\n").encode())
@@ -283,6 +319,7 @@ async def handle_ws(reader, writer, headers, query, ip="?"):
         room_orden[room] = 0
         room_coches[room] = {}
     rooms.setdefault(room, {})[c.id] = c
+    conex_ip[ip] = conex_ip.get(ip, 0) + 1
     if juego:
         room_orden[room] = room_orden.get(room, 0) + 1
         c.orden = room_orden[room]
@@ -381,6 +418,10 @@ async def handle_ws(reader, writer, headers, query, ip="?"):
         pass
     finally:
         rooms.get(room, {}).pop(c.id, None)
+        if conex_ip.get(ip, 0) <= 1:
+            conex_ip.pop(ip, None)
+        else:
+            conex_ip[ip] -= 1
         p = c.presence
         if juego and p.get("m") == 7 and p.get("co") and all(k in p for k in ("x", "y", "z", "r")):
             # (se ha ido conduciendo: el coche se queda donde estaba, con el suelo y el rumbo del coche aparcado)
@@ -403,6 +444,9 @@ writes = {}  # ip -> [timestamps]
 
 def rate_ok(ip, limit=30, window=60):
     now = time.time()
+    if len(writes) > 5000:  # (que no crezca sin fin: fuera las IP que llevan un rato sin escribir)
+        for k in [k for k, v in writes.items() if not v or now - v[-1] >= window]:
+            writes.pop(k, None)
     q = [t for t in writes.get(ip, []) if now - t < window]
     if len(q) >= limit:
         writes[ip] = q
@@ -412,7 +456,9 @@ def rate_ok(ip, limit=30, window=60):
     return True
 
 
-def api(method, path, query, body, ip):
+def api(method, path, query, body, ip, fuente="conexion"):
+    if path == "/api/yo":
+        return 200, {"ip": ip, "de": fuente}
     if path == "/api/online":
         return 200, {"total": sum(len(r) for k, r in rooms.items() if k.startswith("pueblo-")),
                      "pueblos": {k[7:]: len(v) for k, v in rooms.items() if k.startswith("pueblo-")},
@@ -493,12 +539,20 @@ def api(method, path, query, body, ip):
 # cualquiera puede leer); sin ella responde 503 y el juego sigue con su IA del navegador.
 # Para que no sirva de GPT gratis para otra cosa: las instrucciones las monta este servidor con los datos del vecino (el
 # navegador no manda texto libre de sistema), la respuesta va en un esquema fijo (lo que dice, de 280 letras como mucho, y
-# lo que hace), corta, y con topes: 12 charlas por minuto y 150 al día por cada IP, y 4.000 al día en total.
+# lo que hace), corta, y con topes: 12 charlas por minuto y 150 al día por cada IP (la de ip_cliente: la que no se puede
+# falsificar), y 4.000 al día en total (OPENAI_TOPE_DIA). Solo desde las páginas del juego: el navegador siempre dice de
+# qué página viene (Origin) y aquí se pide que sea una de ellas, igual entera (antes valía cualquiera que empezase igual, y
+# sin Origin —un programa cualquiera— también).
 # OPENAI_MODELO (gpt-5.6-luna) y OPENAI_ESFUERZO (high) los cambian; OPENAI_URL, para las pruebas.
 VEC_HACE = ["nada", "saludar", "acompanar", "irse", "sentarse"]
 VEC_TIPOS = {"mayor", "adulto", "joven", "nino"}
 vec_ip, vec_dia = {}, {"dia": "", "n": 0}
-VEC_ORIGENES = ("https://nestorguerra.github.io", "https://pueblos388.onrender.com", "http://127.0.0.1", "http://localhost")
+VEC_ORIGENES = ("https://nestorguerra.github.io", "https://pueblos388.onrender.com")
+VEC_LOCALES = ("http://127.0.0.1", "http://localhost")  # (en local, con cualquier puerto)
+
+
+def vec_origen_ok(o):
+    return o in VEC_ORIGENES or any(o == l or (o.startswith(l + ":") and o[len(l) + 1:].isdigit()) for l in VEC_LOCALES)
 
 
 def vec_texto(v, n):
@@ -538,7 +592,7 @@ def vec_llamar(clave, cuerpo):
 async def vecinos(method, body, ip, origen):
     if method != "POST":
         return 405, {"error": "solo POST"}
-    if origen and not origen.startswith(VEC_ORIGENES):
+    if not vec_origen_ok(origen):
         return 403, {"error": "origen no permitido"}
     clave = os.environ.get("OPENAI_API_KEY", "").strip()
     if not clave:
@@ -548,7 +602,11 @@ async def vecinos(method, body, ip, origen):
         vec_dia.update(dia=hoy, n=0); vec_ip.clear()
     q = vec_ip.setdefault(ip, {"min": [], "dia": 0})
     q["min"] = [t for t in q["min"] if now - t < 60]
-    if len(q["min"]) >= 12 or q["dia"] >= 150 or vec_dia["n"] >= 4000:
+    try:
+        tope_dia = int(os.environ.get("OPENAI_TOPE_DIA", "4000"))
+    except ValueError:
+        tope_dia = 4000
+    if len(q["min"]) >= 12 or q["dia"] >= 150 or vec_dia["n"] >= tope_dia:
         return 429, {"error": "los vecinos están cansados de hablar, prueba luego"}
     try:
         d = json.loads(body.decode("utf-8") or "{}"); assert isinstance(d, dict)
@@ -618,9 +676,11 @@ async def handle(reader, writer):
             h = await asyncio.wait_for(reader.readline(), timeout=20)
             if h in (b"\r\n", b"\n", b""):
                 break
+            if len(headers) >= 100:  # (nadie de verdad manda tantas cabeceras)
+                return
             k, _, v = h.decode("latin-1").partition(":")
             headers[k.strip().lower()] = v.strip()
-        ip = headers.get("x-forwarded-for", ip).split(",")[0].strip()
+        ip, fuente = ip_cliente(headers, ip)
         url = urllib.parse.urlsplit(target)
         query = urllib.parse.parse_qs(url.query)
         if url.path == "/ws" and headers.get("upgrade", "").lower() == "websocket":
@@ -639,7 +699,7 @@ async def handle(reader, writer):
                 status, obj = await vecinos(method, body, ip, headers.get("origin", ""))
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
             elif url.path.startswith("/api/"):
-                status, obj = api(method, url.path, query, body, ip)
+                status, obj = api(method, url.path, query, body, ip, fuente)
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
             elif method in ("GET", "HEAD") and args.site and (url.path.endswith("/") or url.path.endswith(".html")):
                 # la web vive en el CDN: las páginas de aquí llevan allí (la API sigue aquí)
