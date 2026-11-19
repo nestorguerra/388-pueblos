@@ -142,7 +142,13 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
   governor.onChange = resize; // (el grosor de los puntos del mapa depende de la resolución)
 
   const UI_SEL = '.box, .sheet, .nav, .tip, .hud, a, button, input, label, .step';
+  // quitar la ficha del pueblo que se señala (al salir del mapa, al dejar de verse o con el dedo)
+  const soltarHover = () => { state.pointer.inside = false; if (state.hover >= 0) { state.hover = -1; onHover(-1); } };
   addEventListener('pointermove', (e) => {
+    // Con el dedo no hay «pasar por encima»: el dedo que se mueve está bajando la página y, al levantarlo, no llega
+    // ningún pointerleave, así que la ficha se quedaba puesta donde estuvo, también al seguir bajando (19-11-2026, en un
+    // iPhone desde WhatsApp). Con el dedo, tocar un pueblo abre su ficha grande (el clic de abajo) y no hay ficha flotante.
+    if (e.pointerType === 'touch') { soltarHover(); return; }
     const r = canvas.getBoundingClientRect();
     state.pointer.x = e.clientX - r.left;
     state.pointer.y = e.clientY - r.top;
@@ -151,11 +157,14 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
     state.pointer.inside = true;
     state.pointer.overUI = !!(e.target.closest && e.target.closest(UI_SEL));
   }, { passive: true });
-  document.addEventListener('pointerleave', () => { state.pointer.inside = false; if (state.hover >= 0) { state.hover = -1; onHover(-1); } });
+  document.addEventListener('pointerleave', soltarHover);
   addEventListener('click', (e) => {
-    if (state.mode !== 'map' || !state.visible) return;
+    if (state.mode !== 'map' || !state.visible || dive || pilot) return;
     if (e.target.closest && e.target.closest(UI_SEL)) return;
-    if (state.hover >= 0) onPick(state.hover);
+    // el pueblo que hay donde se ha hecho clic (con el dedo no hay hover que mirar; con el ratón es el mismo)
+    const r = canvas.getBoundingClientRect();
+    const i = pickAt(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    if (i >= 0) onPick(i);
   });
 
   const ray = new THREE.Raycaster();
@@ -344,9 +353,9 @@ export async function createLandingWorld({ canvas, labelLayer, base = '.', onPro
       if (state.mode === m) return;
       state.mode = m;
       flight = null;
-      if (m !== 'map') state.hover = -1;
+      if (m !== 'map') soltarHover(); // (antes se olvidaba el pueblo pero la ficha seguía en pantalla)
     },
-    setVisible(v) { state.visible = v; if (v) clock.getDelta(); },
+    setVisible(v) { state.visible = v; if (v) clock.getDelta(); else soltarHover(); },
     setDataMode(m) { state.dataMode = m; },
     setFilter(fn) { map.setDim(fn); },
     setVotes(counts) { map.setVotes(counts); },

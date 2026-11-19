@@ -487,16 +487,25 @@ function muniFacts(m) {
   };
 }
 
+let tipW = 240, tipH = 170;
 function onHover(i, ptr, move) {
   if (i < 0 || !munis[i]) { tip.style.opacity = 0; return; }
   const m = munis[i];
   if (!move) {
     const f = muniFacts(m);
     tip.innerHTML = `<h4>${m.n}</h4><div class="row"><span>${m.id} · ${f.prov}</span><b>${t(m.id === HOME ? 'tip.despierto' : 'tip.auto')}</b></div><div class="row"><span>${t('tip.hab')}</span><b>${f.pop}</b></div><div class="row"><span>${t('tip.desde')}</span><b>${f.chg}</b></div><div class="row"><span>${t('tip.alt')}</span><b>${f.alt}</b></div>${votes[m.id] ? `<div class="row"><span>${t('tip.votos')}</span><b>${votes[m.id]}</b></div>` : ''}`;
+    // su tamaño de verdad («Gemelo automático» la ensancha): antes se suponían 240 px y se salía por la derecha
+    tipW = tip.offsetWidth; tipH = tip.offsetHeight;
   }
   tip.style.opacity = 1;
   const r = canvas.getBoundingClientRect();
-  const x = Math.min(innerWidth - 240, ptr.x + r.left + 18), y = Math.min(innerHeight - 170, ptr.y + r.top + 18);
+  const px = ptr.x + r.left, py = ptr.y + r.top;
+  // abajo a la derecha del puntero; si no cabe, al otro lado; y siempre dentro de la pantalla
+  let x = px + 18, y = py + 18;
+  if (x + tipW > innerWidth - 8) x = px - 18 - tipW;
+  if (y + tipH > innerHeight - 8) y = py - 18 - tipH;
+  x = Math.max(8, Math.min(innerWidth - tipW - 8, x));
+  y = Math.max(8, Math.min(innerHeight - tipH - 8, y));
   tip.style.transform = `translate(${x}px, ${y}px)`;
 }
 
