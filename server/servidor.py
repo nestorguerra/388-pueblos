@@ -24,6 +24,8 @@ import argparse
 import asyncio
 import base64
 import hashlib
+import html
+import io
 import json
 import mimetypes
 import os
@@ -34,6 +36,7 @@ import struct
 import time
 import urllib.parse
 import urllib.request
+import zipfile
 
 from pagina import documento
 
@@ -678,7 +681,160 @@ def op_destinos():
     w = os.environ.get("DISCORD_OPINIONES", "").strip()
     if w.startswith("https://") or w.startswith("http://127.0.0.1:"):  # (en local, para las pruebas)
         d["discord"] = w
+    if op_bd_hay():
+        d["base"] = True
     return d
+
+
+# Guardadas, para verlas y descargarlas (22-11-2026; el usuario no quiso dar de alta un servicio de correo): en la base de
+# datos Postgres de Render (DATABASE_URL; la gratuita da 1 GB, caduca a los 30 días y no tiene copias: hay que
+# descargarlas) o, en las pruebas, en un archivo SQLite (OPINIONES_SQLITE). Se ven en una página privada,
+# /api/opiniones?clave=…, con la clave de OPINIONES_CLAVE (la genera Render; está en su panel), y se bajan en un .zip.
+OP_TOPE_BASE = 850 * 1024 * 1024
+OP_TOPE_ZIP = 30 * 1024 * 1024  # (el .zip se arma en memoria: por partes de 30 MB, o el proceso se queda sin ella)
+op_bd_hecha = []
+
+
+def op_bd_hay():
+    u = os.environ.get("DATABASE_URL", "").strip()
+    if u.startswith(("postgres://", "postgresql://")):
+        try:
+            import pg8000.dbapi  # noqa: F401
+            return True
+        except ImportError:
+            return False
+    return bool(os.environ.get("OPINIONES_SQLITE", "").strip())
+
+
+def op_bd():
+    """(conexión, marca de parámetro, si es Postgres), con la tabla hecha"""
+    u = os.environ.get("DATABASE_URL", "").strip()
+    if u.startswith(("postgres://", "postgresql://")):
+        import pg8000.dbapi
+        s = urllib.parse.urlsplit(u)
+        c = pg8000.dbapi.connect(user=urllib.parse.unquote(s.username or ""), password=urllib.parse.unquote(s.password or ""), host=s.hostname,
+                                 port=s.port or 5432, database=s.path.lstrip("/"), timeout=15)
+        m, pg = "%s", True
+    else:
+        c = sqlite3.connect(os.environ["OPINIONES_SQLITE"].strip(), timeout=15); m, pg = "?", False
+    if op_bd_hecha:
+        return c, m, pg
+    cur = c.cursor()
+    cur.execute("CREATE TABLE IF NOT EXISTS opiniones (id " + ("SERIAL PRIMARY KEY" if pg else "INTEGER PRIMARY KEY AUTOINCREMENT") + ", cuando TEXT, nombre TEXT, "
+                "texto TEXT, dicho TEXT, nota TEXT, sitio TEXT, tecnico TEXT, captura " + ("BYTEA" if pg else "BLOB") + ", audio " + ("BYTEA" if pg else "BLOB") + ", audio_tipo TEXT)")
+    c.commit(); op_bd_hecha.append(1)
+    return c, m, pg
+
+
+def op_guardar(d, dicho, nota, captura, audio, tipo_audio):
+    c, m, _ = op_bd()
+    try:
+        cur = c.cursor()
+        cur.execute("SELECT COALESCE(SUM(COALESCE(LENGTH(captura), 0) + COALESCE(LENGTH(audio), 0)), 0) FROM opiniones")
+        if int(cur.fetchone()[0] or 0) > OP_TOPE_BASE:
+            raise RuntimeError("la base de opiniones está llena")
+        cur.execute(f"INSERT INTO opiniones (cuando, nombre, texto, dicho, nota, sitio, tecnico, captura, audio, audio_tipo) VALUES ({', '.join([m] * 10)})",
+                    (time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime()), d["nombre"], d["texto"], dicho, nota,
+                     f"{d['escena'] or 'juego'} · x {d['x']}, z {d['z']} · {d['hora']}", f"{d['pantalla']} · {d['gpu']} · {d['navegador']}",
+                     captura or None, audio or None, tipo_audio.split(";")[0] if audio else ""))
+        c.commit()
+    finally:
+        c.close()
+
+
+op_malas = {}
+
+
+def op_admin(method, path, query, ip):
+    """la página privada y sus descargas: (estado, cuerpo, tipo). Con la clave mal, 403 (y tras 10 fallos en una hora, 429)"""
+    texto = lambda s, st=200: (st, s.encode("utf-8"), "text/plain; charset=utf-8")
+    clave = os.environ.get("OPINIONES_CLAVE", "").strip(); dada = (query.get("clave") or [""])[0]
+    now = time.time(); k = op_quien(ip); malas = [x for x in op_malas.get(k, []) if now - x < 3600]
+    if len(op_malas) > 2000:  # (que no crezca sin fin)
+        for q_ in [q_ for q_, v_ in op_malas.items() if not v_ or now - v_[-1] > 3600]:
+            op_malas.pop(q_, None)
+    if len(malas) >= 10:
+        return texto("Demasiados intentos. Prueba dentro de una hora.", 429)
+    # (la clave que genera Render es base64 y puede llevar «+», que en una dirección se lee como espacio)
+    if len(clave) < 16 or not any(secrets.compare_digest(x.encode(), clave.encode()) for x in (dada, dada.replace(" ", "+"))):
+        op_malas[k] = malas + [now]
+        return texto("Hace falta la clave.", 403)
+    if not op_bd_hay():
+        return texto("La base de datos de las opiniones no está montada todavía.", 503)
+    try:
+        return op_admin_con(method, path, query, clave, texto)
+    except Exception as e:
+        print(f"opiniones: la página privada falló ({type(e).__name__}: {str(e)[:120]})", flush=True)
+        return texto("La base de datos de las opiniones no responde ahora. Prueba en un momento.", 503)
+
+
+def op_admin_con(method, path, query, clave, texto):
+    def num(k_, por):
+        v = (query.get(k_) or [""])[0]
+        return int(v) if v.isdecimal() and len(v) <= 9 else por
+    c, m, _ = op_bd(); qc = urllib.parse.quote(clave, safe="")
+    try:
+        cur = c.cursor()
+        if method == "POST":
+            if path != "/api/opiniones/borrar":
+                return texto("No está.", 404)
+            cur.execute(f"DELETE FROM opiniones WHERE id = {m}", (num("id", 0),)); c.commit()
+            return 200, (f'<!doctype html><meta charset=utf-8><meta http-equiv=refresh content="0;url=/api/opiniones?clave={qc}">Borrada.').encode("utf-8"), "text/html; charset=utf-8"
+        if path in ("/api/opiniones/captura", "/api/opiniones/voz"):
+            col = "captura" if path.endswith("captura") else "audio"
+            cur.execute(f"SELECT {col}, audio_tipo FROM opiniones WHERE id = {m}", (num("id", 0),)); f = cur.fetchone()
+            if not f or not f[0]:
+                return texto("No está.", 404)
+            return 200, bytes(f[0]), "image/jpeg" if col == "captura" else (f[1] or "audio/webm")
+        antes = num("antes", 0); n = max(1, min(num("n", 25), 50))
+        cur.execute("SELECT COUNT(*) FROM opiniones"); total = int(cur.fetchone()[0])
+        if path == "/api/opiniones/descarga.zip":
+            cur.execute("SELECT id, cuando, nombre, texto, dicho, nota, sitio, tecnico, COALESCE(LENGTH(captura), 0) + COALESCE(LENGTH(audio), 0), audio_tipo FROM opiniones"
+                        + (f" WHERE id < {m}" if antes else "") + f" ORDER BY id DESC LIMIT {n}", (antes,) if antes else ())
+            filas = cur.fetchall(); b = io.BytesIO(); lista = []; pesa = 0
+            with zipfile.ZipFile(b, "w", zipfile.ZIP_STORED) as z:
+                for i, cuando, nombre, tx, dicho, nota, sitio, tecnico, tam, tipo in filas:
+                    if lista and pesa + int(tam or 0) > OP_TOPE_ZIP:
+                        break
+                    pesa += int(tam or 0)
+                    cur.execute(f"SELECT captura, audio FROM opiniones WHERE id = {m}", (i,)); cap, au = cur.fetchone()
+                    ext = "mp4" if "mp4" in (tipo or "") else "ogg" if "ogg" in (tipo or "") else "webm"
+                    e = {"id": i, "cuando": cuando, "nombre": nombre, "texto": tx, "dicho": dicho, "nota": nota, "sitio": sitio, "tecnico": tecnico,
+                         "captura": f"capturas/{i}.jpg" if cap else "", "voz": f"voces/{i}.{ext}" if au else ""}
+                    lista.append(e)
+                    if cap:
+                        z.writestr(e["captura"], bytes(cap))
+                    if au:
+                        z.writestr(e["voz"], bytes(au))
+                    cap = au = None
+                if lista and len(lista) < len(filas):
+                    z.writestr("FALTAN.txt", f"Este archivo llega hasta la opinión #{lista[-1]['id']}. Para las anteriores, abre la página con &antes={lista[-1]['id']} y descarga otra vez.")
+                z.writestr("opiniones.json", json.dumps(lista, ensure_ascii=False, indent=1))
+                z.writestr("opiniones.txt", "\n\n".join(f"#{e['id']} · {e['cuando']} · {e['nombre'] or 'alguien'}\n{e['sitio']}\nESCRITO: {e['texto']}\nDICHO: {e['dicho']} {e['nota']}\n{e['tecnico']}" for e in lista))
+            return 200, b.getvalue(), "application/zip"
+        if path != "/api/opiniones":
+            return texto("No está.", 404)
+        cur.execute("SELECT id, cuando, nombre, texto, dicho, nota, sitio, tecnico, captura IS NOT NULL, audio IS NOT NULL FROM opiniones"
+                    + (f" WHERE id < {m}" if antes else "") + f" ORDER BY id DESC LIMIT {n}", (antes,) if antes else ())
+        filas = cur.fetchall(); h = html.escape; trozos = []
+        for i, cuando, nombre, tx, dicho, nota, sitio, tecnico, hay_cap, hay_au in filas:
+            trozos.append(f'<article><h2>#{i} · {h(nombre or "alguien")} <small>{h(cuando or "")}</small></h2><p class="s">{h(sitio or "")}</p>'
+                          + (f'<a href="/api/opiniones/captura?id={i}&clave={qc}" target="_blank"><img loading="lazy" src="/api/opiniones/captura?id={i}&clave={qc}" alt="Captura de la opinión {i}"></a>' if hay_cap else "")
+                          + (f'<p><b>Escrito:</b> {h(tx)}</p>' if tx else "") + (f'<p><b>Dicho:</b> {h(dicho)}</p>' if dicho else "") + (f'<p class="s">{h(nota)}</p>' if nota else "")
+                          + (f'<audio controls preload="none" src="/api/opiniones/voz?id={i}&clave={qc}"></audio>' if hay_au else "") + f'<p class="s">{h(tecnico or "")}</p><form method="post" action="/api/opiniones/borrar?id={i}&clave={qc}" onsubmit="return confirm(\'¿Borrar la opinión #{i}? No se puede deshacer.\')"><button>Borrar</button></form></article>')
+        ultimo = filas[-1][0] if filas else 0
+        pie = (f'<p><a class="b" href="/api/opiniones?clave={qc}&antes={ultimo}">Más antiguas →</a></p>' if len(filas) == n and ultimo > 1 else "")
+        pag = ("<!doctype html><html lang=es><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=robots content=noindex>"
+               "<title>Opiniones · 388 Pueblos</title><style>body{margin:0;background:#14161f;color:#f4efe6;font:15px/1.5 system-ui,sans-serif}main{max-width:760px;margin:auto;padding:20px 16px 60px}"
+               "h1{font:600 26px Georgia,serif;margin:8px 0}h2{font:600 17px system-ui;margin:0 0 4px}small,.s{color:#b9b3a6;font-size:13px;font-weight:400}article{border:1px solid #2c2f3c;border-radius:14px;padding:14px;margin:14px 0;background:#191c27}"
+               "img{display:block;max-width:100%;border-radius:10px;margin:8px 0}audio{width:100%;margin-top:6px}p{margin:6px 0;overflow-wrap:anywhere}.b{display:inline-block;background:#f5a742;color:#1a1408;text-decoration:none;font-weight:600;border-radius:999px;padding:9px 15px;margin:6px 8px 6px 0}button{background:none;border:1px solid #5a3a3a;color:#ff9a8f;border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;margin-top:8px}</style>"
+               f"<main><h1>Opiniones de la beta</h1><p class=s>{total} guardadas. Se ven las {len(filas)} más recientes{' anteriores a la #' + str(antes) if antes else ''}. "
+               "La base de datos gratuita caduca a los 30 días de crearse: descárgalas de vez en cuando.</p>"
+               f'<p><a class="b" href="/api/opiniones/descarga.zip?clave={qc}&n={n}' + (f"&antes={antes}" if antes else "") + f'">Descargar estas {len(filas)} (.zip)</a></p>'
+               + "".join(trozos) + (pie or "") + ("<p class=s>Todavía no ha llegado ninguna.</p>" if not total else "") + "</main></html>")
+        return 200, pag.encode("utf-8"), "text/html; charset=utf-8"
+    finally:
+        c.close()
 
 
 def op_correo(para, d, dicho, nota, captura, audio, tipo_audio):
@@ -765,6 +921,11 @@ def op_enviar(destinos, crudo, d, captura, audio, tipo_audio):
         else:
             nota = "(sin clave para transcribir)"
     hechas, fallo = 0, None
+    if "base" in destinos:
+        try:
+            op_guardar(crudo, dicho, nota, captura, audio, tipo_audio); hechas += 1
+        except Exception as e:
+            fallo = e; print(f"opinion: no se guardó ({type(e).__name__}: {str(e)[:120]})", flush=True)
     if "correo" in destinos:
         try:
             op_correo(destinos["correo"], crudo, dicho, nota, captura, audio, tipo_audio); hechas += 1
@@ -895,6 +1056,8 @@ async def handle(reader, writer):
             elif url.path == "/api/vecinos":
                 status, obj = await vecinos(method, body, ip, headers.get("origin", ""))
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
+            elif url.path.startswith("/api/opiniones") and method in ("GET", "HEAD", "POST"):
+                status, payload, ctype = await asyncio.to_thread(op_admin, method, url.path, query, ip)
             elif url.path.startswith("/api/"):
                 status, obj = api(method, url.path, query, body, ip, fuente)
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
@@ -907,7 +1070,10 @@ async def handle(reader, writer):
             else:
                 status, payload, ctype = 405, b"", "text/plain"
         extra = ""
-        if url.path.startswith("/api/"):
+        if url.path.startswith("/api/opiniones"):  # (la página privada: sin CORS, sin marcos, sin nada de fuera, sin referente)
+            extra = ("Cache-Control: no-store\r\nX-Frame-Options: DENY\r\nX-Robots-Tag: noindex\r\n"
+                     "Content-Security-Policy: default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'\r\n")
+        elif url.path.startswith("/api/"):
             extra = ("Cache-Control: no-store\r\nAccess-Control-Allow-Origin: *\r\n"
                      "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\nAccess-Control-Allow-Headers: Content-Type\r\n"
                      "Access-Control-Max-Age: 86400\r\n")

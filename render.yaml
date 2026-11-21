@@ -58,7 +58,8 @@ services:
     name: 388-pueblos
     runtime: python
     plan: free
-    buildCommand: python3 -m py_compile server/servidor.py server/pagina.py
+    # (pg8000: el cliente de Postgres, de Python puro, para guardar las opiniones del juego)
+    buildCommand: python3 -m pip install "pg8000>=1.30,<2" && python3 -m py_compile server/servidor.py server/pagina.py
     startCommand: python3 server/servidor.py --host 0.0.0.0 --port $PORT --db /tmp/388pueblos.sqlite3
     healthCheckPath: /api/online
     envVars:
@@ -70,18 +71,20 @@ services:
       # aquí; sync: false hace que Render la pida y no la guarde en este archivo)
       - key: OPENAI_API_KEY
         sync: false
-      # (las opiniones de quien prueba el juego, /api/opinion: el webhook del canal privado de Discord adonde llegan;
-      # se pone en el panel de Render, nunca aquí. Y el modelo que pasa la voz a texto)
-      # (por correo, con Resend: su clave y la dirección que recibe las opiniones; también en el panel, nunca aquí)
-      - key: RESEND_API_KEY
-        sync: false
-      - key: OPINIONES_CORREO
-        sync: false
-      - key: DISCORD_OPINIONES
-        sync: false
+      # (las opiniones de quien prueba el juego, /api/opinion: el modelo que pasa la voz a texto. El correo —RESEND_API_KEY,
+      # OPINIONES_CORREO— y el canal de Discord —DISCORD_OPINIONES— siguen en el servidor por si se quieren, pero no se usan:
+      # si se ponen en el panel, hay que decirlo en la página de privacidad)
       - key: OPENAI_TRANSCRIPCION
         value: whisper-1
       - key: OPENAI_MODELO
         value: gpt-5.6-luna
       - key: OPENAI_ESFUERZO
         value: high
+
+# Las opiniones de quien prueba el juego (/api/opinion). La gratuita da 1 GB, caduca a los 30 días de crearse (con 14 de
+# gracia) y no tiene copias de seguridad: hay que descargarlas desde la página privada.
+databases:
+  - name: opiniones388
+    plan: free
+    databaseName: opiniones
+    ipAllowList: []   # (solo por la red interna de Render: nadie de fuera)
