@@ -95,3 +95,21 @@ if site:
             f.write(body)
 
 print(f"dist/web listo · versión {V} · {n_html} páginas · API {args.api or '—'} · sitio {site or '—'}")
+
+# El juego de Guareña, en /juego/: la copia publicada de nestorguerra/calle-malfeitos, traída al construir en Render
+# (RENDER=true) o con JUEGO=1. Desde GitHub Pages bajaba a unos 100 KB/s y la entrada, de 85 MB, se quedaba minutos
+# volando sobre la torre (21-11-2026). Si el clon falla, la web se publica igual sin /juego/ (los enlaces siguen yendo a
+# GitHub Pages mientras no se cambien). Tras publicar el juego en su repositorio hay que volver a desplegar esta web.
+if os.environ.get("RENDER") or os.environ.get("JUEGO"):
+    import subprocess
+    juego = os.path.join(args.out, "juego")
+    shutil.rmtree(juego, ignore_errors=True)
+    r = subprocess.run(["git", "clone", "--depth", "1", "https://github.com/nestorguerra/calle-malfeitos.git", juego],
+                       capture_output=True, text=True)
+    if r.returncode == 0:
+        shutil.rmtree(os.path.join(juego, ".git"), ignore_errors=True)
+        mb = sum(os.path.getsize(os.path.join(d, f)) for d, _, fs in os.walk(juego) for f in fs) / 1e6
+        print(f"dist/web/juego listo · {mb:.0f} MB")
+    else:
+        shutil.rmtree(juego, ignore_errors=True)
+        print("AVISO: no se pudo traer el juego:", r.stderr.strip()[-300:])
