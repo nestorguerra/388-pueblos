@@ -669,14 +669,51 @@ def op_md(s):
     return re.sub(r"([\\\[\]()*_~>#|`])", r"\\\1", s).replace("@", "@\u200b").replace("://", ":/\u200b/")
 
 
+def op_destinos():
+    """adónde se entregan: el correo (Resend: RESEND_API_KEY y OPINIONES_CORREO, la dirección que las recibe) y, si está,
+    el canal de Discord (DISCORD_OPINIONES). Todo se pone en el panel de Render, nunca en el repositorio."""
+    d = {}
+    if os.environ.get("RESEND_API_KEY", "").strip() and "@" in os.environ.get("OPINIONES_CORREO", ""):
+        d["correo"] = os.environ["OPINIONES_CORREO"].strip()
+    w = os.environ.get("DISCORD_OPINIONES", "").strip()
+    if w.startswith("https://") or w.startswith("http://127.0.0.1:"):  # (en local, para las pruebas)
+        d["discord"] = w
+    return d
+
+
+def op_correo(para, d, dicho, nota, captura, audio, tipo_audio):
+    """un correo por opinión (Resend), con la captura y la voz adjuntas; d, los datos sin el escapado de Discord"""
+    cuerpo = [f"Opinión de {d['nombre'] or 'alguien'}", f"Dónde: {d['escena'] or 'juego'} · x {d['x']}, z {d['z']} · {d['hora']}", ""]
+    if d["texto"]:
+        cuerpo += ["ESCRITO:", d["texto"], ""]
+    if dicho:
+        cuerpo += ["DICHO (transcrito):", dicho, ""]
+    if nota:
+        cuerpo += [nota, ""]
+    cuerpo += [f"{d['pantalla']} · {d['gpu']} · {d['navegador']}"]
+    adjuntos = []
+    if captura:
+        adjuntos.append({"filename": "captura.jpg", "content": base64.b64encode(captura).decode()})
+    if audio:
+        ext = "mp4" if "mp4" in tipo_audio else "ogg" if "ogg" in tipo_audio else "webm"
+        adjuntos.append({"filename": f"voz.{ext}", "content": base64.b64encode(audio).decode()})
+    resumen = re.sub(r"\s+", " ", d["texto"] or dicho or "con voz")[:60]
+    msg = {"from": os.environ.get("OPINIONES_REMITE", "388 Pueblos <onboarding@resend.dev>"), "to": [para],
+           "subject": f"[388 opinión] {d['nombre'] or 'alguien'}: {resumen}", "text": "\n".join(cuerpo), "attachments": adjuntos}
+    req = urllib.request.Request(os.environ.get("RESEND_URL", "https://api.resend.com/emails"), data=json.dumps(msg).encode(),
+                                 headers={"Content-Type": "application/json", "Authorization": f"Bearer {os.environ['RESEND_API_KEY'].strip()}",
+                                          "User-Agent": "388Pueblos/1"}, method="POST")
+    with urllib.request.urlopen(req, timeout=25) as r:
+        r.read()
+
+
 def opinion_antes(method, ip, origen):
     """lo que se puede decidir con las cabeceras, antes de leer el cuerpo: (estado, respuesta) o None si puede seguir"""
     if method != "POST":
         return 405, {"error": "solo POST"}
     if not vec_origen_ok(origen):
         return 403, {"error": "origen no permitido"}
-    webhook = os.environ.get("DISCORD_OPINIONES", "").strip()
-    if not (webhook.startswith("https://") or webhook.startswith("http://127.0.0.1:")):  # (en local, para las pruebas)
+    if not op_destinos():
         return 503, {"error": "el buzón de opiniones no está montado todavía"}
     now = time.time(); hoy = time.strftime("%Y-%m-%d"); k = op_quien(ip)
     if op_dia["dia"] != hoy:
@@ -711,8 +748,9 @@ def op_transcribir(clave, audio, tipo):
         return str(json.loads(r.read().decode("utf-8")).get("text", "")).strip()
 
 
-def op_enviar(webhook, d, captura, audio, tipo_audio):
-    """la transcripción (si hay voz y clave) y el mensaje al canal de Discord; devuelve el texto transcrito"""
+def op_enviar(destinos, crudo, d, captura, audio, tipo_audio):
+    """la transcripción (si hay voz y clave) y la entrega: por correo (crudo, los datos tal cual) y al canal de Discord
+    (d, escapados); vale con que llegue por uno. Devuelve el texto transcrito"""
     dicho, nota = "", ""
     if audio:
         clave = os.environ.get("OPENAI_API_KEY", "").strip()
@@ -726,30 +764,43 @@ def op_enviar(webhook, d, captura, audio, tipo_audio):
                 nota = f"(no se pudo transcribir: {type(e).__name__})"
         else:
             nota = "(sin clave para transcribir)"
-    lineas = [f"**Opinión de {d['nombre'] or 'alguien'}** · {d['escena'] or 'juego'} · x {d['x']}, z {d['z']} · {d['hora']}"]
-    pie = f"-# {d['pantalla']} · {d['gpu']} · {d['navegador']}"[:240]
-    if d["texto"]:
-        lineas.append("**Escrito:** " + d["texto"][:900])
-    if dicho:
-        lineas.append("**Dicho:** " + op_md(dicho)[:max(200, 1900 - len(pie) - sum(len(l) + 1 for l in lineas))])
-    if nota:
-        lineas.append(nota)
-    lineas.append(pie)
-    archivos = []
-    if captura:
-        archivos.append((f"files[{len(archivos)}]", "captura.jpg", "image/jpeg", captura))
-    if audio:
-        ext = "mp4" if "mp4" in tipo_audio else "ogg" if "ogg" in tipo_audio else "webm"
-        archivos.append((f"files[{len(archivos)}]", f"voz.{ext}", tipo_audio.split(";")[0] or "audio/webm", audio))
-    cuerpo, ctipo = op_multiparte({"payload_json": json.dumps({"content": "\n".join(lineas)[:1990], "allowed_mentions": {"parse": []}, "flags": 4}, ensure_ascii=False)}, archivos)
-    req = urllib.request.Request(webhook, data=cuerpo, headers={"Content-Type": ctipo, "User-Agent": "388Pueblos (https://pueblos388.onrender.com, 1)"}, method="POST")
-    with urllib.request.urlopen(req, timeout=20) as r:
-        r.read()
+    hechas, fallo = 0, None
+    if "correo" in destinos:
+        try:
+            op_correo(destinos["correo"], crudo, dicho, nota, captura, audio, tipo_audio); hechas += 1
+        except Exception as e:
+            fallo = e; print(f"opinion: el correo no salió ({type(e).__name__}: {str(e)[:120]})", flush=True)
+    if "discord" in destinos:
+        try:
+            lineas = [f"**Opinión de {d['nombre'] or 'alguien'}** · {d['escena'] or 'juego'} · x {d['x']}, z {d['z']} · {d['hora']}"]
+            pie = f"-# {d['pantalla']} · {d['gpu']} · {d['navegador']}"[:240]
+            if d["texto"]:
+                lineas.append("**Escrito:** " + d["texto"][:900])
+            if dicho:
+                lineas.append("**Dicho:** " + op_md(dicho)[:max(200, 1900 - len(pie) - sum(len(l) + 1 for l in lineas))])
+            if nota:
+                lineas.append(nota)
+            lineas.append(pie)
+            archivos = []
+            if captura:
+                archivos.append((f"files[{len(archivos)}]", "captura.jpg", "image/jpeg", captura))
+            if audio:
+                ext = "mp4" if "mp4" in tipo_audio else "ogg" if "ogg" in tipo_audio else "webm"
+                archivos.append((f"files[{len(archivos)}]", f"voz.{ext}", tipo_audio.split(";")[0] or "audio/webm", audio))
+            cuerpo, ctipo = op_multiparte({"payload_json": json.dumps({"content": "\n".join(lineas)[:1990], "allowed_mentions": {"parse": []}, "flags": 4}, ensure_ascii=False)}, archivos)
+            req = urllib.request.Request(destinos["discord"], data=cuerpo, headers={"Content-Type": ctipo, "User-Agent": "388Pueblos (https://pueblos388.onrender.com, 1)"}, method="POST")
+            with urllib.request.urlopen(req, timeout=20) as r:
+                r.read()
+            hechas += 1
+        except Exception as e:
+            fallo = e; print(f"opinion: Discord no lo recibió ({type(e).__name__}: {str(e)[:120]})", flush=True)
+    if not hechas:
+        raise fallo or RuntimeError("sin destino")
     return dicho
 
 
 async def opinion(body):
-    webhook = os.environ.get("DISCORD_OPINIONES", "").strip()
+    destinos = op_destinos()
     try:
         d = json.loads(body.decode("utf-8") or "{}"); assert isinstance(d, dict)
         captura = base64.b64decode(d.get("captura") or "", validate=True); audio = base64.b64decode(d.get("audio") or "", validate=True)
@@ -765,12 +816,13 @@ async def opinion(body):
               "navegador": vec_texto(d.get("navegador"), 160)}
     for k in ("x", "z"):
         limpio[k] = round(float(d[k]), 1) if isinstance(d.get(k), (int, float)) and abs(d[k]) < 1e5 else "?"
+    crudo = dict(limpio)
     for k in ("texto", "nombre", "escena", "hora", "pantalla", "gpu", "navegador"):  # (nada que Discord lea como mención, formato o enlace)
         limpio[k] = op_md(limpio[k])
     if not limpio["texto"] and not audio:
         return 400, {"error": "falta la opinión"}
     try:
-        dicho = await asyncio.to_thread(op_enviar, webhook, limpio, captura, audio, tipo_audio)
+        dicho = await asyncio.to_thread(op_enviar, destinos, crudo, limpio, captura, audio, tipo_audio)
     except Exception as e:
         print(f"opinion: no se pudo entregar ({type(e).__name__}: {str(e)[:120]})", flush=True)
         return 502, {"error": "no se ha podido entregar; prueba otra vez"}

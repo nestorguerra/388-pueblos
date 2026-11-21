@@ -72,6 +72,11 @@ services:
         sync: false
       # (las opiniones de quien prueba el juego, /api/opinion: el webhook del canal privado de Discord adonde llegan;
       # se pone en el panel de Render, nunca aquí. Y el modelo que pasa la voz a texto)
+      # (por correo, con Resend: su clave y la dirección que recibe las opiniones; también en el panel, nunca aquí)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: OPINIONES_CORREO
+        sync: false
       - key: DISCORD_OPINIONES
         sync: false
       - key: OPENAI_TRANSCRIPCION
