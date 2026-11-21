@@ -2,7 +2,7 @@
 // película, sin paradas ni pantallas en blanco.
 //
 // El juego es el gemelo digital de Guareña con la iglesia de Santa María por fuera y por dentro (PlayCanvas, en
-// https://nestorguerra.github.io/calle-malfeitos/?escena=guarena; su parte, en el proyecto «388 Foto»,
+// https://pueblos388.onrender.com/juego/?escena=guarena; su parte, en el proyecto «388 Foto»,
 // src/desde388.js y src/precarga.js). Va en un marco, debajo e invisible, que se monta en cuanto la portada está quieta
 // (precargar): con ?precarga=1 el juego no arranca, solo baja por detrás todo lo que va a necesitar, y queda en la
 // caché del navegador. Al pulsar Jugar arranca en ese mismo marco y lo encuentra todo (sin pedir nada dos veces).
@@ -35,7 +35,7 @@ addTexts({
 import { THREE } from './world.js';
 import { montarAhora } from './ahora.js';
 
-const GAME = 'https://nestorguerra.github.io/calle-malfeitos/?escena=guarena';
+const GAME = 'https://pueblos388.onrender.com/juego/?escena=guarena';
 // la dirección del juego, con ?desde=388 (su entrada desde aquí). En local se puede probar con el juego servido en local:
 // ?juego=http://127.0.0.1:8934/calle-malfeitos/ ; ?sonido=0 pasa al juego (y ?multi=ws://127.0.0.1:<puerto>, con el juego en local)
 // los pueblos con juego (el multijugador, fase 3: una sala por pueblo, por su código del INE): su escena en el juego, su

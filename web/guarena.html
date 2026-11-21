@@ -48,7 +48,7 @@
   // Con ?jugar el juego empieza a bajarse ya, debajo de todo y sin verse, mientras se levanta la maqueta y vuela la cámara (js/jugar.js lo recoge en window.__j388 y lo enseña al salir de la bruma)
   if (!/[?&]jugar\b/.test(location.search) || window.claude) return;
   var J = window.__j388 = { p: 0, descargado: false, obra: 0, listo: false, hola: false, aterriza: false };
-  var qs = new URLSearchParams(location.search), base = 'https://nestorguerra.github.io/calle-malfeitos/?escena=guarena', lj = qs.get('juego');
+  var qs = new URLSearchParams(location.search), base = 'https://pueblos388.onrender.com/juego/?escena=guarena', lj = qs.get('juego');
   if (lj && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(lj)) base = lj;
   var u = new URL(base, location.href);
   if (!u.searchParams.get('escena')) u.searchParams.set('escena', 'guarena');
@@ -77,7 +77,7 @@
   <div class="right">
     <a class="btn" href="en/guarena.html" hreflang="en" lang="en">EN</a>
     <a class="btn" href="index.html#los388">← Los 388</a>
-    <a class="btn primary" data-jugar href="https://nestorguerra.github.io/calle-malfeitos/?escena=guarena" target="_blank" rel="noopener">Quiero jugar aquí</a>
+    <a class="btn primary" data-jugar href="https://pueblos388.onrender.com/juego/?escena=guarena" target="_blank" rel="noopener">Quiero jugar aquí</a>
   </div>
 </header>
 
@@ -91,7 +91,7 @@
       <div><b>283 km²</b><span>Término</span></div>
     </div>
     <p>Tierra de castúos, cuna de Luis Chamizo y de Eugenio Frutos, y uno de los yacimientos tartésicos más importantes de la península. Este es su gemelo digital, versión 0.1.</p>
-    <a class="btn primary big" data-jugar href="https://nestorguerra.github.io/calle-malfeitos/?escena=guarena" target="_blank" rel="noopener" style="justify-self:start">Jugar en Guareña <span aria-hidden="true">→</span></a>
+    <a class="btn primary big" data-jugar href="https://pueblos388.onrender.com/juego/?escena=guarena" target="_blank" rel="noopener" style="justify-self:start">Jugar en Guareña <span aria-hidden="true">→</span></a>
     <div class="status mono"><span>Gemelo <b>v0.1</b></span><span><b id="n-parts">7.985</b> volúmenes</span><span>Catastro</span></div>
   </section>
 
@@ -99,7 +99,7 @@
     <span class="kicker">El juego</span>
     <h2 id="t-paseo">Pasea por Guareña</h2>
     <p class="hint">El pueblo entero, con la iglesia de Santa María por fuera y por dentro. La cámara vuela desde aquí alrededor de la torre, entra en la bruma de la mañana y baja hasta la calle Malfeitos, y empiezas a jugar.</p>
-    <a class="btn primary big" data-jugar href="https://nestorguerra.github.io/calle-malfeitos/?escena=guarena" target="_blank" rel="noopener">Pasear por el pueblo</a>
+    <a class="btn primary big" data-jugar href="https://pueblos388.onrender.com/juego/?escena=guarena" target="_blank" rel="noopener">Pasear por el pueblo</a>
     <div class="passbar mono" id="pass"><span>Tu pasaporte</span><span>…</span></div>
   </section>
 

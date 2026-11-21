@@ -48,7 +48,7 @@
   // With ?jugar the game starts downloading right away, underneath everything and unseen, while the model is built and the camera flies (js/jugar.js picks it up from window.__j388 and shows it when leaving the mist)
   if (!/[?&]jugar\b/.test(location.search) || window.claude) return;
   var J = window.__j388 = { p: 0, descargado: false, obra: 0, listo: false, hola: false, aterriza: false };
-  var qs = new URLSearchParams(location.search), base = 'https://nestorguerra.github.io/calle-malfeitos/?escena=guarena', lj = qs.get('juego');
+  var qs = new URLSearchParams(location.search), base = 'https://pueblos388.onrender.com/juego/?escena=guarena', lj = qs.get('juego');
   if (lj && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//.test(lj)) base = lj;
   var u = new URL(base, location.href);
   if (!u.searchParams.get('escena')) u.searchParams.set('escena', 'guarena');
@@ -77,7 +77,7 @@
   <div class="right">
     <a class="btn" href="../guarena.html" hreflang="es" lang="es">ES</a>
     <a class="btn" href="index.html#los388">← The 388</a>
-    <a class="btn primary" data-jugar href="https://nestorguerra.github.io/calle-malfeitos/?escena=guarena" target="_blank" rel="noopener">I want to play here</a>
+    <a class="btn primary" data-jugar href="https://pueblos388.onrender.com/juego/?escena=guarena" target="_blank" rel="noopener">I want to play here</a>
   </div>
 </header>
 
@@ -91,7 +91,7 @@
       <div><b>283 km²</b><span>Area</span></div>
     </div>
     <p>Land of castúos, birthplace of Luis Chamizo and Eugenio Frutos, and home to one of the most important Tartessian archaeological sites on the Iberian Peninsula. This is its digital twin, version 0.1.</p>
-    <a class="btn primary big" data-jugar href="https://nestorguerra.github.io/calle-malfeitos/?escena=guarena" target="_blank" rel="noopener" style="justify-self:start">Play in Guareña <span aria-hidden="true">→</span></a>
+    <a class="btn primary big" data-jugar href="https://pueblos388.onrender.com/juego/?escena=guarena" target="_blank" rel="noopener" style="justify-self:start">Play in Guareña <span aria-hidden="true">→</span></a>
     <div class="status mono"><span>Twin <b>v0.1</b></span><span><b id="n-parts">7,985</b> volumes</span><span>Catastro</span></div>
   </section>
 
@@ -99,7 +99,7 @@
     <span class="kicker">The game</span>
     <h2 id="t-paseo">Walk around Guareña</h2>
     <p class="hint">The whole town, with the church of Santa María inside and out. The camera flies from here around the tower, into the morning mist and down to Calle Malfeitos, and you start playing.</p>
-    <a class="btn primary big" data-jugar href="https://nestorguerra.github.io/calle-malfeitos/?escena=guarena" target="_blank" rel="noopener">Walk around the town</a>
+    <a class="btn primary big" data-jugar href="https://pueblos388.onrender.com/juego/?escena=guarena" target="_blank" rel="noopener">Walk around the town</a>
     <div class="passbar mono" id="pass"><span>Your passport</span><span>…</span></div>
   </section>
 

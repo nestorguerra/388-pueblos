@@ -19,7 +19,7 @@ CC BY-SA 4.0 ([LICENCIAS.md](LICENCIAS.md)).
 - **Los 388 municipios en 3D**, levantados de forma automática con los edificios del Catastro (826.000 piezas
   edificadas), con su página (`pueblo.html#<código INE>`) y un mapa vivo para votar qué pueblo despierta después.
 - **Guareña, pueblo 001**, con contenido verificado y la entrada al juego, al momento y como una sola película: el pueblo
-  entero con la iglesia de Santa María por fuera y por dentro (https://nestorguerra.github.io/calle-malfeitos/?escena=guarena),
+  entero con la iglesia de Santa María por fuera y por dentro (https://pueblos388.onrender.com/juego/?escena=guarena),
   en un marco y sin salir de la página. «Jugar» en la portada no cambia de página: la cámara baja del mapa sin frenar,
   pasa junto a la torre y gira hacia la calle Malfeitos (más despacio si el juego aún se descarga); allí se funde, en
   marcha, con un vídeo grabado por el propio juego (`web/assets/juego/`) que sigue avanzando mientras el juego se
