@@ -33,6 +33,7 @@ import sqlite3
 import struct
 import time
 import urllib.parse
+import urllib.request
 
 from pagina import documento
 
@@ -46,6 +47,7 @@ DEVICE_RE = re.compile(r"^[A-Za-z0-9_-]{12,64}$")
 MAX_WS = 4096
 MAX_BODY = 4096
 MAX_BODY_VECINOS = 16384
+MAX_BODY_OPINION = 2500000  # (la captura y el audio de una opinión del juego, en base64)
 MAX_WS_IP = 20  # conexiones a la vez desde una misma IP (una clase entera en la wifi del colegio cabe; una inundación, no)
 LENTO = 512 * 1024  # bytes pendientes de mandar a alguien: con más, es que no lee, y se le cierra para que no frene a nadie
 IP_RE = re.compile(r"^[0-9A-Fa-f:.]{3,45}$")
@@ -647,6 +649,134 @@ async def vecinos(method, body, ip, origen):
 CACHE = {".html": "no-cache", ".js": "no-cache", ".css": "no-cache", ".json": "public, max-age=3600, stale-while-revalidate=604800"}
 
 
+# La opinión de quien prueba el juego (src/opinion.js del juego, 21-11-2026): POST /api/opinion con el texto, la captura
+# (JPEG en base64) y, si la hay, la voz. Solo desde las páginas del juego (Origin, como los vecinos). Aquí se pasa la voz
+# a texto (OpenAI, con la clave de los vecinos; OPENAI_TRANSCRIPCION, el modelo) y todo se manda a un canal privado de
+# Discord por su webhook (DISCORD_OPINIONES, que se pone en el panel de Render, nunca en el repositorio). No se guarda
+# nada en este servidor: su base de datos se borra al dormirse. Topes: 6 por hora y 30 al día por IP (cuentan también los
+# intentos fallidos; las IPv6, por su /64), 400 al día en total y 100 transcripciones al día; el audio, 1,2 MB como mucho.
+# Antes de leer el cuerpo (hasta 2,5 MB) se miran el método, el origen, el buzón y el tope, y solo se leen cuatro a la vez
+# y uno por IP: si no, cien conexiones lentas de 5 MB tumbaban el proceso, con el multijugador dentro (revisión, 21-11-2026).
+op_ip, op_dia, op_subiendo = {}, {"dia": "", "n": 0, "voz": 0}, {}
+
+
+def op_quien(ip):
+    return ":".join(ip.split(":")[:4]) if ":" in ip else ip
+
+
+def op_md(s):
+    """sin formato ni enlaces de Discord"""
+    return re.sub(r"([\\\[\]()*_~>#|`])", r"\\\1", s).replace("@", "@\u200b").replace("://", ":/\u200b/")
+
+
+def opinion_antes(method, ip, origen):
+    """lo que se puede decidir con las cabeceras, antes de leer el cuerpo: (estado, respuesta) o None si puede seguir"""
+    if method != "POST":
+        return 405, {"error": "solo POST"}
+    if not vec_origen_ok(origen):
+        return 403, {"error": "origen no permitido"}
+    webhook = os.environ.get("DISCORD_OPINIONES", "").strip()
+    if not (webhook.startswith("https://") or webhook.startswith("http://127.0.0.1:")):  # (en local, para las pruebas)
+        return 503, {"error": "el buzón de opiniones no está montado todavía"}
+    now = time.time(); hoy = time.strftime("%Y-%m-%d"); k = op_quien(ip)
+    if op_dia["dia"] != hoy:
+        op_dia.update(dia=hoy, n=0, voz=0); op_ip.clear()
+    q = op_ip.setdefault(k, {"hora": [], "dia": 0})
+    q["hora"] = [t for t in q["hora"] if now - t < 3600]
+    if len(q["hora"]) >= 6 or q["dia"] >= 30 or op_dia["n"] >= 400:
+        return 429, {"error": "has mandado muchas opiniones seguidas; prueba dentro de un rato"}
+    if len(op_subiendo) >= 4 or k in op_subiendo:
+        return 429, {"error": "el buzón está ocupado; prueba en unos segundos"}
+    q["hora"].append(now); q["dia"] += 1; op_dia["n"] += 1
+    return None
+
+
+def op_multiparte(campos, archivos):
+    """(cuerpo, tipo) de un formulario multipart: campos {nombre: texto} y archivos [(nombre, archivo, tipo, bytes)]"""
+    borde = "----388pueblos" + secrets.token_hex(12); trozos = []
+    for k, v in campos.items():
+        trozos.append(f'--{borde}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n'.encode() + str(v).encode("utf-8") + b"\r\n")
+    for k, nombre, tipo, datos in archivos:
+        trozos.append(f'--{borde}\r\nContent-Disposition: form-data; name="{k}"; filename="{nombre}"\r\nContent-Type: {tipo}\r\n\r\n'.encode() + datos + b"\r\n")
+    return b"".join(trozos) + f"--{borde}--\r\n".encode(), f"multipart/form-data; boundary={borde}"
+
+
+def op_transcribir(clave, audio, tipo):
+    ext = "mp4" if "mp4" in tipo else "ogg" if "ogg" in tipo else "webm"
+    cuerpo, ctipo = op_multiparte({"model": os.environ.get("OPENAI_TRANSCRIPCION", "whisper-1"), "language": "es", "response_format": "json"},
+                                  [("file", f"voz.{ext}", tipo.split(";")[0] or "audio/webm", audio)])
+    req = urllib.request.Request(os.environ.get("OPENAI_URL_AUDIO", "https://api.openai.com/v1/audio/transcriptions"), data=cuerpo,
+                                 headers={"Content-Type": ctipo, "Authorization": f"Bearer {clave}"}, method="POST")
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return str(json.loads(r.read().decode("utf-8")).get("text", "")).strip()
+
+
+def op_enviar(webhook, d, captura, audio, tipo_audio):
+    """la transcripción (si hay voz y clave) y el mensaje al canal de Discord; devuelve el texto transcrito"""
+    dicho, nota = "", ""
+    if audio:
+        clave = os.environ.get("OPENAI_API_KEY", "").strip()
+        if clave and op_dia["voz"] >= 100:
+            nota = "(tope diario de transcripciones: va solo el audio)"
+        elif clave:
+            op_dia["voz"] += 1
+            try:
+                dicho = op_transcribir(clave, audio, tipo_audio)
+            except Exception as e:  # (sin transcripción, el audio va igual)
+                nota = f"(no se pudo transcribir: {type(e).__name__})"
+        else:
+            nota = "(sin clave para transcribir)"
+    lineas = [f"**Opinión de {d['nombre'] or 'alguien'}** · {d['escena'] or 'juego'} · x {d['x']}, z {d['z']} · {d['hora']}"]
+    pie = f"-# {d['pantalla']} · {d['gpu']} · {d['navegador']}"[:240]
+    if d["texto"]:
+        lineas.append("**Escrito:** " + d["texto"][:900])
+    if dicho:
+        lineas.append("**Dicho:** " + op_md(dicho)[:max(200, 1900 - len(pie) - sum(len(l) + 1 for l in lineas))])
+    if nota:
+        lineas.append(nota)
+    lineas.append(pie)
+    archivos = []
+    if captura:
+        archivos.append((f"files[{len(archivos)}]", "captura.jpg", "image/jpeg", captura))
+    if audio:
+        ext = "mp4" if "mp4" in tipo_audio else "ogg" if "ogg" in tipo_audio else "webm"
+        archivos.append((f"files[{len(archivos)}]", f"voz.{ext}", tipo_audio.split(";")[0] or "audio/webm", audio))
+    cuerpo, ctipo = op_multiparte({"payload_json": json.dumps({"content": "\n".join(lineas)[:1990], "allowed_mentions": {"parse": []}, "flags": 4}, ensure_ascii=False)}, archivos)
+    req = urllib.request.Request(webhook, data=cuerpo, headers={"Content-Type": ctipo, "User-Agent": "388Pueblos (https://pueblos388.onrender.com, 1)"}, method="POST")
+    with urllib.request.urlopen(req, timeout=20) as r:
+        r.read()
+    return dicho
+
+
+async def opinion(body):
+    webhook = os.environ.get("DISCORD_OPINIONES", "").strip()
+    try:
+        d = json.loads(body.decode("utf-8") or "{}"); assert isinstance(d, dict)
+        captura = base64.b64decode(d.get("captura") or "", validate=True); audio = base64.b64decode(d.get("audio") or "", validate=True)
+    except Exception:
+        return 400, {"error": "datos no válidos"}
+    if captura and (captura[:2] != b"\xff\xd8" or len(captura) > 1500000):
+        return 400, {"error": "captura no válida"}
+    tipo_audio = vec_texto(d.get("audio_tipo"), 60).lower()
+    if audio and (len(audio) > 1200000 or not re.fullmatch(r"audio/(webm|mp4|ogg)(;\s*codecs=[\w.,\- ]+)?", tipo_audio)):
+        return 400, {"error": "audio no válido"}
+    limpio = {"texto": vec_texto(d.get("texto"), 1500), "nombre": vec_texto(d.get("nombre"), 40), "escena": vec_texto(d.get("escena"), 30),
+              "hora": vec_texto(d.get("hora"), 60), "pantalla": vec_texto(d.get("pantalla"), 20), "gpu": vec_texto(d.get("gpu"), 20),
+              "navegador": vec_texto(d.get("navegador"), 160)}
+    for k in ("x", "z"):
+        limpio[k] = round(float(d[k]), 1) if isinstance(d.get(k), (int, float)) and abs(d[k]) < 1e5 else "?"
+    for k in ("texto", "nombre", "escena", "hora", "pantalla", "gpu", "navegador"):  # (nada que Discord lea como mención, formato o enlace)
+        limpio[k] = op_md(limpio[k])
+    if not limpio["texto"] and not audio:
+        return 400, {"error": "falta la opinión"}
+    try:
+        dicho = await asyncio.to_thread(op_enviar, webhook, limpio, captura, audio, tipo_audio)
+    except Exception as e:
+        print(f"opinion: no se pudo entregar ({type(e).__name__}: {str(e)[:120]})", flush=True)
+        return 502, {"error": "no se ha podido entregar; prueba otra vez"}
+    return 200, {"ok": True, "dicho": dicho[:300]}
+
+
 def static(path):
     rel = urllib.parse.unquote(path.split("?")[0]).lstrip("/")
     if rel == "" or rel.endswith("/"):
@@ -688,12 +818,27 @@ async def handle(reader, writer):
             return
         body = b""
         n = int(headers.get("content-length", "0") or 0)
-        if n > (MAX_BODY_VECINOS if url.path == "/api/vecinos" else MAX_BODY):
+        if n > (MAX_BODY_OPINION if url.path == "/api/opinion" else MAX_BODY_VECINOS if url.path == "/api/vecinos" else MAX_BODY):
             status, payload, ctype = 413, b'{"error":"demasiado grande"}', "application/json"
         else:
-            if n:
-                body = await reader.readexactly(n)
-            if url.path.startswith("/api/") and method == "OPTIONS":
+            antes = None
+            if url.path == "/api/opinion" and method != "OPTIONS":   # (lo que se sabe sin leer el cuerpo, antes de leerlo)
+                antes = opinion_antes(method, ip, headers.get("origin", ""))
+                if antes is None:
+                    op_subiendo[op_quien(ip)] = 1
+            try:
+                if n and not antes:
+                    body = await asyncio.wait_for(reader.readexactly(n), timeout=45 if url.path == "/api/opinion" else 20)
+                if antes:
+                    status, obj = antes
+                elif url.path == "/api/opinion" and method != "OPTIONS":
+                    status, obj = await opinion(body)
+            finally:
+                if url.path == "/api/opinion" and antes is None:
+                    op_subiendo.pop(op_quien(ip), None)
+            if url.path == "/api/opinion" and method != "OPTIONS":
+                payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
+            elif url.path.startswith("/api/") and method == "OPTIONS":
                 status, payload, ctype = 204, b"", "text/plain"
             elif url.path == "/api/vecinos":
                 status, obj = await vecinos(method, body, ip, headers.get("origin", ""))
