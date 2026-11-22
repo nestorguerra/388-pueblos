@@ -89,6 +89,15 @@ services:
         value: gpt-5.6-luna
       - key: OPENAI_ESFUERZO
         value: high
+      # (las opiniones: la dirección de su base, la de abajo, por la red interna; y la clave de su página privada,
+      # /feedbacks, que genera Render y se lee en el panel —Environment—. 22-11-2026: faltaban, y el buzón decía «no está
+      # montado» aunque la base estaba creada)
+      - key: DATABASE_URL
+        fromDatabase:
+          name: opiniones388
+          property: connectionString
+      - key: OPINIONES_CLAVE
+        generateValue: true
 
 # Las opiniones de quien prueba el juego (/api/opinion). La gratuita da 1 GB, caduca a los 30 días de crearse (con 14 de
 # gracia) y no tiene copias de seguridad: hay que descargarlas desde la página privada.
