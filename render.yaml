@@ -12,6 +12,15 @@ services:
     runtime: static
     buildCommand: python3 tools/build_web.py --api https://three88-pueblos.onrender.com/api --site https://pueblos388.onrender.com
     staticPublishPath: ./dist/web
+    # (las opiniones de quien prueba el juego, en la web: /feedbacks la sirve el servidor, server/servidor.py, op_feedbacks;
+    # entrando con la clave OPINIONES_CLAVE. 22-11-2026)
+    routes:
+      - type: rewrite
+        source: /feedbacks
+        destination: https://three88-pueblos.onrender.com/feedbacks
+      - type: rewrite
+        source: /feedbacks/*
+        destination: https://three88-pueblos.onrender.com/feedbacks/*
     headers:
       - path: /*
         name: X-Content-Type-Options

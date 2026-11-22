@@ -30,6 +30,7 @@ import json
 import mimetypes
 import os
 import re
+import hmac
 import secrets
 import sqlite3
 import struct
@@ -768,27 +769,31 @@ def op_admin(method, path, query, ip):
         return texto("La base de datos de las opiniones no responde ahora. Prueba en un momento.", 503)
 
 
-def op_admin_con(method, path, query, clave, texto):
+def op_admin_con(method, path, query, clave, texto, base="/api/opiniones", aut=None):
+    """la lista, las capturas, las voces, el .zip y el borrado, bajo «base» (/api/opiniones, con la clave en la dirección;
+    /feedbacks, con la galleta de haber entrado: aut vacío)"""
     def num(k_, por):
         v = (query.get(k_) or [""])[0]
         return int(v) if v.isdecimal() and len(v) <= 9 else por
     c, m, _ = op_bd(); qc = urllib.parse.quote(clave, safe="")
+    aut = f"clave={qc}" if aut is None else aut; A = ("&" + aut) if aut else ""; A0 = ("?" + aut) if aut else ""
+    sub = path[len(base):].rstrip("/")
     try:
         cur = c.cursor()
         if method == "POST":
-            if path != "/api/opiniones/borrar":
+            if sub != "/borrar":
                 return texto("No está.", 404)
             cur.execute(f"DELETE FROM opiniones WHERE id = {m}", (num("id", 0),)); c.commit()
-            return 200, (f'<!doctype html><meta charset=utf-8><meta http-equiv=refresh content="0;url=/api/opiniones?clave={qc}">Borrada.').encode("utf-8"), "text/html; charset=utf-8"
-        if path in ("/api/opiniones/captura", "/api/opiniones/voz"):
-            col = "captura" if path.endswith("captura") else "audio"
+            return 200, (f'<!doctype html><meta charset=utf-8><meta http-equiv=refresh content="0;url={base}{A0}">Borrada.').encode("utf-8"), "text/html; charset=utf-8"
+        if sub in ("/captura", "/voz"):
+            col = "captura" if sub == "/captura" else "audio"
             cur.execute(f"SELECT {col}, audio_tipo FROM opiniones WHERE id = {m}", (num("id", 0),)); f = cur.fetchone()
             if not f or not f[0]:
                 return texto("No está.", 404)
             return 200, bytes(f[0]), "image/jpeg" if col == "captura" else (f[1] or "audio/webm")
         antes = num("antes", 0); n = max(1, min(num("n", 25), 50))
         cur.execute("SELECT COUNT(*) FROM opiniones"); total = int(cur.fetchone()[0])
-        if path == "/api/opiniones/descarga.zip":
+        if sub == "/descarga.zip":
             cur.execute("SELECT id, cuando, nombre, texto, dicho, nota, sitio, tecnico, COALESCE(LENGTH(captura), 0) + COALESCE(LENGTH(audio), 0), audio_tipo FROM opiniones"
                         + (f" WHERE id < {m}" if antes else "") + f" ORDER BY id DESC LIMIT {n}", (antes,) if antes else ())
             filas = cur.fetchall(); b = io.BytesIO(); lista = []; pesa = 0
@@ -812,29 +817,97 @@ def op_admin_con(method, path, query, clave, texto):
                 z.writestr("opiniones.json", json.dumps(lista, ensure_ascii=False, indent=1))
                 z.writestr("opiniones.txt", "\n\n".join(f"#{e['id']} · {e['cuando']} · {e['nombre'] or 'alguien'}\n{e['sitio']}\nESCRITO: {e['texto']}\nDICHO: {e['dicho']} {e['nota']}\n{e['tecnico']}" for e in lista))
             return 200, b.getvalue(), "application/zip"
-        if path != "/api/opiniones":
+        if sub != "":
             return texto("No está.", 404)
         cur.execute("SELECT id, cuando, nombre, texto, dicho, nota, sitio, tecnico, captura IS NOT NULL, audio IS NOT NULL FROM opiniones"
                     + (f" WHERE id < {m}" if antes else "") + f" ORDER BY id DESC LIMIT {n}", (antes,) if antes else ())
         filas = cur.fetchall(); h = html.escape; trozos = []
         for i, cuando, nombre, tx, dicho, nota, sitio, tecnico, hay_cap, hay_au in filas:
             trozos.append(f'<article><h2>#{i} · {h(nombre or "alguien")} <small>{h(cuando or "")}</small></h2><p class="s">{h(sitio or "")}</p>'
-                          + (f'<a href="/api/opiniones/captura?id={i}&clave={qc}" target="_blank"><img loading="lazy" src="/api/opiniones/captura?id={i}&clave={qc}" alt="Captura de la opinión {i}"></a>' if hay_cap else "")
+                          + (f'<a href="{base}/captura?id={i}{A}" target="_blank"><img loading="lazy" src="{base}/captura?id={i}{A}" alt="Captura de la opinión {i}"></a>' if hay_cap else "")
                           + (f'<p><b>Escrito:</b> {h(tx)}</p>' if tx else "") + (f'<p><b>Dicho:</b> {h(dicho)}</p>' if dicho else "") + (f'<p class="s">{h(nota)}</p>' if nota else "")
-                          + (f'<audio controls preload="none" src="/api/opiniones/voz?id={i}&clave={qc}"></audio>' if hay_au else "") + f'<p class="s">{h(tecnico or "")}</p><form method="post" action="/api/opiniones/borrar?id={i}&clave={qc}" onsubmit="return confirm(\'¿Borrar la opinión #{i}? No se puede deshacer.\')"><button>Borrar</button></form></article>')
+                          + (f'<audio controls preload="none" src="{base}/voz?id={i}{A}"></audio>' if hay_au else "") + f'<p class="s">{h(tecnico or "")}</p><form method="post" action="{base}/borrar?id={i}{A}" onsubmit="return confirm(\'¿Borrar la opinión #{i}? No se puede deshacer.\')"><button>Borrar</button></form></article>')
         ultimo = filas[-1][0] if filas else 0
-        pie = (f'<p><a class="b" href="/api/opiniones?clave={qc}&antes={ultimo}">Más antiguas →</a></p>' if len(filas) == n and ultimo > 1 else "")
+        pie = (f'<p><a class="b" href="{base}?antes={ultimo}{A}">Más antiguas →</a></p>' if len(filas) == n and ultimo > 1 else "")
         pag = ("<!doctype html><html lang=es><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=robots content=noindex>"
                "<title>Opiniones · 388 Pueblos</title><style>body{margin:0;background:#14161f;color:#f4efe6;font:15px/1.5 system-ui,sans-serif}main{max-width:760px;margin:auto;padding:20px 16px 60px}"
                "h1{font:600 26px Georgia,serif;margin:8px 0}h2{font:600 17px system-ui;margin:0 0 4px}small,.s{color:#b9b3a6;font-size:13px;font-weight:400}article{border:1px solid #2c2f3c;border-radius:14px;padding:14px;margin:14px 0;background:#191c27}"
                "img{display:block;max-width:100%;border-radius:10px;margin:8px 0}audio{width:100%;margin-top:6px}p{margin:6px 0;overflow-wrap:anywhere}.b{display:inline-block;background:#f5a742;color:#1a1408;text-decoration:none;font-weight:600;border-radius:999px;padding:9px 15px;margin:6px 8px 6px 0}button{background:none;border:1px solid #5a3a3a;color:#ff9a8f;border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;margin-top:8px}</style>"
                f"<main><h1>Opiniones de la beta</h1><p class=s>{total} guardadas. Se ven las {len(filas)} más recientes{' anteriores a la #' + str(antes) if antes else ''}. "
                "La base de datos gratuita caduca a los 30 días de crearse: descárgalas de vez en cuando.</p>"
-               f'<p><a class="b" href="/api/opiniones/descarga.zip?clave={qc}&n={n}' + (f"&antes={antes}" if antes else "") + f'">Descargar estas {len(filas)} (.zip)</a></p>'
+               f'<p><a class="b" href="{base}/descarga.zip?n={n}{A}' + (f"&antes={antes}" if antes else "") + f'">Descargar estas {len(filas)} (.zip)</a>'
+               + ('<a class="b" href="/feedbacks/salir" style="background:none;border:1px solid #f5a742;color:#f5a742">Salir</a>' if base == "/feedbacks" else "") + '</p>'
                + "".join(trozos) + (pie or "") + ("<p class=s>Todavía no ha llegado ninguna.</p>" if not total else "") + "</main></html>")
         return 200, pag.encode("utf-8"), "text/html; charset=utf-8"
     finally:
         c.close()
+
+
+# ---- /feedbacks: la misma página privada, en la web (pueblos388.onrender.com/feedbacks la trae de aquí, render.yaml),
+# entrando con la clave en un formulario (OPINIONES_CLAVE) y no en la dirección: queda una galleta firmada con la clave
+# (HttpOnly, Secure, SameSite=Lax: un formulario de otro sitio no puede borrar nada), de 30 días. 22-11-2026, el usuario:
+# «monta el buzón de opiniones en una web externa dentro del dominio que se llama feedbacks».
+FB_GALLETA = "fb388"
+FB_ESTILO = ("<style>body{margin:0;background:#14161f;color:#f4efe6;font:15px/1.5 system-ui,sans-serif}main{max-width:420px;margin:12vh auto;padding:20px 16px}"
+             "h1{font:600 26px Georgia,serif;margin:8px 0}.s{color:#b9b3a6;font-size:13px}input{width:100%;box-sizing:border-box;font:inherit;padding:11px 14px;border-radius:12px;"
+             "border:1px solid #2c2f3c;background:#191c27;color:#f4efe6;margin:10px 0}button,.b{display:inline-block;background:#f5a742;color:#1a1408;border:0;text-decoration:none;"
+             "font:600 15px system-ui;border-radius:999px;padding:10px 18px;cursor:pointer}.e{color:#ff9a8f}</style>")
+
+
+def fb_firma(clave):
+    return hmac.new(clave.encode(), b"feedbacks-388", hashlib.sha256).hexdigest()
+
+
+def fb_galleta(headers):
+    for parte in headers.get("cookie", "").split(";"):
+        k, _, v = parte.strip().partition("=")
+        if k == FB_GALLETA:
+            return v
+    return ""
+
+
+def fb_pagina(cuerpo, st=200):
+    return st, ("<!doctype html><html lang=es><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><meta name=robots content=noindex>"
+                "<title>Feedbacks · 388 Pueblos</title>" + FB_ESTILO + "<main>" + cuerpo + "</main></html>").encode("utf-8"), "text/html; charset=utf-8", ""
+
+
+def fb_entrar(error=""):
+    return fb_pagina("<h1>Opiniones de la beta</h1><p class=s>Lo que mandan quienes prueban el juego (la tecla O): captura, texto y voz.</p>"
+                     + (f"<p class=e>{html.escape(error)}</p>" if error else "")
+                     + "<form method=post action='/feedbacks/entrar'><input type=password name=clave autocomplete=current-password placeholder='Clave' required autofocus>"
+                     "<button>Entrar</button></form><p class=s>La clave es OPINIONES_CLAVE, en el panel de Render (servicio 388-pueblos, Environment).</p>", 403 if error else 200)
+
+
+def op_feedbacks(method, path, query, body, ip, headers):
+    """(estado, cuerpo, tipo, cabeceras de más)"""
+    texto = lambda s, st=200: (st, s.encode("utf-8"), "text/plain; charset=utf-8")
+    clave = os.environ.get("OPINIONES_CLAVE", "").strip()
+    sub = path[len("/feedbacks"):].rstrip("/")
+    seguro = "; Secure" if os.environ.get("RENDER") else ""   # (en local, sin https)
+    if sub == "/entrar" and method == "POST":
+        now = time.time(); k = op_quien(ip); malas = [x for x in op_malas.get(k, []) if now - x < 3600]
+        if len(malas) >= 10:
+            return fb_entrar("Demasiados intentos. Prueba dentro de una hora.")
+        dada = (urllib.parse.parse_qs(body.decode("utf-8", "replace")).get("clave") or [""])[0].strip()
+        if len(clave) < 16:
+            return fb_entrar("El buzón no tiene clave todavía (OPINIONES_CLAVE, en el panel de Render).")
+        if not secrets.compare_digest(dada.encode(), clave.encode()):
+            op_malas[k] = malas + [now]
+            return fb_entrar("Esa clave no es.")
+        return 303, b"", "text/plain", f"Location: /feedbacks\r\nSet-Cookie: {FB_GALLETA}={fb_firma(clave)}; Path=/feedbacks; Max-Age=2592000; HttpOnly{seguro}; SameSite=Lax\r\n"
+    if sub == "/salir":
+        return 303, b"", "text/plain", f"Location: /feedbacks\r\nSet-Cookie: {FB_GALLETA}=; Path=/feedbacks; Max-Age=0; HttpOnly{seguro}; SameSite=Lax\r\n"
+    if len(clave) < 16 or not secrets.compare_digest(fb_galleta(headers).encode(), fb_firma(clave).encode()):
+        return fb_entrar() if sub == "" and method in ("GET", "HEAD") else (*texto("Hace falta entrar: /feedbacks", 403), "")
+    if not op_bd_hay():
+        return fb_pagina("<h1>Opiniones de la beta</h1><p>La base de datos de las opiniones no está montada todavía: hay que crearla en Render "
+                         "(la base gratuita «opiniones388» del render.yaml) y darle su dirección al servidor (DATABASE_URL).</p>"
+                         "<p><a class=b href='/feedbacks/salir'>Salir</a></p>", 503)
+    try:
+        return (*op_admin_con(method, "/feedbacks" + sub, query, clave, texto, base="/feedbacks", aut=""), "")
+    except Exception as e:
+        print(f"opiniones: /feedbacks falló ({type(e).__name__}: {str(e)[:120]})", flush=True)
+        return (*texto("La base de datos de las opiniones no responde ahora. Prueba en un momento.", 503), "")
 
 
 def op_correo(para, d, dicho, nota, captura, audio, tipo_audio):
@@ -1029,7 +1102,7 @@ async def handle(reader, writer):
         if url.path == "/ws" and headers.get("upgrade", "").lower() == "websocket":
             await handle_ws(reader, writer, headers, query, ip)
             return
-        body = b""
+        body = b""; fb_extra = ""
         n = int(headers.get("content-length", "0") or 0)
         if n > (MAX_BODY_OPINION if url.path == "/api/opinion" else MAX_BODY_VECINOS if url.path == "/api/vecinos" else MAX_BODY):
             status, payload, ctype = 413, b'{"error":"demasiado grande"}', "application/json"
@@ -1056,6 +1129,8 @@ async def handle(reader, writer):
             elif url.path == "/api/vecinos":
                 status, obj = await vecinos(method, body, ip, headers.get("origin", ""))
                 payload, ctype = json.dumps(obj, ensure_ascii=False).encode(), "application/json; charset=utf-8"
+            elif (url.path == "/feedbacks" or url.path.startswith("/feedbacks/")) and method in ("GET", "HEAD", "POST"):
+                status, payload, ctype, fb_extra = await asyncio.to_thread(op_feedbacks, method, url.path, query, body, ip, headers)
             elif url.path.startswith("/api/opiniones") and method in ("GET", "HEAD", "POST"):
                 status, payload, ctype = await asyncio.to_thread(op_admin, method, url.path, query, ip)
             elif url.path.startswith("/api/"):
@@ -1070,8 +1145,8 @@ async def handle(reader, writer):
             else:
                 status, payload, ctype = 405, b"", "text/plain"
         extra = ""
-        if url.path.startswith("/api/opiniones"):  # (la página privada: sin CORS, sin marcos, sin nada de fuera, sin referente)
-            extra = ("Cache-Control: no-store\r\nX-Frame-Options: DENY\r\nX-Robots-Tag: noindex\r\n"
+        if url.path.startswith(("/api/opiniones", "/feedbacks")):  # (la página privada: sin CORS, sin marcos, sin nada de fuera, sin referente)
+            extra = fb_extra + ("Cache-Control: no-store\r\nX-Frame-Options: DENY\r\nX-Robots-Tag: noindex\r\n"
                      "Content-Security-Policy: default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'\r\n")
         elif url.path.startswith("/api/"):
             extra = ("Cache-Control: no-store\r\nAccess-Control-Allow-Origin: *\r\n"
@@ -1086,7 +1161,7 @@ async def handle(reader, writer):
             extra = f"Location: {location}\r\nCache-Control: public, max-age=3600\r\n"
         else:
             extra = "Cache-Control: no-store\r\n"
-        reason = {200: "OK", 204: "No Content", 301: "Moved Permanently", 304: "Not Modified", 400: "Bad Request", 403: "Forbidden", 404: "Not Found", 405: "Method Not Allowed", 413: "Payload Too Large", 429: "Too Many Requests", 502: "Bad Gateway", 503: "Service Unavailable"}.get(status, "OK")
+        reason = {200: "OK", 204: "No Content", 301: "Moved Permanently", 303: "See Other", 304: "Not Modified", 400: "Bad Request", 403: "Forbidden", 404: "Not Found", 405: "Method Not Allowed", 413: "Payload Too Large", 429: "Too Many Requests", 502: "Bad Gateway", 503: "Service Unavailable"}.get(status, "OK")
         hdr = (f"HTTP/1.1 {status} {reason}\r\nContent-Type: {ctype}\r\nContent-Length: {len(payload)}\r\n{extra}"
                "X-Content-Type-Options: nosniff\r\nReferrer-Policy: strict-origin-when-cross-origin\r\nConnection: close\r\n\r\n").encode()
         writer.write(hdr + (b"" if method == "HEAD" else payload))
